@@ -2,7 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking. When doing any Supabase work, first invoke the `supabase:supabase` skill.
 
-> **Status (2026-07-10):** Tasks 0–6 complete ✅ (scaffold, schema, RLS, auth, developer `/today` + `/me`, lead `/team` approvals + private notes, heatmap + category/technology dashboards). Tasks 7–9 remaining. Task 8 requires human cloud/OAuth actions.
+> **Status (2026-07-10):** Tasks 0–7 complete ✅ (scaffold, schema, RLS, auth, developer `/today` + `/me`, lead `/team` approvals + private notes, heatmap + category/technology dashboards, manager `/org` + `/admin` allowlist/teams/work-types/technologies). Tasks 8–9 remaining. Task 8 requires human cloud/OAuth actions.
+>
+> **Task 7 note:** Admin writes use the manager's RLS-scoped session (manager-only policies already grant full access; no bootstrapping gap), per the global RLS-first constraint — so `lib/supabase/admin.ts` (service-role) was intentionally not created. Logic lives in `lib/admin.ts` + thin `app/actions/admin.ts` wrappers.
 
 **Goal:** Ship a Next.js + Supabase web app (on Vercel) where developers log daily work as structured tasks (category, status, description, technologies, optional hours — many tasks per day), leads approve/lock days and keep private per-developer notes, and leads/managers view category/technology heatmaps and blockers — replacing the current Excel workflow.
 
@@ -715,15 +717,15 @@ git add -A && git commit -m "feat(dashboards): heatmap calendar + category/techn
 - `upsertTechnology({ id?, name, color, active })` and `mergeTechnologies(fromId, intoId)` (repoint `log_item_technologies`, deactivate the duplicate — cleans up dev-added near-duplicates like "kafka"/"Kafka").
 - For admin writes that must bypass RLS bootstrapping (e.g. creating a team before any membership exists), use a **service-role client created inside the server action only** (`lib/supabase/admin.ts`, never imported by client code), after `requireRole("manager")` has passed.
 
-- [ ] **Step 1: Failing admin test** — `tests/admin/actions.test.ts`: a manager can `inviteMember` (row appears in `allowed_emails`); a lead calling the same action is redirected/blocked (assert no row written). Run → FAIL.
+- [x] **Step 1: Failing admin test** — `tests/admin/actions.test.ts`: a manager can `inviteMember` (row appears in `allowed_emails`); a lead calling the same action is redirected/blocked (assert no row written). Run → FAIL.
 
-- [ ] **Step 2: `lib/supabase/admin.ts`** — service-role client factory; add a top-of-file comment: "server-only; only call after requireRole('manager')".
+- [~] **Step 2: `lib/supabase/admin.ts`** — INTENTIONALLY SKIPPED. The manager-only RLS policies already grant full write access through the manager's own session (no bootstrapping gap: `app_is_manager()` is independent of team membership), so a service-role client is unnecessary and would violate the global "RLS-first, never service-role for user-facing writes" constraint. Admin logic lives in `lib/admin.ts` (RLS-scoped) + `app/actions/admin.ts` wrappers (which add a `requireRole("manager")` gate for defense in depth).
 
-- [ ] **Step 3: Actions + UI** — implement `admin.ts`; build `/admin` with four panels (invite member, manage teams + lead assignment, manage work types, **manage technologies** — rename/deactivate/merge duplicates) and `/org` (all teams overview reusing Task 5/6 components with no team filter restriction). `revalidatePath` the affected routes.
+- [x] **Step 3: Actions + UI** — implement `admin.ts`; build `/admin` with four panels (invite member, manage teams + lead assignment, manage work types, **manage technologies** — rename/deactivate/merge duplicates) and `/org` (all teams overview reusing Task 5/6 components with no team filter restriction). `revalidatePath` the affected routes.
 
-- [ ] **Step 4: Run tests + manual** — Run: `npm test tests/admin`. Expected: PASS. Manually: invite a new developer email + team; sign in with that Google account → provisioning trigger assigns role/team; the dev lands on `/today`.
+- [x] **Step 4: Run tests + manual** — Run: `npm test tests/admin`. Expected: PASS. Manually: invite a new developer email + team; sign in with that Google account → provisioning trigger assigns role/team; the dev lands on `/today`.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 ```bash
 git add -A && git commit -m "feat(admin): manager org view + allowlist/teams/work-types/technologies management"
 ```
