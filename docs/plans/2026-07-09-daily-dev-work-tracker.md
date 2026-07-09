@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking. When doing any Supabase work, first invoke the `supabase:supabase` skill.
 
-> **Status (2026-07-09):** Tasks 0–4 complete ✅ (scaffold, schema, RLS, auth, developer `/today` + `/me`). Tasks 5–9 remaining. Task 8 requires human cloud/OAuth actions.
+> **Status (2026-07-10):** Tasks 0–6 complete ✅ (scaffold, schema, RLS, auth, developer `/today` + `/me`, lead `/team` approvals + private notes, heatmap + category/technology dashboards). Tasks 7–9 remaining. Task 8 requires human cloud/OAuth actions.
 
 **Goal:** Ship a Next.js + Supabase web app (on Vercel) where developers log daily work as structured tasks (category, status, description, technologies, optional hours — many tasks per day), leads approve/lock days and keep private per-developer notes, and leads/managers view category/technology heatmaps and blockers — replacing the current Excel workflow.
 
@@ -624,7 +624,7 @@ git add -A && git commit -m "feat(logs): developer daily entry + history + reope
 
 **Consumes:** RLS from Task 2 (lead may update team logs; notes access restricted to lead/manager).
 
-- [ ] **Step 1: Failing approval test** — `tests/approvals/actions.test.ts`:
+- [x] **Step 1: Failing approval test** — `tests/approvals/actions.test.ts`:
 ```ts
 test("lead approves a submitted day in own team; approved day is locked to dev", async () => {
   const { leadSb, devSb, logId } = await setupTeamWithSubmittedLog();
@@ -637,15 +637,15 @@ test("lead approves a submitted day in own team; approved day is locked to dev",
 });
 ```
 
-- [ ] **Step 2: Failing notes access test** — `tests/notes/access.test.ts`: lead of team can insert+read a note about a team dev; a lead of a *different* team gets 0 rows; the developer gets 0 rows. Run both → Expected: FAIL.
+- [x] **Step 2: Failing notes access test** — `tests/notes/access.test.ts`: lead of team can insert+read a note about a team dev; a lead of a *different* team gets 0 rows; the developer gets 0 rows. Run both → Expected: FAIL.
 
-- [ ] **Step 3: Actions** — implement `approvals.ts` and `notes.ts` (`"use server"`, `requireRole("lead","manager")`, use RLS-scoped client, `revalidatePath("/team")`).
+- [x] **Step 3: Actions** — implement `approvals.ts` and `notes.ts` (`"use server"`, `requireRole("lead","manager")`, use RLS-scoped client, `revalidatePath("/team")`).
 
-- [ ] **Step 4: UI** — `app/team/page.tsx` (server: `requireRole("lead","manager")`): four regions — `<ApprovalQueue>` (submitted days for the lead's teams with Approve / Reopen buttons and an expandable `<DayReview>` showing each task's category, status badge, technologies, hours, and blocker note); `<BlockedTasks>` (all `status='blocked'` tasks across the lead's teams, newest first, showing dev + blocker note); a team developer list; and `<NotesPanel>` (select a developer → running private notes with add/edit/delete). Managers see all teams (RLS returns everything).
+- [x] **Step 4: UI** — `app/team/page.tsx` (server: `requireRole("lead","manager")`): four regions — `<ApprovalQueue>` (submitted days for the lead's teams with Approve / Reopen buttons and an expandable `<DayReview>` showing each task's category, status badge, technologies, hours, and blocker note); `<BlockedTasks>` (all `status='blocked'` tasks across the lead's teams, newest first, showing dev + blocker note); a team developer list; and `<NotesPanel>` (select a developer → running private notes with add/edit/delete). Managers see all teams (RLS returns everything).
 
-- [ ] **Step 5: Run tests + manual** — Run: `npm test tests/approvals tests/notes`. Expected: PASS. Manually: as lead, approve a submitted day; add a private note; sign in as that developer and confirm the note is not visible anywhere.
+- [x] **Step 5: Run tests + manual** — Run: `npm test tests/approvals tests/notes`. Expected: PASS. Manually: as lead, approve a submitted day; add a private note; sign in as that developer and confirm the note is not visible anywhere.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 ```bash
 git add -A && git commit -m "feat(team): approvals + private per-developer notes"
 ```
@@ -663,7 +663,7 @@ git add -A && git commit -m "feat(team): approvals + private per-developer notes
 - `buildCalendar(items: {log_date: string; count: number}[], from: string, to: string): CalendarCell[]` where `CalendarCell = { date: string; count: number; level: 0|1|2|3|4 }`.
 - `buildDistribution(rows: {key: string; name: string; color: string; hours: number|null}[]): { name: string; color: string; total: number; pct: number }[]` (counts items when hours are null; generic over `key` so it serves **both** category/work-type and technology distributions — a task with N technologies contributes to each). Callers pass `key = work_type_id` for the category chart and `key = technology_id` (one row per task-tech pair) for the tech chart.
 
-- [ ] **Step 1: Failing aggregate tests** — `tests/aggregate/buildHeatmap.test.ts`:
+- [x] **Step 1: Failing aggregate tests** — `tests/aggregate/buildHeatmap.test.ts`:
 ```ts
 import { buildCalendar } from "@/lib/aggregate";
 test("assigns intensity levels and fills gaps", () => {
@@ -685,17 +685,17 @@ test("percentages sum to ~100", () => {
 });
 ```
 
-- [ ] **Step 2: Run to verify fail** — Run: `npm test tests/aggregate`. Expected: FAIL (module missing).
+- [x] **Step 2: Run to verify fail** — Run: `npm test tests/aggregate`. Expected: FAIL (module missing).
 
-- [ ] **Step 3: Implement `lib/aggregate.ts`** — pure TS: date-range fill, quantile-free fixed thresholds for levels (`0, 1–2, 3–4, 5–7, 8+`), and distribution with `pct` normalized to 100. No external deps.
+- [x] **Step 3: Implement `lib/aggregate.ts`** — pure TS: date-range fill, quantile-free fixed thresholds for levels (`0, 1–2, 3–4, 5–7, 8+`), and distribution with `pct` normalized to 100. No external deps.
 
-- [ ] **Step 4: Run to verify pass** — Run: `npm test tests/aggregate`. Expected: PASS.
+- [x] **Step 4: Run to verify pass** — Run: `npm test tests/aggregate`. Expected: PASS.
 
-- [ ] **Step 5: Render components** — `components/heatmap-calendar.tsx`: CSS-grid of week columns × weekday rows; cell background from `level` using a single-hue ramp; tooltip on hover; follow the **`dataviz` skill** for the color ramp + accessible contrast (light/dark). `components/worktype-distribution.tsx`: horizontal stacked bar + legend using each work type's `color`. `components/tech-distribution.tsx`: same component fed the technology aggregation (top-N technologies used). `components/filters-bar.tsx`: team select (lead/manager), date-range, category filter, **technology filter**, and **status filter** → drives server-component query params.
+- [x] **Step 5: Render components** — `components/heatmap-calendar.tsx`: CSS-grid of week columns × weekday rows; cell background from `level` using a single-hue ramp; tooltip on hover; follow the **`dataviz` skill** for the color ramp + accessible contrast (light/dark). `components/worktype-distribution.tsx`: horizontal stacked bar + legend using each work type's `color`. `components/tech-distribution.tsx`: same component fed the technology aggregation (top-N technologies used). `components/filters-bar.tsx`: team select (lead/manager), date-range, category filter, **technology filter**, and **status filter** → drives server-component query params.
 
-- [ ] **Step 6: Wire into pages** — `/me` shows the developer's own calendar + distribution. `/team` shows per-developer heatmaps and a team-level distribution, filterable. Aggregate inputs come from RLS-scoped queries (a developer only ever aggregates their own rows; a lead only their teams').
+- [x] **Step 6: Wire into pages** — `/me` shows the developer's own calendar + distribution. `/team` shows per-developer heatmaps and a team-level distribution, filterable. Aggregate inputs come from RLS-scoped queries (a developer only ever aggregates their own rows; a lead only their teams').
 
-- [ ] **Step 7: Manual check + commit** — Verify the heatmap reflects the days logged in Task 4/5 and the distribution matches the tags/technologies used.
+- [x] **Step 7: Manual check + commit** — Verify the heatmap reflects the days logged in Task 4/5 and the distribution matches the tags/technologies used.
 ```bash
 git add -A && git commit -m "feat(dashboards): heatmap calendar + category/technology distribution"
 ```
