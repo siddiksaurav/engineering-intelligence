@@ -64,7 +64,7 @@ export default async function MePage() {
   return (
     <div className="min-h-full">
       <AppBar profile={profile} />
-      <main className="mx-auto max-w-3xl px-6 py-8">
+      <main className="mx-auto max-w-6xl px-6 py-8">
         <div className="hero-band mb-10 px-7 pt-8 pb-6">
           <p className="eyebrow text-white/70">My history</p>
           <h1 className="mt-1.5 text-4xl font-semibold tracking-tight">

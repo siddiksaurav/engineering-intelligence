@@ -133,8 +133,9 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-display);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
 }
 
 @layer base {
@@ -147,6 +148,7 @@
     font-family: var(--font-sans), Arial, Helvetica, sans-serif;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
+    letter-spacing: -0.006em;
     /* Tinted atmosphere: soft indigo + fuchsia washes bleeding from the top
        corners over the cool canvas, so the page never reads as flat white. */
     background-color: var(--background);
@@ -163,6 +165,13 @@
       );
     background-attachment: fixed;
     background-repeat: no-repeat;
+  }
+  /* Headings wear the display face — this is where the type personality lives. */
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display), var(--font-sans), sans-serif;
+    letter-spacing: -0.02em;
   }
 }
 
