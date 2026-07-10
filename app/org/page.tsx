@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { AppBar } from "@/components/app-bar";
 import { requireRole } from "@/lib/auth";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { todayISO } from "@/lib/logs";
@@ -22,6 +22,8 @@ import { FiltersBar, type DashboardFilters } from "@/components/filters-bar";
 import { HeatmapCalendar } from "@/components/heatmap-calendar";
 import { WorkTypeDistribution } from "@/components/worktype-distribution";
 import { TechDistribution } from "@/components/tech-distribution";
+import { SectionHeader } from "@/components/section-header";
+import { EmptyState } from "@/components/empty-state";
 
 function daysAgoISO(n: number): string {
   const d = new Date();
@@ -38,7 +40,7 @@ export default async function OrgPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  await requireRole("manager");
+  const profile = await requireRole("manager");
   const sb = await createServerSupabase();
 
   const sp = await searchParams;
@@ -100,103 +102,104 @@ export default async function OrgPage({
     }))
     .sort((a, b) => a.name.localeCompare(b.name));
 
-  return (
-    <main className="mx-auto max-w-5xl p-6">
-      <header className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Organization</h1>
-          <p className="text-sm text-muted-foreground">
-            {developers.length} developers · {teams.length} teams
-          </p>
-        </div>
-        <nav className="flex items-center gap-4 text-sm">
-          <Link
-            href="/team"
-            className="text-muted-foreground underline underline-offset-4 hover:text-foreground"
-          >
-            Team notes
-          </Link>
-          <Link
-            href="/admin"
-            className="rounded-md bg-primary px-3 py-1.5 font-medium text-primary-foreground hover:opacity-90"
-          >
-            Admin
-          </Link>
-        </nav>
-      </header>
+  const stats = [
+    { label: "Developers", value: developers.length },
+    { label: "Teams", value: teams.length },
+    { label: "Awaiting approval", value: pending.length, accent: pending.length > 0 },
+    { label: "Blocked", value: blocked.length, alert: blocked.length > 0 },
+  ];
 
-      <div className="flex flex-col gap-8">
-        <section>
-          <h2 className="mb-3 text-sm font-medium text-muted-foreground">
-            Dashboard
-          </h2>
-          <div className="flex flex-col gap-4">
-            <FiltersBar
-              action="/org"
-              filters={filters}
-              teams={teams}
+  return (
+    <div className="min-h-full">
+      <AppBar profile={profile} />
+
+      <main className="mx-auto max-w-6xl px-6 py-8">
+        {/* Gradient hero with the telemetry strip embedded — the whole org
+            in one colored read. */}
+        <div className="hero-band mb-10 px-7 pt-8 pb-6">
+          <p className="eyebrow text-white/70">Org overview</p>
+          <h1 className="mt-1.5 text-4xl font-semibold tracking-tight">
+            Organization
+          </h1>
+          <p className="mt-2 text-sm text-white/85">
+            Activity, approvals, and blockers across every team — from{" "}
+            <span className="font-mono">{filters.from}</span> to{" "}
+            <span className="font-mono">{filters.to}</span>.
+          </p>
+
+          <div className="relative mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {stats.map((s) => (
+              <div
+                key={s.label}
+                className="rounded-xl border border-white/15 bg-white/10 p-4 backdrop-blur-sm"
+              >
+                <p className="eyebrow text-white/70">{s.label}</p>
+                <p className="mt-1.5 font-mono text-3xl font-semibold tabular-nums tracking-tight text-white">
+                  {s.value}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-12">
+          <section>
+            <SectionHeader eyebrow="Dashboard" title="Activity" />
+            <div className="flex flex-col gap-5">
+              <FiltersBar
+                action="/org"
+                filters={filters}
+                teams={teams}
+                workTypes={workTypes}
+                technologies={technologies}
+              />
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="surface p-5">
+                  <p className="eyebrow mb-4">By category</p>
+                  <WorkTypeDistribution slices={byWorkType} />
+                </div>
+                <div className="surface p-5">
+                  <p className="eyebrow mb-4">By technology</p>
+                  <TechDistribution slices={byTech} />
+                </div>
+              </div>
+
+              <div>
+                <p className="eyebrow mb-4">Activity by developer</p>
+                {devHeatmaps.length === 0 ? (
+                  <EmptyState message="No activity for these filters." />
+                ) : (
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    {devHeatmaps.map((d) => (
+                      <div key={d.id} className="surface p-5">
+                        <p className="mb-4 text-sm font-medium text-foreground">
+                          {d.name}
+                        </p>
+                        <HeatmapCalendar cells={d.cells} />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </section>
+
+          <section>
+            <SectionHeader eyebrow="Review queue" title="Awaiting approval" />
+            <ApprovalQueue
+              pending={pending}
               workTypes={workTypes}
               technologies={technologies}
             />
+          </section>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="rounded-lg border border-border bg-card p-4">
-                <p className="mb-3 text-xs font-medium text-muted-foreground">
-                  By category
-                </p>
-                <WorkTypeDistribution slices={byWorkType} />
-              </div>
-              <div className="rounded-lg border border-border bg-card p-4">
-                <p className="mb-3 text-xs font-medium text-muted-foreground">
-                  By technology
-                </p>
-                <TechDistribution slices={byTech} />
-              </div>
-            </div>
-
-            <div>
-              <p className="mb-3 text-xs font-medium text-muted-foreground">
-                Activity by developer
-              </p>
-              {devHeatmaps.length === 0 ? (
-                <p className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
-                  No activity for these filters.
-                </p>
-              ) : (
-                <div className="grid gap-4 sm:grid-cols-2">
-                  {devHeatmaps.map((d) => (
-                    <div
-                      key={d.id}
-                      className="rounded-lg border border-border bg-card p-4"
-                    >
-                      <p className="mb-3 text-sm font-medium">{d.name}</p>
-                      <HeatmapCalendar cells={d.cells} />
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </section>
-
-        <section>
-          <h2 className="mb-3 text-sm font-medium text-muted-foreground">
-            Awaiting approval
-          </h2>
-          <ApprovalQueue
-            pending={pending}
-            workTypes={workTypes}
-            technologies={technologies}
-          />
-        </section>
-
-        <section>
-          <h2 className="mb-3 text-sm font-medium text-muted-foreground">
-            Blocked tasks
-          </h2>
-          <BlockedTasks tasks={blocked} technologies={technologies} />
-        </section>
-      </div>
-    </main>
+          <section>
+            <SectionHeader eyebrow="Attention" title="Blocked tasks" />
+            <BlockedTasks tasks={blocked} technologies={technologies} />
+          </section>
+        </div>
+      </main>
+    </div>
   );
 }

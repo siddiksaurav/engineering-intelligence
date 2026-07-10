@@ -3,7 +3,6 @@
 import * as React from "react";
 import { PlusIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { LogItemRow } from "@/components/log-item-row";
 import {
   addItem,
@@ -22,13 +21,10 @@ import type {
   WorkType,
 } from "@/lib/types";
 
-const STATUS_META: Record<
-  LogStatus,
-  { label: string; variant: "secondary" | "default" | "outline" }
-> = {
-  draft: { label: "Draft", variant: "secondary" },
-  submitted: { label: "Submitted", variant: "default" },
-  approved: { label: "Approved", variant: "outline" },
+const STATUS_META: Record<LogStatus, { label: string; pill: string }> = {
+  draft: { label: "Draft", pill: "pill pill-warning" },
+  submitted: { label: "Submitted", pill: "pill pill-info" },
+  approved: { label: "Approved", pill: "pill pill-success" },
 };
 
 export function LogEntryForm({
@@ -116,23 +112,24 @@ export function LogEntryForm({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">Day status</span>
-          <Badge variant={meta.variant}>{meta.label}</Badge>
+      <div className="surface flex items-center justify-between gap-3 px-4 py-3">
+        <div className="flex items-center gap-2.5">
+          <span className="eyebrow">Day status</span>
+          <span className={meta.pill}>{meta.label}</span>
         </div>
-        <Button
+        <button
           type="button"
           onClick={handleSubmit}
           disabled={locked || pending || items.length === 0}
+          className="btn-primary h-9 px-4 text-sm"
         >
           Submit for approval
-        </Button>
+        </button>
       </div>
 
       <div className="flex flex-col gap-3">
         {items.length === 0 && (
-          <p className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+          <p className="rounded-xl border border-dashed border-border bg-card/40 p-8 text-center text-sm text-muted-foreground">
             No tasks yet. Add what you worked on today.
           </p>
         )}

@@ -2,59 +2,106 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/*
+  Engineering Intelligence — "telemetry" design system.
+  Cool layered canvas (soft page / white cards that lift), deep blue-slate
+  ink, one sky/azure signal accent. Mono is the utility face for labels,
+  metrics, and dates. Every surface below derives from these tokens.
+*/
 :root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
+  --radius: 0.7rem;
+
+  --background: oklch(0.975 0.004 240);
+  --foreground: oklch(0.23 0.028 255);
+
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
+  --card-foreground: oklch(0.23 0.028 255);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.985 0 0);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
+  --popover-foreground: oklch(0.23 0.028 255);
+
+  /* Signal accent — sky/azure blue, used with restraint. */
+  --primary: oklch(0.58 0.15 236);
+  --primary-foreground: oklch(0.99 0.005 236);
+
+  --secondary: oklch(0.965 0.006 240);
+  --secondary-foreground: oklch(0.3 0.03 255);
+  --muted: oklch(0.965 0.006 240);
+  --muted-foreground: oklch(0.53 0.025 250);
+  --accent: oklch(0.955 0.016 236);
+  --accent-foreground: oklch(0.42 0.13 240);
+
+  --destructive: oklch(0.58 0.21 25);
+  --destructive-foreground: oklch(0.99 0.005 236);
+
+  /* Semantic status colors — used for pills, accents, and state. */
+  --success: oklch(0.62 0.15 156);
+  --warning: oklch(0.72 0.16 71);
+  /* Info retuned to slate-blue so it stays distinct from the sky primary. */
+  --info: oklch(0.5 0.08 250);
+
+  /* Hero gradient endpoints (sky → light azure). */
+  --grad-a: oklch(0.62 0.15 236);
+  --grad-b: oklch(0.72 0.13 224);
+
+  --border: oklch(0.912 0.008 245);
+  --input: oklch(0.9 0.009 245);
+  --ring: oklch(0.58 0.15 236);
+
+  /* Cohesive, distinguishable data palette (sky → teal → amber → rose → slate). */
+  --chart-1: oklch(0.58 0.16 236);
+  --chart-2: oklch(0.68 0.13 190);
+  --chart-3: oklch(0.78 0.16 78);
+  --chart-4: oklch(0.63 0.21 15);
+  --chart-5: oklch(0.55 0.05 250);
+
+  --shadow-card: 0 1px 2px oklch(0.23 0.03 255 / 0.05),
+    0 4px 16px oklch(0.23 0.03 255 / 0.05);
+  --shadow-card-hover: 0 2px 4px oklch(0.23 0.03 255 / 0.06),
+    0 10px 30px oklch(0.23 0.03 255 / 0.08);
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --destructive-foreground: oklch(0.985 0 0);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
+  --background: oklch(0.17 0.02 255);
+  --foreground: oklch(0.96 0.005 250);
+
+  --card: oklch(0.215 0.022 255);
+  --card-foreground: oklch(0.96 0.005 250);
+  --popover: oklch(0.215 0.022 255);
+  --popover-foreground: oklch(0.96 0.005 250);
+
+  --primary: oklch(0.68 0.15 234);
+  --primary-foreground: oklch(0.15 0.02 255);
+
+  --secondary: oklch(0.25 0.02 255);
+  --secondary-foreground: oklch(0.96 0.005 250);
+  --muted: oklch(0.25 0.02 255);
+  --muted-foreground: oklch(0.71 0.02 250);
+  --accent: oklch(0.3 0.05 236);
+  --accent-foreground: oklch(0.85 0.09 236);
+
+  --destructive: oklch(0.7 0.19 22);
+  --destructive-foreground: oklch(0.15 0.02 255);
+
+  --success: oklch(0.72 0.15 156);
+  --warning: oklch(0.8 0.15 71);
+  --info: oklch(0.62 0.09 250);
+
+  --grad-a: oklch(0.62 0.15 236);
+  --grad-b: oklch(0.7 0.13 224);
+
+  --border: oklch(1 0 0 / 9%);
+  --input: oklch(1 0 0 / 13%);
+  --ring: oklch(0.68 0.15 234);
+
+  --chart-1: oklch(0.68 0.16 234);
+  --chart-2: oklch(0.72 0.13 190);
+  --chart-3: oklch(0.8 0.16 78);
+  --chart-4: oklch(0.68 0.2 15);
+  --chart-5: oklch(0.65 0.05 250);
+
+  --shadow-card: 0 1px 2px oklch(0 0 0 / 0.3), 0 4px 16px oklch(0 0 0 / 0.35);
+  --shadow-card-hover: 0 2px 4px oklch(0 0 0 / 0.35),
+    0 10px 30px oklch(0 0 0 / 0.45);
 }
 
 @theme inline {
@@ -86,8 +133,9 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-display);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
 }
 
 @layer base {
@@ -96,8 +144,164 @@
     outline-color: color-mix(in oklch, var(--ring) 50%, transparent);
   }
   body {
-    background-color: var(--background);
     color: var(--foreground);
     font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    letter-spacing: -0.006em;
+    /* Tinted atmosphere: soft indigo + fuchsia washes bleeding from the top
+       corners over the cool canvas, so the page never reads as flat white. */
+    background-color: var(--background);
+    background-image:
+      radial-gradient(
+        1100px 560px at 100% -8%,
+        color-mix(in oklch, var(--grad-b) 20%, transparent),
+        transparent 60%
+      ),
+      radial-gradient(
+        1000px 520px at -5% -6%,
+        color-mix(in oklch, var(--grad-a) 22%, transparent),
+        transparent 58%
+      );
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+  }
+  /* Headings wear the display face — this is where the type personality lives. */
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display), var(--font-sans), sans-serif;
+    letter-spacing: -0.02em;
+  }
+}
+
+@layer components {
+  /* Mono eyebrow: the telemetry label used above every section + on metrics. */
+  .eyebrow {
+    font-family: var(--font-mono), ui-monospace, monospace;
+    font-size: 0.6875rem;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted-foreground);
+  }
+  /* Elevated surface used for primary panels — hairline + soft lift. */
+  .surface {
+    background-color: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card);
+  }
+
+  /* Vivid gradient hero band — the colored anchor at the top of a page. */
+  .hero-band {
+    position: relative;
+    overflow: hidden;
+    border-radius: var(--radius-xl);
+    color: oklch(0.99 0.01 236);
+    background: linear-gradient(
+      120deg,
+      var(--grad-a) 0%,
+      oklch(0.58 0.16 230) 48%,
+      var(--grad-b) 100%
+    );
+    box-shadow: 0 10px 34px color-mix(in oklch, var(--grad-a) 40%, transparent);
+  }
+  /* Faint grid texture etched into the hero so the gradient has substance. */
+  .hero-band::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(oklch(1 0 0 / 0.09) 1px, transparent 1px),
+      linear-gradient(90deg, oklch(1 0 0 / 0.09) 1px, transparent 1px);
+    background-size: 34px 34px;
+    -webkit-mask-image: radial-gradient(
+      120% 120% at 85% 0%,
+      black,
+      transparent 70%
+    );
+    mask-image: radial-gradient(120% 120% at 85% 0%, black, transparent 70%);
+    pointer-events: none;
+  }
+
+  /* Gradient primary button — the accent given weight. */
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    border-radius: var(--radius-lg);
+    background: linear-gradient(135deg, var(--grad-a), var(--grad-b));
+    color: oklch(0.99 0.01 236);
+    font-weight: 500;
+    box-shadow: 0 4px 14px color-mix(in oklch, var(--grad-a) 34%, transparent);
+    transition:
+      transform 0.12s ease,
+      box-shadow 0.12s ease,
+      opacity 0.12s ease;
+  }
+  .btn-primary:hover {
+    box-shadow: 0 6px 20px color-mix(in oklch, var(--grad-a) 44%, transparent);
+    transform: translateY(-1px);
+  }
+  .btn-primary:active {
+    transform: translateY(0);
+  }
+  .btn-primary:disabled {
+    opacity: 0.5;
+    box-shadow: none;
+    transform: none;
+  }
+
+  /* Semantic soft pills — colored fill + matching ink for status. */
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    border-radius: 999px;
+    padding: 0.15rem 0.6rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    line-height: 1.2;
+  }
+  .pill::before {
+    content: "";
+    width: 0.4rem;
+    height: 0.4rem;
+    border-radius: 999px;
+    background: currentColor;
+  }
+  .pill-warning {
+    color: var(--warning);
+    background: color-mix(in oklch, var(--warning) 16%, var(--card));
+  }
+  .pill-info {
+    color: var(--info);
+    background: color-mix(in oklch, var(--info) 16%, var(--card));
+  }
+  .pill-success {
+    color: var(--success);
+    background: color-mix(in oklch, var(--success) 16%, var(--card));
+  }
+
+  /* Sequential activity ramp derived from the sky primary (contribution
+     heatmap). Mixing the accent into the card means it follows the palette and
+     inverts correctly in dark mode — higher activity stays brighter. */
+  .heat-0 {
+    background-color: var(--muted);
+  }
+  .heat-1 {
+    background-color: color-mix(in oklch, var(--primary) 24%, var(--card));
+  }
+  .heat-2 {
+    background-color: color-mix(in oklch, var(--primary) 46%, var(--card));
+  }
+  .heat-3 {
+    background-color: color-mix(in oklch, var(--primary) 70%, var(--card));
+  }
+  .heat-4 {
+    background-color: var(--primary);
   }
 }

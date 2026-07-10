@@ -1,17 +1,17 @@
 import type { CalendarCell } from "@/lib/aggregate";
 
 // GitHub-style contribution calendar: one square per day, columns = weeks,
-// rows = weekday (Sun→Sat). Intensity is a single-hue blue sequential ramp
-// (dataviz skill) — level 0 recedes to a neutral surface square; 1→4 step
-// light→dark. Dark mode reverses the ramp so higher activity stays brighter
-// against the dark surface. Both column strings are literal so Tailwind v4 emits
-// them.
+// rows = weekday (Sun→Sat). Intensity is a single-hue sky sequential ramp
+// (dataviz skill) via the token-derived `.heat-*` classes in globals.css —
+// level 0 recedes to a neutral surface square; 1→4 mix more of the sky accent
+// into the card. Dark mode inverts automatically (dark card + bright accent),
+// so higher activity stays brighter against the dark surface.
 const LEVEL_BG: Record<CalendarCell["level"], string> = {
-  0: "bg-muted",
-  1: "bg-[#b7d3f6] dark:bg-[#184f95]",
-  2: "bg-[#86b6ef] dark:bg-[#256abf]",
-  3: "bg-[#3987e5] dark:bg-[#3987e5]",
-  4: "bg-[#184f95] dark:bg-[#86b6ef]",
+  0: "heat-0",
+  1: "heat-1",
+  2: "heat-2",
+  3: "heat-3",
+  4: "heat-4",
 };
 
 const LEGEND_LEVELS: CalendarCell["level"][] = [0, 1, 2, 3, 4];

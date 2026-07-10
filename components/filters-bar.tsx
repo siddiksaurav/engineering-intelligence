@@ -18,7 +18,10 @@ const STATUS_LABELS: Record<ItemStatus, string> = {
 };
 
 const selectClass =
-  "h-9 rounded-md border border-border bg-background px-2 text-sm text-foreground";
+  "h-9 rounded-lg border border-input bg-background px-2.5 text-sm text-foreground shadow-sm transition-colors focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/25";
+
+const labelClass =
+  "flex flex-col gap-1.5 text-[0.7rem] font-medium uppercase tracking-wide text-muted-foreground";
 
 // A plain GET form: submitting reloads the (server-rendered) page with the
 // chosen filters as query params, so no client JS is needed. `action` targets
@@ -40,9 +43,9 @@ export function FiltersBar({
     <form
       method="get"
       action={action}
-      className="flex flex-wrap items-end gap-3 rounded-lg border border-border bg-card p-3"
+      className="surface flex flex-wrap items-end gap-x-3 gap-y-4 p-4"
     >
-      <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+      <label className={labelClass}>
         From
         <input
           type="date"
@@ -51,7 +54,7 @@ export function FiltersBar({
           className={selectClass}
         />
       </label>
-      <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+      <label className={labelClass}>
         To
         <input
           type="date"
@@ -62,7 +65,7 @@ export function FiltersBar({
       </label>
 
       {teams.length > 0 && (
-        <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+        <label className={labelClass}>
           Team
           <select name="team" defaultValue={filters.team} className={selectClass}>
             <option value="">All teams</option>
@@ -75,7 +78,7 @@ export function FiltersBar({
         </label>
       )}
 
-      <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+      <label className={labelClass}>
         Category
         <select name="wt" defaultValue={filters.workType} className={selectClass}>
           <option value="">All categories</option>
@@ -87,7 +90,7 @@ export function FiltersBar({
         </select>
       </label>
 
-      <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+      <label className={labelClass}>
         Technology
         <select
           name="tech"
@@ -103,7 +106,7 @@ export function FiltersBar({
         </select>
       </label>
 
-      <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+      <label className={labelClass}>
         Status
         <select
           name="status"
@@ -119,19 +122,19 @@ export function FiltersBar({
         </select>
       </label>
 
-      <div className="flex items-center gap-2">
-        <button
-          type="submit"
-          className="h-9 rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground hover:opacity-90"
-        >
-          Apply
-        </button>
+      <div className="ml-auto flex items-center gap-1.5">
         <a
           href={action}
-          className="text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground"
+          className="h-9 rounded-lg px-3 text-sm font-medium leading-9 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
         >
           Clear
         </a>
+        <button
+          type="submit"
+          className="h-9 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground shadow-sm transition-opacity hover:opacity-90"
+        >
+          Apply
+        </button>
       </div>
     </form>
   );

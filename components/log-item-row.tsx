@@ -43,8 +43,19 @@ export function LogItemRow({
   const wtLabel = (id: string) =>
     workTypes.find((w) => w.id === id)?.name ?? "Category";
 
+  const accent =
+    item.status === "blocked"
+      ? "before:bg-destructive"
+      : item.status === "done"
+        ? "before:bg-[var(--success)]"
+        : item.status === "in_progress"
+          ? "before:bg-[var(--info)]"
+          : "before:bg-border";
+
   return (
-    <div className="rounded-lg border border-border bg-card p-3">
+    <div
+      className={`surface relative overflow-hidden p-4 pl-5 before:absolute before:inset-y-0 before:left-0 before:w-1.5 ${accent}`}
+    >
       <div className="flex flex-wrap items-center gap-2">
         <Select
           value={item.work_type_id}
