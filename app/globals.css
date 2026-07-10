@@ -32,6 +32,10 @@
 
   --destructive: oklch(0.58 0.21 25);
   --destructive-foreground: oklch(0.99 0.005 236);
+  /* Text-on-its-own-tint variant (e.g. bg-destructive/10) — blended toward
+     foreground so labels like the "Blocked" badge clear 4.5:1; the flat
+     token alone is ~4.2:1 on a light tint. */
+  --destructive-ink: color-mix(in oklch, var(--foreground) 50%, var(--destructive) 50%);
 
   /* Semantic status colors — used for pills, accents, and state. */
   --success: oklch(0.62 0.15 156);
@@ -255,8 +259,17 @@
     box-shadow: none;
     transform: none;
   }
+  .btn-primary:focus-visible {
+    outline: none;
+    box-shadow:
+      0 0 0 3px color-mix(in oklch, var(--ring) 50%, transparent),
+      0 4px 14px color-mix(in oklch, var(--grad-a) 34%, transparent);
+  }
 
-  /* Semantic soft pills — colored fill + matching ink for status. */
+  /* Semantic soft pills — colored fill + matching ink for status. Text blends
+     toward --foreground (same formula as entityInk() in color-dot.tsx) so it
+     clears 4.5:1 against its own soft tint regardless of the token's raw
+     lightness — the flat token alone reads as low-contrast on light mode. */
   .pill {
     display: inline-flex;
     align-items: center;
@@ -276,16 +289,20 @@
     background: currentColor;
   }
   .pill-warning {
-    color: var(--warning);
+    color: color-mix(in oklch, var(--foreground) 50%, var(--warning) 50%);
     background: color-mix(in oklch, var(--warning) 16%, var(--card));
   }
   .pill-info {
-    color: var(--info);
+    color: color-mix(in oklch, var(--foreground) 50%, var(--info) 50%);
     background: color-mix(in oklch, var(--info) 16%, var(--card));
   }
   .pill-success {
-    color: var(--success);
+    color: color-mix(in oklch, var(--foreground) 50%, var(--success) 50%);
     background: color-mix(in oklch, var(--success) 16%, var(--card));
+  }
+  .pill-destructive {
+    color: color-mix(in oklch, var(--foreground) 50%, var(--destructive) 50%);
+    background: color-mix(in oklch, var(--destructive) 16%, var(--card));
   }
 
   /* Sequential activity ramp derived from the sky primary (contribution

@@ -5,11 +5,9 @@ import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { inviteMemberAction } from "@/app/actions/admin";
+import { nativeSelectClass } from "@/lib/utils";
 import type { AppRole } from "@/lib/types";
 import type { AdminTeam } from "@/lib/queries";
-
-const selectCls =
-  "h-9 rounded-md border border-border bg-background px-2 text-sm text-foreground";
 
 const ROLES: AppRole[] = ["developer", "lead", "manager"];
 
@@ -58,7 +56,7 @@ export function InviteForm({ teams }: { teams: AdminTeam[] }) {
         <label className="flex flex-col gap-1 text-xs text-muted-foreground">
           Role
           <select
-            className={selectCls}
+            className={nativeSelectClass}
             value={role}
             onChange={(e) => setRole(e.target.value as AppRole)}
           >
@@ -72,7 +70,7 @@ export function InviteForm({ teams }: { teams: AdminTeam[] }) {
         <label className="flex flex-col gap-1 text-xs text-muted-foreground">
           Team
           <select
-            className={selectCls}
+            className={nativeSelectClass}
             value={teamId}
             onChange={(e) => setTeamId(e.target.value)}
           >
@@ -88,7 +86,11 @@ export function InviteForm({ teams }: { teams: AdminTeam[] }) {
           Invite
         </Button>
       </div>
-      {message && <p className="text-sm text-emerald-600">{message}</p>}
+      {message && (
+        <p className="text-sm text-[color:color-mix(in_oklch,var(--foreground)_50%,var(--success)_50%)]">
+          {message}
+        </p>
+      )}
       {error && <p className="text-sm text-destructive">{error}</p>}
     </form>
   );

@@ -8,10 +8,9 @@ import {
   mergeTechnologiesAction,
   upsertTechnologyAction,
 } from "@/app/actions/admin";
+import { nativeSelectClass } from "@/lib/utils";
+import { paletteColorForIndex } from "@/lib/palette";
 import type { Technology } from "@/lib/types";
-
-const selectCls =
-  "h-9 rounded-md border border-border bg-background px-2 text-sm text-foreground";
 
 // Manage the shared technology list: rename/recolor/deactivate, add new, and
 // merge dev-added near-duplicates (e.g. "kafka" into "Apache Kafka") — merging
@@ -27,28 +26,36 @@ export function TechManager({
         {technologies.map((t) => (
           <TechRow key={t.id} tech={t} />
         ))}
-        <TechRow />
+        <TechRow nextIndex={technologies.length} />
       </div>
       <MergePanel technologies={technologies} />
     </div>
   );
 }
 
-function TechRow({ tech }: { tech?: Technology }) {
+function TechRow({ tech, nextIndex = 0 }: { tech?: Technology; nextIndex?: number }) {
   const router = useRouter();
   const [pending, startTransition] = React.useTransition();
   const [name, setName] = React.useState(tech?.name ?? "");
-  const [color, setColor] = React.useState(tech?.color ?? "#64748b");
+  const [color, setColor] = React.useState(
+    tech?.color ?? paletteColorForIndex(nextIndex)
+  );
+  const [colorTouched, setColorTouched] = React.useState(false);
   const [active, setActive] = React.useState(tech?.active ?? true);
   const isNew = !tech;
 
   function save() {
     if (!name.trim()) return;
+    // New rows the admin didn't manually recolor get the next palette color
+    // in rotation (round-robin, not name-hashed, to avoid collisions
+    // clustering several technologies onto the same hue) — see lib/palette.ts.
+    const finalColor = isNew && !colorTouched ? paletteColorForIndex(nextIndex) : color;
     startTransition(async () => {
-      await upsertTechnologyAction({ id: tech?.id, name, color, active });
+      await upsertTechnologyAction({ id: tech?.id, name, color: finalColor, active });
       if (isNew) {
         setName("");
-        setColor("#64748b");
+        setColor(paletteColorForIndex(nextIndex + 1));
+        setColorTouched(false);
       }
       router.refresh();
     });
@@ -60,7 +67,10 @@ function TechRow({ tech }: { tech?: Technology }) {
         type="color"
         aria-label="Color"
         value={color}
-        onChange={(e) => setColor(e.target.value)}
+        onChange={(e) => {
+          setColor(e.target.value);
+          setColorTouched(true);
+        }}
         className="h-8 w-8 rounded border border-border bg-background"
       />
       <Input
@@ -118,7 +128,7 @@ function MergePanel({ technologies }: { technologies: Technology[] }) {
         <label className="flex flex-col gap-1 text-xs text-muted-foreground">
           Merge
           <select
-            className={selectCls}
+            className={nativeSelectClass}
             value={fromId}
             onChange={(e) => setFromId(e.target.value)}
           >
@@ -134,7 +144,7 @@ function MergePanel({ technologies }: { technologies: Technology[] }) {
         <label className="flex flex-col gap-1 text-xs text-muted-foreground">
           Keep
           <select
-            className={selectCls}
+            className={nativeSelectClass}
             value={intoId}
             onChange={(e) => setIntoId(e.target.value)}
           >

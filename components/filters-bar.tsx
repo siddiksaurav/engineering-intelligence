@@ -1,5 +1,6 @@
 import type { ItemStatus, Technology, WorkType } from "@/lib/types";
 import type { TeamOption } from "@/lib/queries";
+import { nativeSelectClass } from "@/lib/utils";
 
 export interface DashboardFilters {
   from: string;
@@ -16,9 +17,6 @@ const STATUS_LABELS: Record<ItemStatus, string> = {
   done: "Done",
   blocked: "Blocked",
 };
-
-const selectClass =
-  "h-9 rounded-lg border border-input bg-background px-2.5 text-sm text-foreground shadow-sm transition-colors focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/25";
 
 const labelClass =
   "flex flex-col gap-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground";
@@ -51,7 +49,7 @@ export function FiltersBar({
           type="date"
           name="from"
           defaultValue={filters.from}
-          className={selectClass}
+          className={nativeSelectClass}
         />
       </label>
       <label className={labelClass}>
@@ -60,14 +58,14 @@ export function FiltersBar({
           type="date"
           name="to"
           defaultValue={filters.to}
-          className={selectClass}
+          className={nativeSelectClass}
         />
       </label>
 
       {teams.length > 0 && (
         <label className={labelClass}>
           Team
-          <select name="team" defaultValue={filters.team} className={selectClass}>
+          <select name="team" defaultValue={filters.team} className={nativeSelectClass}>
             <option value="">All teams</option>
             {teams.map((t) => (
               <option key={t.id} value={t.id}>
@@ -80,7 +78,7 @@ export function FiltersBar({
 
       <label className={labelClass}>
         Category
-        <select name="wt" defaultValue={filters.workType} className={selectClass}>
+        <select name="wt" defaultValue={filters.workType} className={nativeSelectClass}>
           <option value="">All categories</option>
           {workTypes.map((w) => (
             <option key={w.id} value={w.id}>
@@ -95,7 +93,7 @@ export function FiltersBar({
         <select
           name="tech"
           defaultValue={filters.technology}
-          className={selectClass}
+          className={nativeSelectClass}
         >
           <option value="">All technologies</option>
           {technologies.map((t) => (
@@ -111,7 +109,7 @@ export function FiltersBar({
         <select
           name="status"
           defaultValue={filters.status}
-          className={selectClass}
+          className={nativeSelectClass}
         >
           <option value="">Any status</option>
           {(Object.keys(STATUS_LABELS) as ItemStatus[]).map((s) => (

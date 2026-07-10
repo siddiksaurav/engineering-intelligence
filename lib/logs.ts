@@ -3,6 +3,7 @@
 // (with a password-signed anon client). No "use server" here — these are plain
 // functions; the thin action wrappers live in app/actions/logs.ts.
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { paletteColorFor } from "./palette";
 import type {
   DailyLog,
   ItemStatus,
@@ -213,7 +214,11 @@ export async function createTechnology(
     const { data: auth } = await sb.auth.getUser();
     actor = auth.user?.id;
   }
-  const insert: Record<string, unknown> = { name: trimmed, created_by: actor };
+  const insert: Record<string, unknown> = {
+    name: trimmed,
+    created_by: actor,
+    color: paletteColorFor(trimmed),
+  };
 
   const { data, error } = await sb
     .from("technologies")

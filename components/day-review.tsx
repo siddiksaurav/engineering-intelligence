@@ -7,14 +7,14 @@ import type {
   WorkType,
 } from "@/lib/types";
 
-const ITEM_STATUS_META: Record<
-  ItemStatus,
-  { label: string; variant: "secondary" | "default" | "outline" | "destructive" }
-> = {
-  todo: { label: "To do", variant: "secondary" },
-  in_progress: { label: "In progress", variant: "default" },
-  done: { label: "Done", variant: "outline" },
-  blocked: { label: "Blocked", variant: "destructive" },
+// Same semantic mapping as the day-status pill (log-entry-form.tsx): status
+// color means the same thing everywhere it appears. "To do" stays neutral —
+// a plain Badge, not a semantic pill — since it isn't an active state yet.
+const ITEM_STATUS_META: Record<ItemStatus, { label: string; pill: string | null }> = {
+  todo: { label: "To do", pill: null },
+  in_progress: { label: "In progress", pill: "pill pill-info" },
+  done: { label: "Done", pill: "pill pill-success" },
+  blocked: { label: "Blocked", pill: "pill pill-destructive" },
 };
 
 // Read-only view of a day's tasks: category, status, technologies, hours, and
@@ -53,7 +53,11 @@ export function DayReview({
               ) : (
                 <Badge variant="outline">—</Badge>
               )}
-              <Badge variant={meta.variant}>{meta.label}</Badge>
+              {meta.pill ? (
+                <span className={meta.pill}>{meta.label}</span>
+              ) : (
+                <Badge variant="secondary">{meta.label}</Badge>
+              )}
               {item.hours != null && (
                 <span className="text-xs text-muted-foreground">
                   {item.hours}h
@@ -77,7 +81,7 @@ export function DayReview({
             )}
 
             {item.status === "blocked" && item.blocker_note && (
-              <p className="mt-2 rounded-md bg-destructive/10 px-2 py-1 text-xs text-destructive">
+              <p className="mt-2 rounded-md bg-destructive/10 px-2 py-1 text-xs text-[color:var(--destructive-ink)]">
                 Blocked: {item.blocker_note}
               </p>
             )}

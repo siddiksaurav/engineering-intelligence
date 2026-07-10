@@ -48,7 +48,7 @@ export function BlockedTasks({
             </div>
             <p className="mt-1 text-sm">{task.description || "—"}</p>
             {task.blocker_note && (
-              <p className="mt-2 rounded-md bg-destructive/10 px-2 py-1 text-xs text-destructive">
+              <p className="mt-2 rounded-md bg-destructive/10 px-2 py-1 text-xs text-[color:var(--destructive-ink)]">
                 {task.blocker_note}
               </p>
             )}

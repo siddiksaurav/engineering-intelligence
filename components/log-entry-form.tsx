@@ -4,6 +4,7 @@ import * as React from "react";
 import { PlusIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LogItemRow } from "@/components/log-item-row";
+import { EmptyState } from "@/components/empty-state";
 import {
   addItem,
   updateItem,
@@ -112,7 +113,7 @@ export function LogEntryForm({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="surface flex items-center justify-between gap-3 px-4 py-3">
+      <div className="surface flex flex-wrap items-center justify-between gap-3 px-4 py-3">
         <div className="flex items-center gap-2.5">
           <span className="eyebrow">Day status</span>
           <span className={meta.pill}>{meta.label}</span>
@@ -121,7 +122,7 @@ export function LogEntryForm({
           type="button"
           onClick={handleSubmit}
           disabled={locked || pending || items.length === 0}
-          className="btn-primary h-9 px-4 text-sm"
+          className="btn-primary h-9 shrink-0 whitespace-nowrap px-4 text-sm"
         >
           Submit for approval
         </button>
@@ -129,9 +130,7 @@ export function LogEntryForm({
 
       <div className="flex flex-col gap-3">
         {items.length === 0 && (
-          <p className="rounded-xl border border-dashed border-border bg-card/40 p-8 text-center text-sm text-muted-foreground">
-            No tasks yet. Add what you worked on today.
-          </p>
+          <EmptyState message="No tasks yet. Add what you worked on today." />
         )}
         {items.map((item) => (
           <LogItemRow
