@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { requireRole } from "@/lib/auth";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { todayISO } from "@/lib/logs";
@@ -26,6 +25,9 @@ import {
 import { HeatmapCalendar } from "@/components/heatmap-calendar";
 import { WorkTypeDistribution } from "@/components/worktype-distribution";
 import { TechDistribution } from "@/components/tech-distribution";
+import { AppBar } from "@/components/app-bar";
+import { SectionHeader } from "@/components/section-header";
+import { EmptyState } from "@/components/empty-state";
 
 function daysAgoISO(n: number): string {
   const d = new Date();
@@ -110,107 +112,86 @@ export default async function TeamPage({
   const scope = profile.role === "manager" ? "All teams" : "Your teams";
 
   return (
-    <main className="mx-auto max-w-5xl p-6">
-      <header className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Team</h1>
-          <p className="text-sm text-muted-foreground">
-            {scope} · dashboards, approvals, blockers &amp; notes
+    <div className="min-h-full">
+      <AppBar profile={profile} />
+      <main className="mx-auto max-w-6xl px-6 py-8">
+        <div className="hero-band mb-10 px-7 pt-8 pb-6">
+          <p className="eyebrow text-white/70">Team overview</p>
+          <h1 className="mt-1.5 text-4xl font-semibold tracking-tight">Team</h1>
+          <p className="mt-2 text-sm text-white/85">
+            {scope} · dashboards, approvals, blockers &amp; notes — from{" "}
+            <span className="font-mono">{filters.from}</span> to{" "}
+            <span className="font-mono">{filters.to}</span>.
           </p>
         </div>
-        <Link
-          href="/today"
-          className="text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground"
-        >
-          My day
-        </Link>
-      </header>
 
-      <div className="flex flex-col gap-8">
-        <section>
-          <h2 className="mb-3 text-sm font-medium text-muted-foreground">
-            Dashboard
-          </h2>
-          <div className="flex flex-col gap-4">
-            <FiltersBar
-              action="/team"
-              filters={filters}
-              teams={teams}
+        <div className="flex flex-col gap-12">
+          <section>
+            <SectionHeader eyebrow="Dashboard" title="Activity" />
+            <div className="flex flex-col gap-5">
+              <FiltersBar
+                action="/team"
+                filters={filters}
+                teams={teams}
+                workTypes={workTypes}
+                technologies={technologies}
+              />
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="surface p-5">
+                  <p className="eyebrow mb-4">By category</p>
+                  <WorkTypeDistribution slices={byWorkType} />
+                </div>
+                <div className="surface p-5">
+                  <p className="eyebrow mb-4">By technology</p>
+                  <TechDistribution slices={byTech} />
+                </div>
+              </div>
+
+              <div>
+                <p className="eyebrow mb-4">Activity by developer</p>
+                {devHeatmaps.length === 0 ? (
+                  <EmptyState message="No activity for these filters." />
+                ) : (
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    {devHeatmaps.map((d) => (
+                      <div key={d.id} className="surface p-5">
+                        <p className="mb-4 text-sm font-medium text-foreground">
+                          {d.name}
+                        </p>
+                        <HeatmapCalendar cells={d.cells} />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </section>
+
+          <section>
+            <SectionHeader eyebrow="Review queue" title="Awaiting approval" />
+            <ApprovalQueue
+              pending={pending}
               workTypes={workTypes}
               technologies={technologies}
             />
+          </section>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="rounded-lg border border-border bg-card p-4">
-                <p className="mb-3 text-xs font-medium text-muted-foreground">
-                  By category
-                </p>
-                <WorkTypeDistribution slices={byWorkType} />
-              </div>
-              <div className="rounded-lg border border-border bg-card p-4">
-                <p className="mb-3 text-xs font-medium text-muted-foreground">
-                  By technology
-                </p>
-                <TechDistribution slices={byTech} />
-              </div>
-            </div>
+          <section>
+            <SectionHeader eyebrow="Attention" title="Blocked tasks" />
+            <BlockedTasks tasks={blocked} technologies={technologies} />
+          </section>
 
-            <div>
-              <p className="mb-3 text-xs font-medium text-muted-foreground">
-                Activity by developer
-              </p>
-              {devHeatmaps.length === 0 ? (
-                <p className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
-                  No activity for these filters.
-                </p>
-              ) : (
-                <div className="grid gap-4 sm:grid-cols-2">
-                  {devHeatmaps.map((d) => (
-                    <div
-                      key={d.id}
-                      className="rounded-lg border border-border bg-card p-4"
-                    >
-                      <p className="mb-3 text-sm font-medium">{d.name}</p>
-                      <HeatmapCalendar cells={d.cells} />
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </section>
-
-        <section>
-          <h2 className="mb-3 text-sm font-medium text-muted-foreground">
-            Awaiting approval
-          </h2>
-          <ApprovalQueue
-            pending={pending}
-            workTypes={workTypes}
-            technologies={technologies}
-          />
-        </section>
-
-        <section>
-          <h2 className="mb-3 text-sm font-medium text-muted-foreground">
-            Blocked tasks
-          </h2>
-          <BlockedTasks tasks={blocked} technologies={technologies} />
-        </section>
-
-        <section>
-          <h2 className="mb-3 text-sm font-medium text-muted-foreground">
-            Private notes
-          </h2>
-          {developers.length === 0 ? (
-            <p className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
-              No developers on your teams yet.
-            </p>
-          ) : (
-            <NotesPanel developers={developers} />
-          )}
-        </section>
-      </div>
-    </main>
+          <section>
+            <SectionHeader eyebrow="1:1" title="Private notes" />
+            {developers.length === 0 ? (
+              <EmptyState message="No developers on your teams yet." />
+            ) : (
+              <NotesPanel developers={developers} />
+            )}
+          </section>
+        </div>
+      </main>
+    </div>
   );
 }

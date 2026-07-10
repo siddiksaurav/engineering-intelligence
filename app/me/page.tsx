@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { requireRole } from "@/lib/auth";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { todayISO } from "@/lib/logs";
@@ -13,6 +12,9 @@ import { HeatmapCalendar } from "@/components/heatmap-calendar";
 import { WorkTypeDistribution } from "@/components/worktype-distribution";
 import { TechDistribution } from "@/components/tech-distribution";
 import { Badge } from "@/components/ui/badge";
+import { AppBar } from "@/components/app-bar";
+import { SectionHeader } from "@/components/section-header";
+import { EmptyState } from "@/components/empty-state";
 import type { LogStatus } from "@/lib/types";
 
 const STATUS_META: Record<
@@ -60,91 +62,81 @@ export default async function MePage() {
   );
 
   return (
-    <main className="mx-auto max-w-3xl p-6">
-      <header className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">My history</h1>
-          <p className="text-sm text-muted-foreground">Last 30 days</p>
+    <div className="min-h-full">
+      <AppBar profile={profile} />
+      <main className="mx-auto max-w-3xl px-6 py-8">
+        <div className="hero-band mb-10 px-7 pt-8 pb-6">
+          <p className="eyebrow text-white/70">My history</p>
+          <h1 className="mt-1.5 text-4xl font-semibold tracking-tight">
+            Last 30 days
+          </h1>
+          <p className="mt-2 text-sm text-white/85">
+            Your activity, category &amp; technology mix, and day-by-day log.
+          </p>
         </div>
-        <Link
-          href="/today"
-          className="text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground"
-        >
-          Back to today
-        </Link>
-      </header>
 
-      <div className="flex flex-col gap-8">
-        <section>
-          <h2 className="mb-3 text-sm font-medium text-muted-foreground">
-            Activity
-          </h2>
-          <div className="rounded-lg border border-border bg-card p-4">
-            <HeatmapCalendar cells={calendar} />
+        <div className="flex flex-col gap-12">
+          <section>
+            <SectionHeader eyebrow="Activity" title="Contributions" />
+            <div className="surface p-5">
+              <HeatmapCalendar cells={calendar} />
+            </div>
+          </section>
+
+          <div className="grid gap-8 sm:grid-cols-2">
+            <section>
+              <SectionHeader eyebrow="Breakdown" title="By category" />
+              <div className="surface p-5">
+                <WorkTypeDistribution slices={byWorkType} />
+              </div>
+            </section>
+            <section>
+              <SectionHeader eyebrow="Breakdown" title="By technology" />
+              <div className="surface p-5">
+                <TechDistribution slices={byTech} />
+              </div>
+            </section>
           </div>
-        </section>
 
-        <div className="grid gap-8 sm:grid-cols-2">
           <section>
-            <h2 className="mb-3 text-sm font-medium text-muted-foreground">
-              By category
-            </h2>
-            <div className="rounded-lg border border-border bg-card p-4">
-              <WorkTypeDistribution slices={byWorkType} />
-            </div>
-          </section>
-          <section>
-            <h2 className="mb-3 text-sm font-medium text-muted-foreground">
-              By technology
-            </h2>
-            <div className="rounded-lg border border-border bg-card p-4">
-              <TechDistribution slices={byTech} />
-            </div>
+            <SectionHeader eyebrow="Timeline" title="Days" />
+            {days.length === 0 ? (
+              <EmptyState message="Nothing logged in the last 30 days." />
+            ) : (
+              <ul className="flex flex-col gap-2">
+                {days.map((day) => {
+                  const meta = STATUS_META[day.status];
+                  const count = counts[day.log_date] ?? 0;
+                  const prettyDate = new Date(
+                    `${day.log_date}T00:00:00`
+                  ).toLocaleDateString(undefined, {
+                    weekday: "short",
+                    month: "short",
+                    day: "numeric",
+                  });
+                  return (
+                    <li
+                      key={day.id}
+                      className="surface flex items-center justify-between p-3.5"
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="font-medium">{prettyDate}</span>
+                        <span className="text-sm text-muted-foreground">
+                          {count} {count === 1 ? "task" : "tasks"}
+                        </span>
+                        {blocked.has(day.log_date) && (
+                          <Badge variant="destructive">Blocked</Badge>
+                        )}
+                      </div>
+                      <Badge variant={meta.variant}>{meta.label}</Badge>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
           </section>
         </div>
-
-        <section>
-          <h2 className="mb-3 text-sm font-medium text-muted-foreground">
-            Days
-          </h2>
-          {days.length === 0 ? (
-            <p className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
-              Nothing logged in the last 30 days.
-            </p>
-          ) : (
-            <ul className="flex flex-col gap-2">
-              {days.map((day) => {
-                const meta = STATUS_META[day.status];
-                const count = counts[day.log_date] ?? 0;
-                const prettyDate = new Date(
-                  `${day.log_date}T00:00:00`
-                ).toLocaleDateString(undefined, {
-                  weekday: "short",
-                  month: "short",
-                  day: "numeric",
-                });
-                return (
-                  <li
-                    key={day.id}
-                    className="flex items-center justify-between rounded-lg border border-border bg-card p-3"
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="font-medium">{prettyDate}</span>
-                      <span className="text-sm text-muted-foreground">
-                        {count} {count === 1 ? "task" : "tasks"}
-                      </span>
-                      {blocked.has(day.log_date) && (
-                        <Badge variant="destructive">Blocked</Badge>
-                      )}
-                    </div>
-                    <Badge variant={meta.variant}>{meta.label}</Badge>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </section>
-      </div>
-    </main>
+      </main>
+    </div>
   );
 }

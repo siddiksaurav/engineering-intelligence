@@ -27,7 +27,7 @@ function WorkTypeRow({ workType }: { workType?: WorkType }) {
   const router = useRouter();
   const [pending, startTransition] = React.useTransition();
   const [name, setName] = React.useState(workType?.name ?? "");
-  const [color, setColor] = React.useState(workType?.color ?? "#4f46e5");
+  const [color, setColor] = React.useState(workType?.color ?? "#0284c7");
   const [sortOrder, setSortOrder] = React.useState(workType?.sort_order ?? 0);
   const [active, setActive] = React.useState(workType?.active ?? true);
   const isNew = !workType;
@@ -44,7 +44,7 @@ function WorkTypeRow({ workType }: { workType?: WorkType }) {
       });
       if (isNew) {
         setName("");
-        setColor("#4f46e5");
+        setColor("#0284c7");
         setSortOrder(0);
       }
       router.refresh();
