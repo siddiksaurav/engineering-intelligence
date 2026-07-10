@@ -164,7 +164,9 @@ export function NotesPanel({ developers }: { developers: Profile[] }) {
                   ) : (
                     <>
                       <div className="flex items-start justify-between gap-2">
-                        <p className="whitespace-pre-wrap text-sm">{note.body}</p>
+                        <p className="max-w-[65ch] whitespace-pre-wrap text-base leading-relaxed">
+                          {note.body}
+                        </p>
                         <div className="flex shrink-0 gap-1">
                           <Button
                             type="button"

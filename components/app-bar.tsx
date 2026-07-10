@@ -59,7 +59,7 @@ export function AppBar({ profile }: { profile: NavProfile }) {
         <Link href="/today" className="flex shrink-0 items-center gap-2.5">
           <span
             aria-hidden
-            className="grid h-6 w-6 place-items-center rounded-[7px] text-[0.7rem] font-bold text-white"
+            className="grid h-6 w-6 place-items-center rounded-[7px] text-xs font-bold text-white"
             style={{
               background:
                 "linear-gradient(135deg, var(--grad-a), var(--grad-b))",
@@ -101,7 +101,7 @@ export function AppBar({ profile }: { profile: NavProfile }) {
             <PopoverTrigger className="flex items-center gap-2 rounded-md py-1 pl-1 pr-1.5 transition-colors hover:bg-muted">
               <span
                 aria-hidden
-                className="grid h-7 w-7 place-items-center rounded-full bg-accent text-[0.7rem] font-semibold text-accent-foreground"
+                className="grid h-7 w-7 place-items-center rounded-full bg-accent text-xs font-semibold text-accent-foreground"
               >
                 {initials(profile)}
               </span>

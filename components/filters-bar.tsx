@@ -21,7 +21,7 @@ const selectClass =
   "h-9 rounded-lg border border-input bg-background px-2.5 text-sm text-foreground shadow-sm transition-colors focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/25";
 
 const labelClass =
-  "flex flex-col gap-1.5 text-[0.7rem] font-medium uppercase tracking-wide text-muted-foreground";
+  "flex flex-col gap-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground";
 
 // A plain GET form: submitting reloads the (server-rendered) page with the
 // chosen filters as query params, so no client JS is needed. `action` targets

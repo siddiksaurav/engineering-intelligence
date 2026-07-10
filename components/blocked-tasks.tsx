@@ -1,4 +1,5 @@
 import { Badge } from "@/components/ui/badge";
+import { EntityChip } from "@/components/entity-chip";
 import type { BlockedTask } from "@/lib/queries";
 import type { Technology } from "@/lib/types";
 
@@ -53,14 +54,14 @@ export function BlockedTasks({
             )}
             {task.technology_ids.length > 0 && (
               <div className="mt-2 flex flex-wrap gap-1">
-                {task.technology_ids.map((id) => (
-                  <span
-                    key={id}
-                    className="rounded-full border border-border px-2 py-0.5 text-xs text-muted-foreground"
-                  >
-                    {tech.get(id)?.name ?? "?"}
-                  </span>
-                ))}
+                {task.technology_ids.map((id) => {
+                  const t = tech.get(id);
+                  return (
+                    <EntityChip key={id} color={t?.color ?? "var(--muted-foreground)"}>
+                      {t?.name ?? "?"}
+                    </EntityChip>
+                  );
+                })}
               </div>
             )}
           </li>

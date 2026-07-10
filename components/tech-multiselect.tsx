@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/command";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ColorDot, entityInk, entityTint } from "@/components/color-dot";
 import type { Technology } from "@/lib/types";
 
 export function TechMultiselect({
@@ -77,10 +78,12 @@ export function TechMultiselect({
         <Badge
           key={t.id}
           variant="secondary"
-          className="cursor-pointer"
+          className="cursor-pointer border-transparent"
+          style={{ backgroundColor: entityTint(t.color), color: entityInk(t.color) }}
           onClick={() => !disabled && toggle(t.id)}
           title="Remove"
         >
+          <ColorDot color={t.color} />
           {t.name}
           <span className="ml-1 opacity-60">×</span>
         </Badge>
@@ -134,6 +137,7 @@ export function TechMultiselect({
                     data-checked={selectedIds.includes(t.id)}
                     onSelect={() => toggle(t.id)}
                   >
+                    <ColorDot color={t.color} />
                     {t.name}
                   </CommandItem>
                 ))}
