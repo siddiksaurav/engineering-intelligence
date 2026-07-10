@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { StatusSelect } from "@/components/status-select";
 import { TechMultiselect } from "@/components/tech-multiselect";
+import { ColorDot } from "@/components/color-dot";
 import type {
   ItemStatus,
   LogItemWithTech,
@@ -42,6 +43,8 @@ export function LogItemRow({
 }) {
   const wtLabel = (id: string) =>
     workTypes.find((w) => w.id === id)?.name ?? "Category";
+  const wtColor = (id: string) =>
+    workTypes.find((w) => w.id === id)?.color ?? "var(--muted-foreground)";
 
   const accent =
     item.status === "blocked"
@@ -64,12 +67,18 @@ export function LogItemRow({
         >
           <SelectTrigger className="w-40" aria-label="Category">
             <SelectValue placeholder="Category">
-              {(v) => wtLabel(v as string)}
+              {(v) => (
+                <>
+                  <ColorDot color={wtColor(v as string)} />
+                  {wtLabel(v as string)}
+                </>
+              )}
             </SelectValue>
           </SelectTrigger>
           <SelectContent>
             {workTypes.map((w) => (
               <SelectItem key={w.id} value={w.id}>
+                <ColorDot color={w.color} />
                 {w.name}
               </SelectItem>
             ))}

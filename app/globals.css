@@ -166,12 +166,14 @@
     background-attachment: fixed;
     background-repeat: no-repeat;
   }
-  /* Headings wear the display face — this is where the type personality lives. */
+  /* Headings wear the display face — this is where the type personality lives.
+     -0.025em matches Tailwind's `tracking-tight`, which every heading in the
+     app also carries; this is the fallback for any heading that doesn't. */
   h1,
   h2,
   h3 {
     font-family: var(--font-display), var(--font-sans), sans-serif;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.025em;
   }
 }
 
@@ -261,7 +263,7 @@
     gap: 0.35rem;
     border-radius: 999px;
     padding: 0.15rem 0.6rem;
-    font-size: 0.72rem;
+    font-size: 0.75rem;
     font-weight: 600;
     letter-spacing: 0.01em;
     line-height: 1.2;

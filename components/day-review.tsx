@@ -1,4 +1,5 @@
 import { Badge } from "@/components/ui/badge";
+import { EntityChip } from "@/components/entity-chip";
 import type {
   ItemStatus,
   LogItemWithTech,
@@ -27,7 +28,7 @@ export function DayReview({
   workTypes: WorkType[];
   technologies: Technology[];
 }) {
-  const wtName = new Map(workTypes.map((w) => [w.id, w.name] as const));
+  const wt = new Map(workTypes.map((w) => [w.id, w] as const));
   const tech = new Map(technologies.map((t) => [t.id, t] as const));
 
   if (items.length === 0) {
@@ -40,13 +41,18 @@ export function DayReview({
     <ul className="flex flex-col gap-2">
       {items.map((item) => {
         const meta = ITEM_STATUS_META[item.status];
+        const workType = wt.get(item.work_type_id);
         return (
           <li
             key={item.id}
             className="rounded-md border border-border bg-background p-3"
           >
             <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="outline">{wtName.get(item.work_type_id) ?? "—"}</Badge>
+              {workType ? (
+                <EntityChip color={workType.color}>{workType.name}</EntityChip>
+              ) : (
+                <Badge variant="outline">—</Badge>
+              )}
               <Badge variant={meta.variant}>{meta.label}</Badge>
               {item.hours != null && (
                 <span className="text-xs text-muted-foreground">
@@ -59,14 +65,14 @@ export function DayReview({
 
             {item.technology_ids.length > 0 && (
               <div className="mt-2 flex flex-wrap gap-1">
-                {item.technology_ids.map((id) => (
-                  <span
-                    key={id}
-                    className="rounded-full border border-border px-2 py-0.5 text-xs text-muted-foreground"
-                  >
-                    {tech.get(id)?.name ?? "?"}
-                  </span>
-                ))}
+                {item.technology_ids.map((id) => {
+                  const t = tech.get(id);
+                  return (
+                    <EntityChip key={id} color={t?.color ?? "var(--muted-foreground)"}>
+                      {t?.name ?? "?"}
+                    </EntityChip>
+                  );
+                })}
               </div>
             )}
 

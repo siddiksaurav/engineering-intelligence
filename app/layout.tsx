@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
-import { Space_Grotesk, Manrope, JetBrains_Mono } from "next/font/google";
+import { Plus_Jakarta_Sans, Manrope, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
-// Telemetry type system: Space Grotesk carries the display personality (engineered,
-// slightly technical), Manrope is the warm, legible body face, and JetBrains Mono
-// is the utility face for eyebrows, metrics, and dates.
-const displayFont = Space_Grotesk({
+// Telemetry type system: Plus Jakarta Sans carries the display personality — a
+// rounder, warmer geometric-humanist face than a pure geometric sans, chosen so
+// headings on approval/review screens read as considered rather than clinical.
+// Manrope is the warm, legible body face, and JetBrains Mono is the utility face
+// for eyebrows, metrics, and dates.
+const displayFont = Plus_Jakarta_Sans({
   variable: "--font-display",
   subsets: ["latin"],
   weight: ["500", "600", "700"],
