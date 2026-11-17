@@ -1,5 +1,6 @@
 package com.dsinnovators.ei.common;
 
+import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -16,9 +17,14 @@ import tools.jackson.databind.json.JsonMapper;
  * The canonical form of a JSON value and its content hash.
  *
  * <p>The canonical form has object keys sorted by code point at every depth, no white space, and
- * arrays in their given order. Numbers stay as the source spelled them, so {@code 1} and
- * {@code 1.0} are different content. The same content gives the same hash whatever key order the
- * source used.
+ * arrays in their given order. Numbers keep their digits, trailing zeros included, so {@code 1}
+ * and {@code 1.0} are different content; they are written in plain decimal form, so {@code 1E+2}
+ * becomes {@code 100}. This is the form PostgreSQL's {@code jsonb} gives back, so a payload read
+ * from the database has the same hash as when it was stored. The same content gives the same hash
+ * whatever key order the source used.
+ *
+ * <p>Build the tree with {@link #parse(String)}. A tree read by another mapper may hold numbers as
+ * binary floating point, which spells them differently and gives another hash.
  *
  * <p>This rule must not change once records are stored: a new rule would make every stored record
  * look changed.
@@ -94,7 +100,7 @@ public final class CanonicalJson {
         } else if (node.isString()) {
             out.append(quote(node.stringValue()));
         } else if (node.isNumber()) {
-            out.append(node.numberValue().toString());
+            out.append(number(node.numberValue()));
         } else if (node.isBoolean()) {
             out.append(node.booleanValue());
         } else if (node.isNull()) {
@@ -102,6 +108,11 @@ public final class CanonicalJson {
         } else {
             throw new IllegalArgumentException("Not a JSON value: " + node.getNodeType());
         }
+    }
+
+    /** Plain decimal form, never an exponent: the form PostgreSQL's jsonb gives back. */
+    private static String number(Number value) {
+        return value instanceof BigDecimal decimal ? decimal.toPlainString() : value.toString();
     }
 
     private static String quote(String text) {

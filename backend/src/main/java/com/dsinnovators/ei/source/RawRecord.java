@@ -17,7 +17,8 @@ import tools.jackson.databind.JsonNode;
 
 /**
  * An unchanged copy of one pulled record, one row per version. A raw record is never updated and
- * never deleted: Hibernate issues no update for it, there are no setters, and {@link RawRecordStore} is the only way to write one.
+ * never deleted: a database trigger refuses both, Hibernate issues no update for it, there are no
+ * setters, and {@link RawRecordStore} is the only way to write one.
  */
 @Entity
 @Immutable

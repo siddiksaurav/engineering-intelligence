@@ -7,11 +7,12 @@ One entry per working session, newest at the top. Each entry says what was done,
 **Done**
 - F01 Repository skeleton is done: design and plan approved by the user, eight tasks built test first on branch `f01-repository-skeleton`, one commit per task.
 - Temurin JDK 25.0.5+8 installed to `~/.jdks/temurin-25.0.5`. The system default is still JDK 21.
-- Backend: Spring Boot 4.1.2, migration `V1__base_tables.sql`, `RawRecordStore`, `SettingService`, `Quarter`, `CanonicalJson`, the `Job` runner, `/actuator/health`. 70 tests.
+- Backend: Spring Boot 4.1.2, migrations `V1__base_tables.sql` and `V2__raw_record_is_never_changed.sql`, `RawRecordStore`, `SettingService`, `Quarter`, `CanonicalJson`, the `Job` runner, `/actuator/health`. 74 tests.
+- A fresh reviewer read the whole branch. Two findings were fixed (a delete path on `raw_record`; number spelling in the content hash). The rest are listed in `notes.md` for F02 and F06.
 - Development database: PostgreSQL 18 in Docker Compose on host port 5433.
 - Web: Next.js 16.4.6 shell that shows "backend up" or "backend down". 11 tests.
 - The commands are in `CLAUDE.md`. Every "Done when" check is recorded in `docs/features/F01-repository-skeleton/notes.md`.
-- Decisions 28 to 31 added.
+- Decisions 28 to 33 added.
 
 **Next**
 - F02 GitHub connector: deep dive with the user. Read `docs/features/F01-repository-skeleton/notes.md`, section "What a later feature should know", first.

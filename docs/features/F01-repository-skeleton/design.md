@@ -113,7 +113,7 @@ Every backend command is run with `JAVA_HOME=~/.jdks/temurin-25.0.5`. The Maven 
 A connector hands over: data source key, record kind, external id, URL and the payload as JSON.
 
 1. The content hash is calculated: SHA-256, as lower-case hex, over the canonical form of the payload. The canonical form is the JSON with object keys sorted, no extra white space, and arrays in their given order. The same content gives the same hash whatever key order the source used.
-   The hash is taken from the payload as the connector hands it over, not from the stored `jsonb`. Numbers are parsed without loss of precision and written as the source spelled them, so `1` and `1.0` are different content. This rule is not changed once F02 has stored records, because a new rule would make every record look changed.
+   The hash is taken from the payload as the connector hands it over, not from the stored `jsonb`. Numbers are parsed without loss of precision and keep their digits, trailing zeros included, so `1` and `1.0` are different content. They are written in plain decimal form, so `1E+2` becomes `100`: this is the form `jsonb` gives back, so a payload read from the database has the same hash as when it was stored (decision 32, made at the F01 review). This rule is not changed once F02 has stored records, because a new rule would make every record look changed.
 2. The latest stored version for `(data source, record kind, external id)` is looked up.
 3. No version exists: a row is written with `version = 1`. Result `CREATED`.
 4. The latest version has the same hash: nothing is written. Result `UNCHANGED`.
@@ -121,7 +121,7 @@ A connector hands over: data source key, record kind, external id, URL and the p
 
 The comparison is only with the latest version. A record that changes and later changes back to earlier content gets a new version, and that version is the current one.
 
-There is no update and no delete. `RawRecordStore` is the only way to write a raw record. The `RawRecord` entity is marked `@Immutable` (Hibernate), so a change to a loaded object writes nothing.
+There is no update and no delete. A database trigger on `raw_record` refuses both (migration `V2__raw_record_is_never_changed.sql`, decision 33, added at the F01 review). `RawRecordStore` is the only way to write a raw record. The `RawRecord` entity is marked `@Immutable` (Hibernate), so a change to a loaded object writes nothing.
 
 When a record is fetched again and is unchanged, nothing records that it was seen again. `fetched_at` is the time the stored copy was pulled.
 

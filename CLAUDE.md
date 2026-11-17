@@ -81,6 +81,7 @@ $JAVA_HOME/bin/java -jar backend/target/ei.jar --job=<name> --key=value     run 
 - The job command needs `./mvnw verify` to have built the jar, and is run from the repository root so that `.env` is found. No job exists yet; F02 adds the first.
 - Health: `curl -s localhost:8080/actuator/health`. The web page at `localhost:3000` shows "backend up" or "backend down".
 - A test that needs the database extends `com.dsinnovators.ei.DatabaseTest`.
+- Do not put quotes around values in `.env`: the backend would read them as part of the value.
 
 ## End of every session
 

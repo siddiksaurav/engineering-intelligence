@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.transaction.support.TransactionTemplate;
 import tools.jackson.databind.JsonNode;
@@ -178,5 +179,40 @@ class RawRecordStoreTest extends DatabaseTest {
         });
 
         assertEquals(URL, jdbc.queryForObject("select url from raw_record where id = ?", String.class, id));
+    }
+
+    @Test
+    void aStoredRecordCannotBeDeletedThroughJpa() {
+        long id = store.store(GH, PR, "108", URL, p("{\"title\":\"A\"}")).record().getId();
+
+        assertThrows(RuntimeException.class, () -> transaction.executeWithoutResult(status -> {
+            entityManager.remove(entityManager.find(RawRecord.class, id));
+            entityManager.flush();
+        }));
+
+        assertEquals(1, rowCount());
+    }
+
+    @Test
+    void theDatabaseRefusesAnUpdateOrDeleteOfARawRecord() {
+        long id = store.store(GH, PR, "109", URL, p("{\"title\":\"A\"}")).record().getId();
+
+        DataAccessException update = assertThrows(
+                DataAccessException.class, () -> jdbc.update("update raw_record set url = 'changed' where id = ?", id));
+        assertTrue(update.getMessage().contains("raw_record is never updated or deleted"));
+        assertThrows(DataAccessException.class, () -> jdbc.update("delete from raw_record where id = ?", id));
+
+        assertEquals(URL, jdbc.queryForObject("select url from raw_record where id = ?", String.class, id));
+    }
+
+    @Test
+    void aStoredPayloadHashesToItsContentHashAndStoresAsUnchanged() {
+        JsonNode payload = p("{\"n\":1E+2,\"m\":0.0000001,\"k\":1.50,\"big\":1e21,\"i\":7}");
+        RawRecord written = store.store(GH, PR, "110", URL, payload).record();
+
+        RawRecord read = store.findLatest(GH, PR, "110").orElseThrow();
+        assertEquals(written.getContentHash(), CanonicalJson.sha256Hex(read.getPayload()));
+        assertEquals(Outcome.UNCHANGED, store.store(GH, PR, "110", URL, read.getPayload()).outcome());
+        assertEquals(1, rowCount());
     }
 }

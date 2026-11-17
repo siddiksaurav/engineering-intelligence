@@ -66,4 +66,14 @@ class CanonicalJsonTest {
         assertThrows(IllegalArgumentException.class, () -> canonicalize(null));
         assertThrows(IllegalArgumentException.class, () -> sha256Hex(null));
     }
+
+    @Test
+    void numbersAreWrittenInPlainDecimalFormWhateverExponentTheSourceUsed() {
+        assertEquals("{\"n\":100}", canonicalize(parse("{\"n\":1E+2}")));
+        assertEquals("{\"n\":100}", canonicalize(parse("{\"n\":1e2}")));
+        assertEquals("{\"n\":0.0000001}", canonicalize(parse("{\"n\":0.0000001}")));
+        assertEquals("{\"n\":0.0000001}", canonicalize(parse("{\"n\":1E-7}")));
+        assertEquals("{\"n\":1000000000000000000000}", canonicalize(parse("{\"n\":1e21}")));
+        assertEquals("{\"n\":-12.50}", canonicalize(parse("{\"n\":-12.50}")));
+    }
 }

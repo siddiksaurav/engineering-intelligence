@@ -35,6 +35,8 @@ Every decision that shapes the PoC, newest at the bottom. A later entry override
 | 29 | 17 Nov 2026 | Entity attributes for the columns `key` and `value` are named `sourceKey`, `settingKey`, `settingValue` | `key` and `value` are keywords in JPA's query language. The columns keep their names | F01 build |
 | 30 | 17 Nov 2026 | The web app does not use Next.js cache components. Pages that show live data are rendered on every request (`dynamic = "force-dynamic"`) | The health page must never show a cached answer. A later feature can turn caching on per page | F01 build |
 | 31 | 17 Nov 2026 | A job is run with `$JAVA_HOME/bin/java -jar ...`, not plain `java` | The default `java` on the build machine is 21 and cannot run the jar | F01 build |
+| 32 | 17 Nov 2026 | In the canonical form of JSON a number is written in plain decimal form with its digits kept (`1.50` stays `1.50`, `1E+2` becomes `100`). This narrows decision-level wording in the F01 design ("as the source spelled them") | It is the form PostgreSQL's `jsonb` returns, so a stored payload hashes to its own content hash. Found by the F01 review; fixed before any record is stored, because the rule is frozen after F02 | F01 review |
+| 33 | 17 Nov 2026 | A database trigger refuses every update and delete of `raw_record` (migration V2) | `@Immutable` stops updates through Hibernate only; a delete through JPA or plain SQL was still possible. The first rule of the project now holds in the database itself | F01 review |
 
 ## Not decided yet
 

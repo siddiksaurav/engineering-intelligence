@@ -86,7 +86,9 @@ class SchemaTest extends DatabaseTest {
     }
 
     @Test
-    void flywayAppliedExactlyVersionOne() {
-        assertEquals(List.of("1"), jdbc.queryForList("select version from flyway_schema_history", String.class));
+    void flywayAppliedVersionsOneAndTwo() {
+        assertEquals(
+                List.of("1", "2"),
+                jdbc.queryForList("select version from flyway_schema_history order by installed_rank", String.class));
     }
 }

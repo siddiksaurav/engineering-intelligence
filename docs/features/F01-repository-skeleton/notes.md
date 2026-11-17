@@ -2,7 +2,7 @@
 
 ## Result
 
-All eight tasks of `plan.md` are built. 70 backend tests and 11 web tests pass. Every "Done when" line of the master plan holds; the evidence is at the end of this file.
+All eight tasks of `plan.md` are built, and two findings of the final review are fixed. 74 backend tests and 11 web tests pass. Every "Done when" line of the master plan holds; the evidence is at the end of this file.
 
 ## Differences from the plan, and why
 
@@ -20,6 +20,26 @@ All eight tasks of `plan.md` are built. 70 backend tests and 11 web tests pass. 
 | Task 7 | Not stated | `@types/node` is `^24`, not the generated `^20` | Vitest 5.1.0 does not accept `^20`; the project runs on Node 24 |
 
 None of these changes what F01 does.
+
+## Final review (one fresh reviewer over the whole branch)
+
+Two findings were fixed, each with a test that failed first:
+
+| Finding | Fix | Tests |
+| --- | --- | --- |
+| A `raw_record` row could be deleted through JPA (`EntityManager.remove`, a JPQL delete) or changed by plain SQL. `@Immutable` stops only updates through Hibernate | Migration `V2__raw_record_is_never_changed.sql`: a trigger that refuses every update and delete. `TRUNCATE` still works, which the tests rely on | `RawRecordStoreTest.aStoredRecordCannotBeDeletedThroughJpa`, `theDatabaseRefusesAnUpdateOrDeleteOfARawRecord` |
+| A number with an exponent was written as `1E+2` in the canonical form, but `jsonb` returns `100`. A payload read back from the database then had another hash than the stored `content_hash`, and storing it again made a false new version | Numbers are written in plain decimal form (decision 32) | `CanonicalJsonTest.numbersAreWrittenInPlainDecimalFormWhateverExponentTheSourceUsed`, `RawRecordStoreTest.aStoredPayloadHashesToItsContentHashAndStoresAsUnchanged` |
+
+Findings that were not fixed, for the features they concern:
+
+- **F02 must decide: text with a NUL character.** `jsonb` cannot store the character U+0000. A payload whose text contains it (possible in a PR body) makes `store` fail with `DataIntegrityViolationException`. F02 decides whether such a character is removed, replaced or the record skipped.
+- **F02, F03: always parse with `CanonicalJson.parse`.** `store` accepts any `JsonNode`. A tree read by another mapper holds decimals as binary floating point, so `1.10` is stored as `1.1` and the hash differs. Nothing in the code stops this yet.
+- **F02, F06: tests see the developer's `.env`.** Backend tests run in `backend/` and load `../.env`. Harmless today. Once `GITHUB_TOKEN` and the LLM key are in `.env`, a test that wires the real client would call the real service. Decide before F06 (for example a test profile that does not import `.env`).
+- **Job arguments are also Spring properties.** `--debug` or `--spring.*` given to a job changes the application. A repeated argument (`--from=A --from=B`) keeps the first value without a message. An argument without `--` is ignored.
+- **`.env` is read by three parsers.** Compose and Node strip quotes around a value; Spring keeps them. Do not quote values in `.env`.
+- **`npm start` does not load the root `.env`;** only `npm run dev` does. Production start is out of scope.
+- **A fresh clone** needs `npm run dev` or `npx next typegen` once before the TypeScript compiler knows `LayoutProps`.
+- `SettingService` readers given a `null` quarter throw `NullPointerException`. A lone surrogate character in a text hashes like `?`.
 
 ## What a later feature should know
 
@@ -50,7 +70,7 @@ None of these changes what F01 does.
 
 Run from a clean state: backend and web app stopped, `docker compose down` (volume kept).
 
-The migration itself was applied on the first backend start, during Task 6. Both starts below are therefore "second" starts and apply nothing; `flyway_schema_history` has one row.
+The first migration was applied on the first backend start, during Task 6. Both starts below are therefore "second" starts and apply nothing. The evidence was taken before the review fix added migration V2; at that time `flyway_schema_history` had one row. After the fix it has two (versions 1 and 2), and a further start again applies nothing.
 
 ```
 $ docker compose ps   (database stopped)
