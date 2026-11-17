@@ -2,19 +2,21 @@
 
 One entry per working session, newest at the top. Each entry says what was done, what is next and what is blocked. Read the top entry first.
 
-## 17 Nov 2026: F01 deep dive, design written
+## 17 Nov 2026: F01 design approved, task plan written
 
 **Done**
 - F01 deep dive held with the user. All open questions of the F01 block are answered.
-- `docs/features/F01-repository-skeleton/design.md` written. Approved by the user on 17 Nov 2026.
+- `docs/features/F01-repository-skeleton/design.md` written and approved by the user.
 - Decisions 19 to 27 added to `docs/decisions.md`.
-- F01 set to "in design" in the master plan.
+- `docs/features/F01-repository-skeleton/plan.md` written: 8 tasks. State: draft, waiting for the user's approval.
+- Library names and versions under Spring Boot 4.1.2 were checked against Maven Central for the plan (Flyway 12.4.0, Hibernate 7.4, Jackson 3.1, Testcontainers 2.0.5).
 
 **Next**
-- The task plan, `docs/features/F01-repository-skeleton/plan.md`.
+- The user reads and approves the plan and chooses how it is executed. Then implementation, starting with Task 1.
 
 **Blocked or needed from the user**
-- JDK 25 is still not installed. It is the first task of the F01 implementation (Temurin 25 into `~/.jdks/`, approved by the user).
+- Approval of the F01 plan.
+- JDK 25 is still not installed. It is step 1 of Task 1 (Temurin 25 into `~/.jdks/`, approved by the user).
 - A read-only GitHub token is needed from F02.
 - An LLM API key is needed from F06.
 
