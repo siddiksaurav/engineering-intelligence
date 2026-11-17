@@ -388,7 +388,7 @@ Update this table when a feature changes state. States: not started, in design, 
 
 | Id | Feature | State | Design | Plan |
 | --- | --- | --- | --- | --- |
-| F01 | Repository skeleton | design approved | `docs/features/F01-repository-skeleton/design.md` | `docs/features/F01-repository-skeleton/plan.md` (draft) |
+| F01 | Repository skeleton | in progress | `docs/features/F01-repository-skeleton/design.md` | `docs/features/F01-repository-skeleton/plan.md` |
 | F02 | GitHub connector | not started | | |
 | F03 | OpenProject connector | not started | | |
 | F04 | Identity | not started | | |
