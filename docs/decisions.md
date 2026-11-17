@@ -31,6 +31,10 @@ Every decision that shapes the PoC, newest at the bottom. A later entry override
 | 25 | 17 Nov 2026 | F01 creates tables with only the columns certain today. Later features add columns in their own migrations | Nothing is guessed and reworked | F01 deep dive, user |
 | 26 | 17 Nov 2026 | Local wiring: PostgreSQL on host port 5433, backend 8080, web 3000; one `.env` at the repository root; health is Actuator's endpoint with the database check; the web app calls the backend only from the server side; jobs are `Job` beans started with `--job=<name>`; base package `com.dsinnovators.ei` | Port 5432 is taken on the build machine; the rest keeps the setup small | F01 deep dive, user approved |
 | 27 | 17 Nov 2026 | Docker Compose is the development database only. Only standard PostgreSQL is used, with no extensions | The production database can then be a VM or a managed service without code changes | F01 deep dive |
+| 28 | 17 Nov 2026 | JSON columns are held as JSON text in the entities (`RawRecord.payload`, `Setting` value) and parsed with `CanonicalJson.parse` on read | Every JSON value, the literal `null` included, reaches `jsonb` unchanged, and nothing depends on how Hibernate maps Jackson 3 types | F01 build |
+| 29 | 17 Nov 2026 | Entity attributes for the columns `key` and `value` are named `sourceKey`, `settingKey`, `settingValue` | `key` and `value` are keywords in JPA's query language. The columns keep their names | F01 build |
+| 30 | 17 Nov 2026 | The web app does not use Next.js cache components. Pages that show live data are rendered on every request (`dynamic = "force-dynamic"`) | The health page must never show a cached answer. A later feature can turn caching on per page | F01 build |
+| 31 | 17 Nov 2026 | A job is run with `$JAVA_HOME/bin/java -jar ...`, not plain `java` | The default `java` on the build machine is 21 and cannot run the jar | F01 build |
 
 ## Not decided yet
 

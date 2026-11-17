@@ -79,6 +79,9 @@ OpenProject ┘                              │                          ├─
 | `scoring/` | Mapping, presence, working tier, gates, dimension score | `dimension`, `dimension_evidence_type`, `dimension_score`, scoring rows in `setting` | Steps 4 and 5 (sections 8, 9) |
 | `review/` | Blind-label export and import | `human_label` | PoC only |
 | `api/` | REST for the web front end | none | |
+| `common/` | `Quarter`, the canonical form of JSON and the content hash | none | |
+| `job/` | The `Job` interface and the command-line job runner | none | |
+| `setting/` | Reading a setting for a quarter | `setting` | Section 14 |
 | `web/` (Next.js) | Evidence list, item page, profile page | none | Step 6 (section 10) |
 
 The tables are described in `poc-plan.md` section 3.4. Adding a data source later means a new connector. Adding an evidence type means a new builder, a prompt and a row in the mapping.
@@ -388,7 +391,7 @@ Update this table when a feature changes state. States: not started, in design, 
 
 | Id | Feature | State | Design | Plan |
 | --- | --- | --- | --- | --- |
-| F01 | Repository skeleton | in progress | `docs/features/F01-repository-skeleton/design.md` | `docs/features/F01-repository-skeleton/plan.md` |
+| F01 | Repository skeleton | done | `docs/features/F01-repository-skeleton/design.md` | `docs/features/F01-repository-skeleton/plan.md` |
 | F02 | GitHub connector | not started | | |
 | F03 | OpenProject connector | not started | | |
 | F04 | Identity | not started | | |

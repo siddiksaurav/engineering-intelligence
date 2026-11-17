@@ -50,7 +50,37 @@ Java 25, Spring Boot 4.x, Maven, PostgreSQL (Docker Compose), Flyway, Next.js (A
 
 ## Commands
 
-No code exists yet. Feature F01 fills in this section: start the database, build, run all tests, run one test, start the backend, start the web app, run a job.
+All commands start from the repository root.
+
+Before any backend command, select Java 25 (the machine's default is 21 and the build refuses it):
+
+```
+export JAVA_HOME=~/.jdks/temurin-25.0.5
+```
+
+Before any web command, in a shell where `node` is not on the `PATH`:
+
+```
+source ~/.nvm/nvm.sh && nvm use
+```
+
+```
+cp .env.example .env                                         once; .env is never committed
+docker compose up -d                                         start the database (host port 5433)
+cd backend && ./mvnw verify                                  build and run all backend tests
+cd backend && ./mvnw test -Dtest=ClassName                   run one test class
+cd backend && ./mvnw spring-boot:run                         start the backend (port 8080)
+cd web && npm install                                        once
+cd web && npm run dev                                        start the web app (port 3000)
+cd web && npm test                                           run the web tests
+cd web && npm run lint                                       lint the web app
+$JAVA_HOME/bin/java -jar backend/target/ei.jar --job=<name> --key=value     run a job
+```
+
+- Backend tests need Docker running. They start their own PostgreSQL container and never use the Compose database.
+- The job command needs `./mvnw verify` to have built the jar, and is run from the repository root so that `.env` is found. No job exists yet; F02 adds the first.
+- Health: `curl -s localhost:8080/actuator/health`. The web page at `localhost:3000` shows "backend up" or "backend down".
+- A test that needs the database extends `com.dsinnovators.ei.DatabaseTest`.
 
 ## End of every session
 
