@@ -6,15 +6,14 @@ One entry per working session, newest at the top. Each entry says what was done,
 
 **Done**
 - F01 deep dive held with the user. All open questions of the F01 block are answered.
-- `docs/features/F01-repository-skeleton/design.md` written. State: draft, waiting for the user's approval.
+- `docs/features/F01-repository-skeleton/design.md` written. Approved by the user on 17 Nov 2026.
 - Decisions 19 to 27 added to `docs/decisions.md`.
 - F01 set to "in design" in the master plan.
 
 **Next**
-- The user reads and approves the design. Then the task plan, `docs/features/F01-repository-skeleton/plan.md`.
+- The task plan, `docs/features/F01-repository-skeleton/plan.md`.
 
 **Blocked or needed from the user**
-- Approval of the F01 design.
 - JDK 25 is still not installed. It is the first task of the F01 implementation (Temurin 25 into `~/.jdks/`, approved by the user).
 - A read-only GitHub token is needed from F02.
 - An LLM API key is needed from F06.

@@ -1,6 +1,6 @@
 # F01 Repository skeleton: design
 
-State: draft
+State: approved on 2026-11-17
 
 ## 1. Goal
 
