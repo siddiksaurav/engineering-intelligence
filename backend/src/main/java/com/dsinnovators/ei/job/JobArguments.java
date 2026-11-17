@@ -1,0 +1,12 @@
+package com.dsinnovators.ei.job;
+
+import java.util.Optional;
+
+/** The {@code --key=value} arguments a job was started with. {@code --key} alone has the value "". */
+public interface JobArguments {
+
+    Optional<String> get(String name);
+
+    /** @throws IllegalArgumentException that names the argument when it was not given */
+    String require(String name);
+}

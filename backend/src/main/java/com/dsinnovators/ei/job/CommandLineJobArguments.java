@@ -1,0 +1,47 @@
+package com.dsinnovators.ei.job;
+
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+/** Reads {@code --key=value} and {@code --key} arguments. {@code --job} is not passed on to the job. */
+final class CommandLineJobArguments implements JobArguments {
+
+    static final String JOB = "job";
+
+    private final Map<String, String> values = new LinkedHashMap<>();
+    private final List<String> jobNames = new ArrayList<>();
+
+    CommandLineJobArguments(String... args) {
+        for (String arg : args) {
+            if (arg == null || !arg.startsWith("--")) {
+                continue;
+            }
+            int equals = arg.indexOf('=');
+            String name = equals < 0 ? arg.substring(2) : arg.substring(2, equals);
+            String value = equals < 0 ? "" : arg.substring(equals + 1);
+            if (name.equals(JOB)) {
+                jobNames.add(value);
+            } else {
+                values.putIfAbsent(name, value);
+            }
+        }
+    }
+
+    /** Every value given for {@code --job}, in order. */
+    List<String> jobNames() {
+        return List.copyOf(jobNames);
+    }
+
+    @Override
+    public Optional<String> get(String name) {
+        return Optional.ofNullable(values.get(name));
+    }
+
+    @Override
+    public String require(String name) {
+        return get(name).orElseThrow(() -> new IllegalArgumentException("Missing argument --" + name));
+    }
+}
