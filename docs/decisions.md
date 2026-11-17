@@ -22,10 +22,20 @@ Every decision that shapes the PoC, newest at the bottom. A later entry override
 | 16 | 17 Nov 2026 | One repository with `backend/` and `web/` | One place for code and documents; a session sees everything | This session |
 | 17 | 17 Nov 2026 | The project is built feature by feature: master plan, then per feature a design, a task plan and the implementation, each approved by the user | The whole build is done by Claude Code across sessions with no memory; the documents carry the context | This session |
 | 18 | 17 Nov 2026 | The spec is kept in the repository as `docs/spec/spec-v1.5.md` and never edited | Every session can read it; proposed changes stay in `poc-plan.md` section 5 | This session |
+| 19 | 17 Nov 2026 | JDK 25 is Eclipse Temurin 25.0.5+8, unpacked to `~/.jdks/` without sudo. The system default stays JDK 21 | Other projects on the build machine keep their Java | F01 deep dive, user |
+| 20 | 17 Nov 2026 | Versions: Spring Boot 4.1.2, PostgreSQL 18, Next.js 16.4.6 with React 19.3.1, Node 24.14.1, Maven 3.9.16 through the Maven wrapper | Latest releases, looked up on 17 Nov 2026. Maven 4 is still a release candidate | F01 deep dive |
+| 21 | 17 Nov 2026 | Persistence is JPA with Hibernate. Never-edited and append-only entities are `@Immutable`; Hibernate only validates the schema, Flyway owns it | User's choice over Spring Data JDBC. The guards keep Hibernate from updating rows that must not change | F01 deep dive, user |
+| 22 | 17 Nov 2026 | Tests get their database from Testcontainers, never from the Compose database | One command builds and tests; tests cannot touch development data, which from F06 holds paid judgments | F01 deep dive, user |
+| 23 | 17 Nov 2026 | `raw_record` has one row per version of a record. A fetched record is compared with the latest version's content hash; a different hash writes the next version | A record can change and change back; uniqueness on the hash would drop the return to earlier content | F01 deep dive, user |
+| 24 | 17 Nov 2026 | `setting` has `valid_from_quarter`. A value is in force until a row with a later quarter replaces it. A missing setting is an error, never a default in code | Spec 14 asks for a version per quarter. Not strictly needed for one quarter, but cheap now and costly to add later | F01 deep dive, user |
+| 25 | 17 Nov 2026 | F01 creates tables with only the columns certain today. Later features add columns in their own migrations | Nothing is guessed and reworked | F01 deep dive, user |
+| 26 | 17 Nov 2026 | Local wiring: PostgreSQL on host port 5433, backend 8080, web 3000; one `.env` at the repository root; health is Actuator's endpoint with the database check; the web app calls the backend only from the server side; jobs are `Job` beans started with `--job=<name>`; base package `com.dsinnovators.ei` | Port 5432 is taken on the build machine; the rest keeps the setup small | F01 deep dive, user approved |
+| 27 | 17 Nov 2026 | Docker Compose is the development database only. Only standard PostgreSQL is used, with no extensions | The production database can then be a VM or a managed service without code changes | F01 deep dive |
 
 ## Not decided yet
 
-- Exact versions of Spring Boot, PostgreSQL, Next.js and the LLM SDK. Fixed in F01 and F06.
+- The version of the LLM SDK. Fixed in F06.
+- Where the production database runs: PostgreSQL on a VM or a managed service. The user leans to a VM. Decided when a DSi pilot is planned.
 - The LLM models for Stage 1 and Stage 2. Fixed in F06 and F07.
 - Each feature's "Open questions" in `docs/master-plan.md`.
 - The 14 proposed spec changes in `poc-plan.md` section 5 are proposals to the spec owner. The PoC already follows them.
