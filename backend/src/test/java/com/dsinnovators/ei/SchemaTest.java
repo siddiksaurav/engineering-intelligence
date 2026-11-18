@@ -40,7 +40,13 @@ class SchemaTest extends DatabaseTest {
         assertEquals(
                 List.of(
                         Map.of("key", "github", "name", "GitHub", "base_url", "https://github.com"),
-                        Map.of("key", "openproject", "name", "OpenProject", "base_url", "https://community.openproject.org")),
+                        Map.of(
+                                "key",
+                                "openproject",
+                                "name",
+                                "OpenProject",
+                                "base_url",
+                                "https://community.openproject.org")),
                 rows);
     }
 

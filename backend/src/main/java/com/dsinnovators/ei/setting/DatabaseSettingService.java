@@ -29,8 +29,7 @@ class DatabaseSettingService implements SettingService {
     @Override
     public int getInt(String key, Quarter quarter) {
         JsonNode value = getJson(key, quarter);
-        requireKind(
-                value.isIntegralNumber() && value.canConvertToInt(), key, "a whole number that fits an int", value);
+        requireKind(value.isIntegralNumber() && value.canConvertToInt(), key, "a whole number that fits an int", value);
         return value.intValue();
     }
 
@@ -52,8 +51,7 @@ class DatabaseSettingService implements SettingService {
     public JsonNode getJson(String key, Quarter quarter) {
         Objects.requireNonNull(key, "key");
         Objects.requireNonNull(quarter, "quarter");
-        return settings
-                .findInForce(key, quarter.toString())
+        return settings.findInForce(key, quarter.toString())
                 .map(setting -> CanonicalJson.parse(setting.getSettingValue()))
                 .orElseThrow(() -> new SettingNotFoundException(key, quarter));
     }

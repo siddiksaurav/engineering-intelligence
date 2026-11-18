@@ -24,7 +24,10 @@ class SettingServiceTest extends DatabaseTest {
     private void insert(String key, String quarter, String json) {
         jdbc.update(
                 "insert into setting (key, valid_from_quarter, value, description) values (?, ?, ?::jsonb, ?)",
-                key, quarter, json, "test");
+                key,
+                quarter,
+                json,
+                "test");
     }
 
     private static Quarter quarter(String text) {
@@ -138,10 +141,12 @@ class SettingServiceTest extends DatabaseTest {
     void aMissingKeyOrQuarterIsRejectedByName() {
         assertEquals(
                 "key",
-                assertThrows(NullPointerException.class, () -> settings.getInt(null, Q3_2026)).getMessage());
+                assertThrows(NullPointerException.class, () -> settings.getInt(null, Q3_2026))
+                        .getMessage());
         assertEquals(
                 "quarter",
-                assertThrows(NullPointerException.class, () -> settings.getInt("some.key", null)).getMessage());
+                assertThrows(NullPointerException.class, () -> settings.getInt("some.key", null))
+                        .getMessage());
     }
 
     @Test

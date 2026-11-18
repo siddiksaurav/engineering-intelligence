@@ -86,7 +86,9 @@ class RawRecordStoreTest extends DatabaseTest {
         assertEquals(List.of(1, 2), versions.stream().map(RawRecord::getVersion).toList());
         assertEquals(
                 List.of("A", "B"),
-                versions.stream().map(v -> v.getPayload().get("title").asString()).toList());
+                versions.stream()
+                        .map(v -> v.getPayload().get("title").asString())
+                        .toList());
     }
 
     @Test
@@ -133,7 +135,10 @@ class RawRecordStoreTest extends DatabaseTest {
 
         assertEquals(
                 List.of("101:1", "103:2"),
-                latest.stream().map(r -> r.getExternalId() + ":" + r.getVersion()).sorted().toList());
+                latest.stream()
+                        .map(r -> r.getExternalId() + ":" + r.getVersion())
+                        .sorted()
+                        .toList());
     }
 
     @Test
@@ -146,8 +151,7 @@ class RawRecordStoreTest extends DatabaseTest {
     @NullSource
     @ValueSource(strings = {"", "  "})
     void aMissingDataSourceKeyIsRejectedAndNothingIsWritten(String missing) {
-        assertThrows(
-                IllegalArgumentException.class, () -> store.store(missing, PULL_REQUEST, "1", URL, json("{}")));
+        assertThrows(IllegalArgumentException.class, () -> store.store(missing, PULL_REQUEST, "1", URL, json("{}")));
         assertEquals(0, rowCount());
     }
 
@@ -163,8 +167,7 @@ class RawRecordStoreTest extends DatabaseTest {
     @NullSource
     @ValueSource(strings = {"", "  "})
     void aMissingExternalIdIsRejectedAndNothingIsWritten(String missing) {
-        assertThrows(
-                IllegalArgumentException.class, () -> store.store(GITHUB, PULL_REQUEST, missing, URL, json("{}")));
+        assertThrows(IllegalArgumentException.class, () -> store.store(GITHUB, PULL_REQUEST, missing, URL, json("{}")));
         assertEquals(0, rowCount());
     }
 
@@ -172,8 +175,7 @@ class RawRecordStoreTest extends DatabaseTest {
     @NullSource
     @ValueSource(strings = {"", "  "})
     void aMissingUrlIsRejectedAndNothingIsWritten(String missing) {
-        assertThrows(
-                IllegalArgumentException.class, () -> store.store(GITHUB, PULL_REQUEST, "1", missing, json("{}")));
+        assertThrows(IllegalArgumentException.class, () -> store.store(GITHUB, PULL_REQUEST, "1", missing, json("{}")));
         assertEquals(0, rowCount());
     }
 
@@ -206,12 +208,16 @@ class RawRecordStoreTest extends DatabaseTest {
         StoreResult result = store.store(GITHUB, PULL_REQUEST, "106", URL, json(text));
 
         assertEquals(Outcome.CREATED, result.outcome());
-        assertEquals(json(text), store.findLatest(GITHUB, PULL_REQUEST, "106").orElseThrow().getPayload());
+        assertEquals(
+                json(text),
+                store.findLatest(GITHUB, PULL_REQUEST, "106").orElseThrow().getPayload());
     }
 
     @Test
     void aChangeToALoadedRecordIsNeverWritten() {
-        long id = store.store(GITHUB, PULL_REQUEST, "107", URL, json("{\"title\":\"A\"}")).record().getId();
+        long id = store.store(GITHUB, PULL_REQUEST, "107", URL, json("{\"title\":\"A\"}"))
+                .record()
+                .getId();
 
         transaction.executeWithoutResult(status -> {
             RawRecord loaded = entityManager.find(RawRecord.class, id);
@@ -224,10 +230,13 @@ class RawRecordStoreTest extends DatabaseTest {
 
     @Test
     void aStoredRecordCannotBeDeletedThroughJpa() {
-        long id = store.store(GITHUB, PULL_REQUEST, "108", URL, json("{\"title\":\"A\"}")).record().getId();
+        long id = store.store(GITHUB, PULL_REQUEST, "108", URL, json("{\"title\":\"A\"}"))
+                .record()
+                .getId();
 
-        PersistenceException refused =
-                assertThrows(PersistenceException.class, () -> transaction.executeWithoutResult(status -> {
+        PersistenceException refused = assertThrows(
+                PersistenceException.class,
+                () -> transaction.executeWithoutResult(status -> {
                     entityManager.remove(entityManager.find(RawRecord.class, id));
                     entityManager.flush();
                 }));
@@ -239,7 +248,9 @@ class RawRecordStoreTest extends DatabaseTest {
 
     @Test
     void theDatabaseRefusesAnUpdateOrDeleteOfARawRecord() {
-        long id = store.store(GITHUB, PULL_REQUEST, "109", URL, json("{\"title\":\"A\"}")).record().getId();
+        long id = store.store(GITHUB, PULL_REQUEST, "109", URL, json("{\"title\":\"A\"}"))
+                .record()
+                .getId();
 
         DataAccessException update = assertThrows(
                 DataAccessException.class, () -> jdbc.update("update raw_record set url = 'changed' where id = ?", id));
@@ -252,11 +263,14 @@ class RawRecordStoreTest extends DatabaseTest {
     @Test
     void aStoredPayloadHashesToItsContentHashAndStoresAsUnchanged() {
         JsonNode payload = json("{\"n\":1E+2,\"m\":0.0000001,\"k\":1.50,\"big\":1e21,\"i\":7}");
-        RawRecord written = store.store(GITHUB, PULL_REQUEST, "110", URL, payload).record();
+        RawRecord written =
+                store.store(GITHUB, PULL_REQUEST, "110", URL, payload).record();
 
         RawRecord read = store.findLatest(GITHUB, PULL_REQUEST, "110").orElseThrow();
         assertEquals(written.getContentHash(), CanonicalJson.sha256Hex(read.getPayload()));
-        assertEquals(Outcome.UNCHANGED, store.store(GITHUB, PULL_REQUEST, "110", URL, read.getPayload()).outcome());
+        assertEquals(
+                Outcome.UNCHANGED,
+                store.store(GITHUB, PULL_REQUEST, "110", URL, read.getPayload()).outcome());
         assertEquals(1, rowCount());
     }
 }

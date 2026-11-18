@@ -37,8 +37,8 @@ public final class CanonicalJson {
             .disable(JsonNodeFeature.STRIP_TRAILING_BIGDECIMAL_ZEROES)
             .build();
 
-    private static final Comparator<String> BY_CODE_POINT =
-            (left, right) -> Arrays.compare(left.codePoints().toArray(), right.codePoints().toArray());
+    private static final Comparator<String> BY_CODE_POINT = (left, right) ->
+            Arrays.compare(left.codePoints().toArray(), right.codePoints().toArray());
 
     private CanonicalJson() {}
 

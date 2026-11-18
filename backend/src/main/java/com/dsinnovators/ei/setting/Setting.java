@@ -26,6 +26,8 @@ class Setting {
     @Column(name = "key")
     private String settingKey;
 
+    // Read only by the query in SettingRepository.
+    @Column(name = "valid_from_quarter")
     private String validFromQuarter;
 
     @Column(name = "value")

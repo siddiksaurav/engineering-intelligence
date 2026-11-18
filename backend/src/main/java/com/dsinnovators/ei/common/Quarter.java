@@ -1,5 +1,6 @@
 package com.dsinnovators.ei.common;
 
+import java.io.Serializable;
 import java.time.LocalDate;
 import java.util.Objects;
 import java.util.regex.Matcher;
@@ -10,7 +11,7 @@ import java.util.regex.Pattern;
  * sort in time order. Dates are plain dates: a caller that starts from a timestamp converts it in
  * UTC.
  */
-public record Quarter(int year, int number) implements Comparable<Quarter> {
+public record Quarter(int year, int number) implements Comparable<Quarter>, Serializable {
 
     private static final Pattern TEXT_FORM = Pattern.compile("([0-9]{4})-Q([1-4])");
 

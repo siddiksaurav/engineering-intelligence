@@ -10,7 +10,11 @@ class JobRegistry {
 
     private final Map<String, Job> jobs = new TreeMap<>();
 
-    /** @throws IllegalStateException when two jobs share a name */
+    /**
+     * Registers the jobs by name.
+     *
+     * @throws IllegalStateException when two jobs share a name
+     */
     JobRegistry(List<Job> jobs) {
         for (Job job : jobs) {
             if (this.jobs.putIfAbsent(job.name(), job) != null) {

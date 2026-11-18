@@ -18,7 +18,8 @@ class HealthEndpointTest extends DatabaseTest {
     private int port;
 
     private HttpResponse<String> get(String path) throws Exception {
-        HttpRequest request = HttpRequest.newBuilder(URI.create("http://localhost:" + port + path)).build();
+        HttpRequest request = HttpRequest.newBuilder(URI.create("http://localhost:" + port + path))
+                .build();
         return HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
     }
 
@@ -26,7 +27,9 @@ class HealthEndpointTest extends DatabaseTest {
     void healthIsUpWhenTheDatabaseIsReached() throws Exception {
         HttpResponse<String> response = get("/actuator/health");
         assertEquals(200, response.statusCode());
-        assertEquals("UP", JsonMapper.shared().readTree(response.body()).get("status").asString());
+        assertEquals(
+                "UP",
+                JsonMapper.shared().readTree(response.body()).get("status").asString());
     }
 
     @Test

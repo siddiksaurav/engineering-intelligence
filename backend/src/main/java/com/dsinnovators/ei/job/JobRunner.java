@@ -16,7 +16,11 @@ public class JobRunner {
         this.registry = registry;
     }
 
-    /** @return 0 when the job returns, 1 in every other case */
+    /**
+     * Runs the job named by {@code --job}.
+     *
+     * @return 0 when the job returns, 1 in every other case
+     */
     public int run(String... args) {
         CommandLineJobArguments arguments;
         try {

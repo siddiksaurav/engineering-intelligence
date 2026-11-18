@@ -67,8 +67,13 @@ class QuarterTest {
     void aMissingDateIsRejectedByName() {
         Quarter quarter = Quarter.parse("2026-Q3");
 
-        assertEquals("date", assertThrows(NullPointerException.class, () -> Quarter.of(null)).getMessage());
-        assertEquals("date", assertThrows(NullPointerException.class, () -> quarter.contains(null)).getMessage());
+        assertEquals(
+                "date",
+                assertThrows(NullPointerException.class, () -> Quarter.of(null)).getMessage());
+        assertEquals(
+                "date",
+                assertThrows(NullPointerException.class, () -> quarter.contains(null))
+                        .getMessage());
     }
 
     @ParameterizedTest

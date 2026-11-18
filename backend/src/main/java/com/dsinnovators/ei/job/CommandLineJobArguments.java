@@ -17,6 +17,8 @@ final class CommandLineJobArguments implements JobArguments {
     private final List<String> jobNames = new ArrayList<>();
 
     /**
+     * Reads the arguments as they came from the command line.
+     *
      * @throws IllegalArgumentException for an argument that does not start with {@code --} and for
      *     an argument other than {@code --job} that is given more than once
      */

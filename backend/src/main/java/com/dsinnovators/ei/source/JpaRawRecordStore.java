@@ -36,10 +36,9 @@ class JpaRawRecordStore implements RawRecordStore {
             return new StoreResult(StoreResult.Outcome.UNCHANGED, latest.get());
         }
         int version = latest.map(record -> record.getVersion() + 1).orElse(1);
-        RawRecord written = rawRecords.save(new RawRecord(
-                dataSource, recordKind, externalId, version, url, contentHash, payload, Instant.now()));
-        return new StoreResult(
-                version == 1 ? StoreResult.Outcome.CREATED : StoreResult.Outcome.NEW_VERSION, written);
+        RawRecord written = rawRecords.save(
+                new RawRecord(dataSource, recordKind, externalId, version, url, contentHash, payload, Instant.now()));
+        return new StoreResult(version == 1 ? StoreResult.Outcome.CREATED : StoreResult.Outcome.NEW_VERSION, written);
     }
 
     @Override
@@ -67,7 +66,8 @@ class JpaRawRecordStore implements RawRecordStore {
 
     private DataSource dataSource(String key) {
         requireText(key, "dataSourceKey");
-        return dataSources.findByKey(key)
+        return dataSources
+                .findByKey(key)
                 .orElseThrow(() -> new IllegalArgumentException("Unknown data source: " + key));
     }
 

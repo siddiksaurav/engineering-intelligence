@@ -8,6 +8,10 @@ public interface JobArguments {
     /** The value of the argument, or empty when it was not given. */
     Optional<String> get(String name);
 
-    /** @throws IllegalArgumentException that names the argument when it was not given */
+    /**
+     * The value of an argument the job cannot run without.
+     *
+     * @throws IllegalArgumentException that names the argument when it was not given
+     */
     String require(String name);
 }

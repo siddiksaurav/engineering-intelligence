@@ -1,7 +1,12 @@
 package com.dsinnovators.ei.setting;
 
+import java.io.Serial;
+
 /** The value of the setting is of another kind than the reader asked for. */
 public class SettingTypeException extends RuntimeException {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     private final String key;
 

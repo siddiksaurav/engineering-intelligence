@@ -143,8 +143,7 @@ class JobRunnerTest {
     void requireThrowsForAMissingArgument() {
         runner.run("--job=echo");
 
-        IllegalArgumentException e =
-                assertThrows(IllegalArgumentException.class, () -> echo.received.require("from"));
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> echo.received.require("from"));
         assertTrue(e.getMessage().contains("from"));
     }
 
@@ -159,8 +158,7 @@ class JobRunnerTest {
     @Test
     void namesAreSorted() {
         assertEquals(
-                List.of("boom", "echo"),
-                new JobRegistry(List.of(new RecordingJob("echo"), new FailingJob())).names());
+                List.of("boom", "echo"), new JobRegistry(List.of(new RecordingJob("echo"), new FailingJob())).names());
     }
 
     @Test
