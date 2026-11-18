@@ -1,59 +1,99 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { checkBackend } from "./health";
 
-const BASE = "http://localhost:8080";
+const BACKEND_URL = "http://localhost:8080";
 
 function answering(status: number, body: string): typeof fetch {
   return vi.fn(async () => new Response(body, { status })) as unknown as typeof fetch;
 }
 
 describe("checkBackend", () => {
+  let warn: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    warn.mockRestore();
+  });
+
+  it("logs nothing when the backend is up", async () => {
+    await checkBackend(BACKEND_URL, answering(200, '{"status":"UP"}'));
+    expect(warn).not.toHaveBeenCalled();
+  });
+
+  it("logs the HTTP status when it is not 200", async () => {
+    await checkBackend(BACKEND_URL, answering(503, '{"status":"DOWN"}'));
+    expect(warn).toHaveBeenCalledWith(
+      "Backend health check failed: HTTP 503 from http://localhost:8080/actuator/health",
+    );
+  });
+
+  it("logs the reported status when it is not UP", async () => {
+    await checkBackend(BACKEND_URL, answering(200, '{"status":"OUT_OF_SERVICE"}'));
+    expect(warn).toHaveBeenCalledWith('Backend health check failed: status is "OUT_OF_SERVICE"');
+  });
+
+  it("logs the cause when the connection fails", async () => {
+    const fetchFn = vi.fn(async () => {
+      throw new TypeError("fetch failed");
+    }) as unknown as typeof fetch;
+    await checkBackend(BACKEND_URL, fetchFn);
+    expect(warn).toHaveBeenCalledWith("Backend health check failed: fetch failed");
+  });
+
+  it("logs that no backend URL is set", async () => {
+    await checkBackend(undefined, answering(200, '{"status":"UP"}'));
+    expect(warn).toHaveBeenCalledWith("Backend health check skipped: BACKEND_URL is not set");
+  });
+
   it("is up when the health endpoint answers 200 with status UP", async () => {
-    expect(await checkBackend(BASE, answering(200, '{"status":"UP"}'))).toBe("up");
+    expect(await checkBackend(BACKEND_URL, answering(200, '{"status":"UP"}'))).toBe("up");
   });
 
   it("calls the Actuator health endpoint of the backend", async () => {
     const fetchFn = answering(200, '{"status":"UP"}');
-    await checkBackend(BASE, fetchFn);
+    await checkBackend(BACKEND_URL, fetchFn);
     expect(fetchFn).toHaveBeenCalledTimes(1);
     expect(vi.mocked(fetchFn).mock.calls[0][0]).toBe("http://localhost:8080/actuator/health");
   });
 
   it("does not double the slash when the base URL ends with one", async () => {
     const fetchFn = answering(200, '{"status":"UP"}');
-    await checkBackend(BASE + "/", fetchFn);
+    await checkBackend(BACKEND_URL + "/", fetchFn);
     expect(vi.mocked(fetchFn).mock.calls[0][0]).toBe("http://localhost:8080/actuator/health");
   });
 
   it("does not let the answer be cached", async () => {
     const fetchFn = answering(200, '{"status":"UP"}');
-    await checkBackend(BASE, fetchFn);
+    await checkBackend(BACKEND_URL, fetchFn);
     expect(vi.mocked(fetchFn).mock.calls[0][1]?.cache).toBe("no-store");
   });
 
   it("is down when the status is not UP", async () => {
-    expect(await checkBackend(BASE, answering(200, '{"status":"DOWN"}'))).toBe("down");
+    expect(await checkBackend(BACKEND_URL, answering(200, '{"status":"DOWN"}'))).toBe("down");
   });
 
   it("is down when the HTTP status is not 200, whatever the body says", async () => {
-    expect(await checkBackend(BASE, answering(503, '{"status":"DOWN"}'))).toBe("down");
-    expect(await checkBackend(BASE, answering(503, '{"status":"UP"}'))).toBe("down");
+    expect(await checkBackend(BACKEND_URL, answering(503, '{"status":"DOWN"}'))).toBe("down");
+    expect(await checkBackend(BACKEND_URL, answering(503, '{"status":"UP"}'))).toBe("down");
   });
 
   it("is down when the body is not JSON", async () => {
-    expect(await checkBackend(BASE, answering(200, "<html>"))).toBe("down");
+    expect(await checkBackend(BACKEND_URL, answering(200, "<html>"))).toBe("down");
   });
 
   it("is down when the body is JSON without a status", async () => {
-    expect(await checkBackend(BASE, answering(200, "null"))).toBe("down");
-    expect(await checkBackend(BASE, answering(200, "{}"))).toBe("down");
+    expect(await checkBackend(BACKEND_URL, answering(200, "null"))).toBe("down");
+    expect(await checkBackend(BACKEND_URL, answering(200, "{}"))).toBe("down");
   });
 
   it("is down when the connection fails", async () => {
     const fetchFn = vi.fn(async () => {
       throw new TypeError("fetch failed");
     }) as unknown as typeof fetch;
-    expect(await checkBackend(BASE, fetchFn)).toBe("down");
+    expect(await checkBackend(BACKEND_URL, fetchFn)).toBe("down");
   });
 
   it("is down after the timeout when the backend does not answer, and aborts the request", async () => {
@@ -65,7 +105,7 @@ describe("checkBackend", () => {
       });
     }) as unknown as typeof fetch;
 
-    expect(await checkBackend(BASE, fetchFn, 50)).toBe("down");
+    expect(await checkBackend(BACKEND_URL, fetchFn, 50)).toBe("down");
     expect(signal?.aborted).toBe(true);
   });
 

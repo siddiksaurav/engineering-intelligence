@@ -3,8 +3,9 @@
 // already set in the environment wins.
 import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import { webPort } from "./web-port.mjs";
 
-const port = process.env.WEB_PORT || "3000";
+const port = webPort(process.env);
 const next = fileURLToPath(new URL("../node_modules/next/dist/bin/next", import.meta.url));
 
 const child = spawn(process.execPath, [next, "dev", "-p", port], { stdio: "inherit" });
