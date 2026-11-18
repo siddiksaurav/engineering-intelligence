@@ -11,9 +11,4 @@ class JobConfiguration {
     JobRegistry jobRegistry(ObjectProvider<Job> jobs) {
         return new JobRegistry(jobs.orderedStream().toList());
     }
-
-    @Bean
-    JobRunner jobRunner(JobRegistry registry) {
-        return new JobRunner(registry);
-    }
 }

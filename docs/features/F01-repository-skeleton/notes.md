@@ -35,6 +35,15 @@ None of these changes what F01 does.
   - **Open:** `npm audit` reports 16 high-severity findings, all in development dependencies (`picomatch` under `vite`, which Vitest uses); the dependencies that ship have none. The only offered fix is a forced, breaking upgrade, so it is not applied.
   - **Three earlier open points are now closed:** the silent job arguments, the null quarter, and reads without validation.
 
+## Amendment 1: the job runner was withdrawn (18 Nov 2026)
+
+Design section 13, decisions 38 and 39.
+
+- Removed: `CommandLineJobArguments`, `JobRunner`, the `--job` switch in `EiApplication`, and their tests. Every note in this file about job mode, job arguments, the job command and exit codes describes code that no longer exists.
+- Kept and unused until F02: `Job`, `JobArguments`, `JobRegistry`, `JobConfiguration`. Each says so in its comment. `JobArguments` has no implementation.
+- F02 builds the launcher, the `job_run` table and the endpoint that starts a job. Until then no job can be started.
+- 106 backend tests.
+
 ## Final review (one fresh reviewer over the whole branch)
 
 Two findings were fixed, each with a test that failed first:
@@ -63,8 +72,8 @@ Findings that were not fixed, for the features they concern:
 - **Reading a payload.** `RawRecord.getPayload()` parses the text on every call. Keep the result in a variable when it is used more than once.
 - **Jackson.** Spring Boot 4.1.2 ships Jackson 3: the packages are `tools.jackson.*`, text nodes are read with `asString()` or `stringValue()`.
 - **Tests.** Extend `com.dsinnovators.ei.DatabaseTest`. It gives `jdbc` and empties `raw_record`, `setting`, `person_identity`, `person`, `project` before each test. A feature that adds a table adds it to that `truncate` line.
-- **A new job.** Declare a `@Component` that implements `Job`. Nothing else is registered.
-- **Jobs and the database.** Job mode starts the whole application context without the web server, so Flyway runs and the database must be up.
+- **A new job.** Declare a `@Component` that implements `Job`; the registry finds it. Nothing can start it until F02 builds the launcher and the endpoint (design section 13).
+- **Jobs and the database (withdrawn with the runner).** Job mode starts the whole application context without the web server, so Flyway runs and the database must be up.
 - **Compose volume.** The `postgres:18` image keeps its data under `/var/lib/postgresql`, not `/var/lib/postgresql/data`. The volume is mounted there.
 - **`web/AGENTS.md`.** `next dev` writes this file and writes it again when it is removed. It is committed so the tree stays clean. It tells a coding session to read the guides in `web/node_modules/next/dist/docs/` before writing Next.js code, because Next.js 16 differs from older versions.
 - **Next.js telemetry.** The checks were run with `NEXT_TELEMETRY_DISABLED=1`. Without it Next.js sends anonymous usage data.

@@ -10,7 +10,7 @@ After F01 the repository holds a backend that starts, a database that is migrate
 
 **In.**
 - JDK 25 on the build machine.
-- `backend/`: Spring Boot application, Maven wrapper, package layout, health endpoint, job runner, test setup.
+- `backend/`: Spring Boot application, Maven wrapper, package layout, health endpoint, the `Job` interface and registry, test setup. (The job runner was withdrawn, section 13.)
 - Migration `V1__base_tables.sql`: `data_source` (with two seeded rows), `raw_record`, `person`, `person_identity`, `project`, `setting`.
 - Java code for `data_source`, `raw_record` and `setting`, and the `Quarter` type.
 - `docker-compose.yml` with PostgreSQL.
@@ -21,7 +21,7 @@ After F01 the repository holds a backend that starts, a database that is migrate
 - Java classes for `person`, `person_identity` and `project`. F04 and F03 write them when they first use the tables.
 - Any real job. F02 writes the first one.
 - Any real row in `setting`. F03 adds the done statuses, F11 the scoring values.
-- A REST endpoint that starts a job. A later feature adds it if it needs one.
+- A REST endpoint that starts a job. F02 adds it (section 13).
 - A screen or endpoint to edit settings.
 - CORS, authentication, a scheduler, a production deployment.
 - The tables of later features (`evidence_item` in F05, `judgment` in F06, `human_label` in F08, the scoring tables in F11).
@@ -101,7 +101,7 @@ Every backend command is run with `JAVA_HOME=~/.jdks/temurin-25.0.5`. The Maven 
 | --- | --- |
 | `com.dsinnovators.ei` | The application class |
 | `...ei.common` | `Quarter`, the JSON canonical form and hash |
-| `...ei.job` | `Job`, `JobArguments`, the job runner |
+| `...ei.job` | `Job`, `JobArguments`, `JobRegistry` (the job runner was withdrawn, section 13) |
 | `...ei.setting` | `Setting`, `SettingRepository`, `SettingService` |
 | `...ei.source` | `DataSource`, `DataSourceRepository`, `RawRecord`, `RawRecordRepository`, `RawRecordStore` |
 
@@ -137,6 +137,8 @@ When a record is fetched again and is unchanged, nothing records that it was see
 `Quarter` is a value type: a year and a number from 1 to 4. Its text form is `YYYY-Qn` (`2026-Q3`). Text forms sort in time order, which the query uses. Quarters are calendar quarters; dates are plain dates, and a caller that starts from a timestamp converts it in UTC.
 
 ### 5.5 Running a job
+
+**Withdrawn on 18 Nov 2026 by section 13, except the first point.** F01 keeps the `Job` interface and the registry of jobs by name. Nothing starts a job in F01. The text below is kept as the record of what was first approved.
 
 - `Job` is an interface with a name and a run method. A job is a Spring bean. Names are unique; two jobs with one name stop the application at start.
 - The application is started with `--job=<name>` and further `--key=value` arguments. It then does not open the web port, runs that one job, prints what the job writes to the log, and exits with code 0 when the job returns and 1 when it throws. The failure message is printed. An argument that does not start with `--`, and an argument other than `--job` given more than once, is refused before any job runs (amended 18 Nov 2026, decision 37).
@@ -345,9 +347,9 @@ public interface JobArguments {
 | A setting with rows for `2026-Q3` and `2027-Q1` | Asked for `2026-Q3` and `2026-Q4`: the Q3 value. Asked for `2027-Q1` and later: the Q1 value. Asked for `2026-Q2`: `SettingNotFoundException` |
 | An unknown setting key | `SettingNotFoundException` that names the key |
 | A list setting read with `getInt` | `SettingTypeException` |
-| `--job=` with an unknown name | The known names are printed; exit code 1 |
-| A job throws | The message is printed; exit code 1 |
-| A job is given without a required argument | `require` throws; exit code 1 with the argument's name |
+| Two jobs with one name | The application does not start; the error names the name |
+
+The three cases about running a job (unknown name, a job that throws, a missing argument) were withdrawn with the runner, section 13.
 | The backend starts and the database is down | The start fails with the connection error. Nothing is retried |
 | The backend starts a second time | Flyway reports that the schema is up to date and applies nothing |
 | The web page is opened and the backend is down or slow | The page shows "backend down". It does not fail |
@@ -367,12 +369,11 @@ cd backend && ./mvnw spring-boot:run                         start the backend
 cd web && npm install                                        once
 cd web && npm run dev                                        start the web app
 cd web && npm test                                           run the web tests
-java -jar backend/target/ei.jar --job=<name> --key=value     run a job
 ```
 
 Before the backend commands: `export JAVA_HOME=~/.jdks/temurin-25.0.5`. Before the web commands, in a shell where `node` is not on the `PATH`: `source ~/.nvm/nvm.sh && nvm use`.
 
-The job command is run from the repository root so that `.env` is found.
+The job command of the first version was withdrawn, section 13.
 
 ## 10. How it is checked
 
@@ -386,7 +387,6 @@ The job command is run from the repository root so that `.env` is found.
 Further checks:
 - `curl -s localhost:8080/actuator/health` returns `{"status":"UP"}`.
 - `select key from data_source` returns `github` and `openproject`.
-- The jar started with `--job=nope` prints that no such job exists and exits with 1.
 - `git status` shows no `.env`, no `target/`, no `node_modules/`.
 - The commands in `CLAUDE.md` are the ones that were run for these checks.
 
@@ -419,9 +419,9 @@ The evidence (command and output) is written to `notes.md`.
 | `setting` has `valid_from_quarter`; a value is in force until a later row replaces it | Spec 14 asks for a version per quarter. The PoC scores one quarter and would work without it, but the column costs little and adding a quarter argument to every caller later costs more | User kept it after asking whether it was needed |
 | F01 creates tables with only the columns certain today; `person`, `person_identity`, `project` get no Java class yet | Nothing is guessed and reworked; no unused code | User approved the tables |
 | `data_source` rows are seeded in V1 | Fixed reference data; `raw_record` needs them from F02's first insert | Session's call, approved with the tables |
-| PostgreSQL on host port 5433 | 5432 is taken on the build machine | Session's call, approved with the wiring |
+| PostgreSQL on host port 5433 | 5432 is taken on the build machine | Session's call, approved with the wiring. |
 | Health is Actuator's endpoint with the database check; the web page calls it from the server side | "Up" then includes the database; no CORS setup | Session's call, approved with the wiring |
-| Jobs: a `Job` interface, started with `--job=<name>`, no web port, exit code 0 or 1 | The master plan asks for a way to run a job from the command line | Session's call, approved with the wiring |
+| Jobs: a `Job` interface, started with `--job=<name>`, no web port, exit code 0 or 1 | The master plan asks for a way to run a job from the command line | Session's call, approved with the wiring. The runner was withdrawn by section 13 |
 | One `.env` at the repository root for Compose, backend and web | One place for local values and secrets | Session's call, approved with the wiring |
 | Base package `com.dsinnovators.ei`, database `ei`, npm | | Session's call, approved with the wiring |
 | Maven wrapper on 3.9.16; an Enforcer rule requires Java 25 | The Maven version is pinned and the system Maven is left alone; a wrong JDK fails with a clear message | Session's call |
@@ -441,9 +441,9 @@ The evidence (command and output) is written to `notes.md`.
 
 **Left to the builder.** The Maven artifact names for Flyway, Testcontainers and the PostgreSQL driver under Spring Boot 4.1.2 (looked up in its documentation at build time, not taken from memory). How the JSONB columns are mapped in Hibernate. How the backend and the web app load the root `.env`. How the job runner keeps the web port closed. The layout of the Next.js page. Class names inside a package that section 7 does not fix.
 
-## 13. Amendment 1: no job mechanism in F01
+## 13. Amendment 1: no job runner in F01
 
-State: proposed on 2026-11-18, not approved
+State: approved on 2026-11-18
 
 ### 13.1 Why
 
@@ -464,29 +464,31 @@ These hold for the whole project, not only for F01.
 
 ### 13.3 What changes in F01
 
-The whole `job` package is removed from F01. Nothing replaces it in F01.
+The command-line half of the `job` package is removed. The general half stays.
 
-This goes one step further than what was agreed in conversation, which was to keep `Job` and `JobRegistry`. With the runner gone, those two would have no caller until F02, and the "Code quality" section of `CLAUDE.md` forbids code that nothing uses. F02 designs the job interface, the launcher, the `job_run` table and the endpoint together.
+Kept, unused until F02, each with a comment that says so:
+
+- `Job` and `JobArguments`: the interface a job implements and the arguments it receives.
+- `JobRegistry` and `JobConfiguration`: the jobs of the application by name; two jobs with one name stop the application at start.
+
+The user decided to keep these: they are known to be used in F02, so they are not dead code (decision 39).
 
 Removed from the code:
 
-- `Job`, `JobArguments`, `CommandLineJobArguments`, `JobRegistry`, `JobRunner`, `JobConfiguration`.
+- `CommandLineJobArguments` and `JobRunner`.
 - The `--job` switch and `isJobMode` in `EiApplication`. `main` only starts the web server.
-- `JobRunnerTest` and `EiApplicationJobModeTest`.
+- `JobRunnerTest` and `EiApplicationJobModeTest`. The registry cases of `JobRunnerTest` live on in `JobRegistryTest`.
 
-Changed in this document:
-
-- Section 2: "job runner" leaves the list of what F01 builds. "A REST endpoint that starts a job" stays out of scope for F01 and is named as F02's.
-- Section 5.5, the `job` rows of the tables in sections 5 and 8, the `Job` and `JobArguments` interfaces in section 7, the job command in section 9 and the `--job=nope` check in section 10 are marked as withdrawn.
+Changed in this document: section 2, section 5.5, the `job` rows of the tables in sections 5 and 8, the job command in section 9 and the `--job=nope` check in section 10. The `Job` and `JobArguments` interfaces in section 7 stand as written.
 
 Changed in `CLAUDE.md`: the job command and its note are removed.
 
 ### 13.4 What changes in the master plan
 
 - Section 2, "Way of working": "Jobs are started by a REST endpoint or a command-line runner. There is no scheduler." becomes "Jobs are started by a REST endpoint, and every run is recorded. There is no command-line runner and no scheduler."
-- Section 3, package table: the `job/` row becomes "A job, the launcher that runs it and records the run, the endpoint that starts it", with table `job_run`, built in F02.
-- F01, "Gives to later features": "the way to run a job from the command line" is removed.
-- F02, "Builds": gains "The job mechanism: the job interface, the launcher, the `job_run` table and the endpoint that starts a job. The GitHub import is its first job."
+- Section 3, package table: the `job/` row becomes "A job, the launcher that runs it and records the run, the endpoint that starts it", with table `job_run`.
+- F01, "Gives to later features": "the way to run a job from the command line" becomes "the `Job` interface and the registry of jobs by name".
+- F02, "Builds": gains "The rest of the job mechanism: the launcher, the `job_run` table and the endpoint that starts a job. The GitHub import is its first job."
 - F02, "Open questions": gains "Whether a second run of a job may start while one is running. What a run records as counts. Who may call the endpoint while there is no authentication."
 
 `poc-plan.md` 3.6 says "REST endpoints or a command-line runner". It allows either, so it is not changed.
@@ -497,10 +499,10 @@ Changed in `CLAUDE.md`: the job command and its note are removed.
 - Decision 31 (the job is run with `$JAVA_HOME/bin/java -jar`).
 - Decision 37 (a malformed or repeated job argument is refused).
 
-A new decision records the settled points of 13.2.
+Decision 38 records the settled points of 13.2.
 
 ### 13.6 How it is checked
 
-- `./mvnw verify` is green with the package gone.
+- `./mvnw verify` is green with the runner gone.
 - The "Done when" of F01 in the master plan does not mention jobs, so all four checks still hold.
 - CI is green on the pull request.

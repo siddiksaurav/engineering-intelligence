@@ -5,7 +5,11 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
 
-/** The jobs of the application, by name. */
+/**
+ * The jobs of the application, by name.
+ *
+ * <p>Nothing reads the registry yet. F02 adds the launcher that does (F01 design, section 13).
+ */
 class JobRegistry {
 
     private final Map<String, Job> jobs = new TreeMap<>();

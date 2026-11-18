@@ -51,10 +51,12 @@ Production-grade, industry-standard clean code is mandatory in this repository. 
 - Follow the standard conventions of the language and framework: Java and Spring Boot conventions in `backend/`, TypeScript, React and Next.js conventions in `web/`.
 - Names say what a thing is or does. No abbreviations that a new reader must look up.
 - Classes and methods are small and do one thing. No duplicated logic.
-- No dead code, no commented-out code, no placeholder files, no unused dependencies, no `TODO` left without a feature number.
+- No dead code. When new code takes over the work of old code, the old code is removed in the same change: if `methodB()` replaces `methodA()` and nothing calls `methodA()` any more, `methodA()` goes. The same holds for a class, a file, a column mapping or a dependency that nothing uses any more.
+- Code that a planned feature will use may stay unused until then. It carries a comment that names the feature, and it is listed in the feature's `notes.md`. This is not dead code.
+- No commented-out code, no placeholder files, no `TODO` without a feature number.
 - Dependencies are injected through constructors. Fields are `final` where they can be. Nothing is more visible than it needs to be.
 - Errors are never swallowed. An exception carries a message that says what went wrong and with which value. No secret appears in a message or a log line.
-- Inputs are validated at the boundary: API, job arguments, connector responses.
+- Inputs are validated at the boundary: API requests, job arguments, connector responses.
 - Every behaviour has a test, written first. Tests are held to the same standard as the code they test.
 - A comment says why, never what. Public interfaces carry a short description.
 - The build is free of compiler warnings and lint errors before a commit. The build and CI enforce this; a check is never switched off to get a commit through.
@@ -92,11 +94,10 @@ cd web && npm test                                           run the web tests
 cd web && npm run lint                                       lint the web app
 cd web && npm run typecheck                                  type-check the web app
 cd web && npm run format                                     format the web code (format:check only checks)
-$JAVA_HOME/bin/java -jar backend/target/ei.jar --job=<name> --key=value     run a job
 ```
 
 - Backend tests need Docker running. They start their own PostgreSQL container and never use the Compose database.
-- The job command needs `./mvnw verify` to have built the jar, and is run from the repository root so that `.env` is found. No job exists yet; F02 adds the first.
+- No job can be started yet. F02 adds the launcher and the endpoint that starts a job; there is no command-line runner.
 - Health: `curl -s localhost:8080/actuator/health`. The web page at `localhost:3000` shows "backend up" or "backend down".
 - A test that needs the database extends `com.dsinnovators.ei.DatabaseTest`.
 - Do not put quotes around values in `.env`: the backend would read them as part of the value.

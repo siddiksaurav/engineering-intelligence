@@ -2,7 +2,11 @@ package com.dsinnovators.ei.job;
 
 import java.util.Optional;
 
-/** The {@code --key=value} arguments a job was started with. {@code --key} alone has the value "". */
+/**
+ * The named arguments a job was started with.
+ *
+ * <p>There is no implementation yet. F02 adds it with the launcher (F01 design, section 13).
+ */
 public interface JobArguments {
 
     /** The value of the argument, or empty when it was not given. */

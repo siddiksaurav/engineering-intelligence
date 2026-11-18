@@ -57,7 +57,7 @@ Every feature follows these. A feature design may not change one without a new e
 - Test first. Each task in a feature plan has its test before its code.
 - One commit per task.
 - Secrets (GitHub token, LLM API key) live in a local `.env` that is not committed. `.env.example` lists the names.
-- Jobs are started by a REST endpoint or a command-line runner. There is no scheduler.
+- Jobs are started by a REST endpoint, and every run is recorded. There is no command-line runner and no scheduler.
 
 ## 3. System overview
 
@@ -80,7 +80,7 @@ OpenProject ┘                              │                          ├─
 | `review/` | Blind-label export and import | `human_label` | PoC only |
 | `api/` | REST for the web front end | none | |
 | `common/` | `Quarter`, the canonical form of JSON and the content hash | none | |
-| `job/` | The `Job` interface and the command-line job runner | none | |
+| `job/` | A job, the launcher that runs it and records the run, the endpoint that starts it | `job_run` | |
 | `setting/` | Reading a setting for a quarter | `setting` | Section 14 |
 | `web/` (Next.js) | Evidence list, item page, profile page | none | Step 6 (section 10) |
 
@@ -136,7 +136,7 @@ Each block below gives a new session enough to start the deep dive. "Open questi
 
 **Read first.** `poc-plan.md` 3.4, 3.5, 3.6.
 
-**Gives to later features.** The `raw_record` table and its repository class; the `setting` table and a way to read a setting; the way to run a job from the command line; the test setup.
+**Gives to later features.** The `raw_record` table and its repository class; the `setting` table and a way to read a setting; the `Job` interface and the registry of jobs by name; the test setup.
 
 **Done when.** One command starts the database; one command builds and tests the backend with all tests green; the web shell shows "backend up"; a second start does not run the migrations again.
 
@@ -148,7 +148,7 @@ Each block below gives a new session enough to start the deep dive. "Open questi
 
 **Goal.** An unchanged copy of every merged PR in the window, with what is needed to judge it.
 
-**Builds.** A connector that reads `opf/openproject` through the GitHub GraphQL API and stores, per merged PR: title, body, author, labels, branch name, merge date, file list, reviews, inline review comments with file path and diff hunk, and the diff. It runs for a range of merge dates, or for a given list of PR numbers (F03 needs this for the PRs of long features). It can be run again without creating duplicates. It is first run on two weeks.
+**Builds.** A connector that reads `opf/openproject` through the GitHub GraphQL API and stores, per merged PR: title, body, author, labels, branch name, merge date, file list, reviews, inline review comments with file path and diff hunk, and the diff. It runs for a range of merge dates, or for a given list of PR numbers (F03 needs this for the PRs of long features). It can be run again without creating duplicates. It is first run on two weeks. It also builds the rest of the job mechanism: the launcher, the `job_run` table and the endpoint that starts a job. The GitHub import is its first job (F01 design, section 13).
 
 **Read first.** `poc-plan.md` section 1 (GitHub), 3.1 item 1, 3.7 step 2. Spec section 5, source 1.
 
@@ -158,7 +158,7 @@ Each block below gives a new session enough to start the deep dive. "Open questi
 
 **Known facts.** About 100 human-merged PRs per week from about 36 authors, plus about 30 bot PRs per week. The unauthenticated limit of 60 requests per hour is too low; a read-only token is required.
 
-**Open questions.** How the diff is fetched (GraphQL does not return patch text; the REST endpoint does) and how large diffs are stored. The list of bot accounts (dependabot, the CI account, the Copilot review bot, others found in the data) and where it is kept; F04 and F05 use the same list. Whether bot PRs are stored and marked, or skipped. One `raw_record` row per PR with everything inside, or one row per PR, review, comment and file. Rate-limit handling and resume after a failure. How a re-fetched, changed record is versioned in a table that is never edited.
+**Open questions.** How the diff is fetched (GraphQL does not return patch text; the REST endpoint does) and how large diffs are stored. The list of bot accounts (dependabot, the CI account, the Copilot review bot, others found in the data) and where it is kept; F04 and F05 use the same list. Whether bot PRs are stored and marked, or skipped. One `raw_record` row per PR with everything inside, or one row per PR, review, comment and file. Rate-limit handling and resume after a failure. How a re-fetched, changed record is versioned in a table that is never edited. For the job mechanism: whether a second run of a job may start while one is running, what a run records as counts, and who may call the endpoint while there is no authentication.
 
 ---
 
