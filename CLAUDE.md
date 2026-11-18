@@ -57,7 +57,7 @@ Production-grade, industry-standard clean code is mandatory in this repository. 
 - Inputs are validated at the boundary: API, job arguments, connector responses.
 - Every behaviour has a test, written first. Tests are held to the same standard as the code they test.
 - A comment says why, never what. Public interfaces carry a short description.
-- The build is free of compiler warnings and lint errors before a commit.
+- The build is free of compiler warnings and lint errors before a commit. The build and CI enforce this; a check is never switched off to get a commit through.
 
 ## Stack
 
@@ -82,13 +82,16 @@ source ~/.nvm/nvm.sh && nvm use
 ```
 cp .env.example .env                                         once; .env is never committed
 docker compose up -d                                         start the database (host port 5433)
-cd backend && ./mvnw verify                                  build and run all backend tests
+cd backend && ./mvnw verify                                  build, run all backend tests, check the formatting
+cd backend && ./mvnw spotless:apply                          format the backend code
 cd backend && ./mvnw test -Dtest=ClassName                   run one test class
 cd backend && ./mvnw spring-boot:run                         start the backend (port 8080)
 cd web && npm install                                        once
 cd web && npm run dev                                        start the web app (port 3000)
 cd web && npm test                                           run the web tests
 cd web && npm run lint                                       lint the web app
+cd web && npm run typecheck                                  type-check the web app
+cd web && npm run format                                     format the web code (format:check only checks)
 $JAVA_HOME/bin/java -jar backend/target/ei.jar --job=<name> --key=value     run a job
 ```
 
@@ -97,6 +100,8 @@ $JAVA_HOME/bin/java -jar backend/target/ei.jar --job=<name> --key=value     run 
 - Health: `curl -s localhost:8080/actuator/health`. The web page at `localhost:3000` shows "backend up" or "backend down".
 - A test that needs the database extends `com.dsinnovators.ei.DatabaseTest`.
 - Do not put quotes around values in `.env`: the backend would read them as part of the value.
+- The backend build fails on any compiler warning, any Error Prone finding and any unformatted file. Run `./mvnw spotless:apply` before `./mvnw verify`.
+- GitHub Actions (`.github/workflows/ci.yml`) runs the backend build and the web format check, lint, type check, tests and build on every pull request and on `main`. A feature is not done while CI is red.
 
 ## End of every session
 

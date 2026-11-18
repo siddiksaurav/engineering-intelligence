@@ -25,6 +25,15 @@ None of these changes what F01 does.
 
 - The seven placeholder `package-info.java` files (`identity`, `evidence`, `judgment`, `analytics`, `scoring`, `review`, `api`) were removed at the user's request. A package now appears when a feature puts its first class there; the layout stays in the master plan, section 3. Decision 34.
 - The plan still lists the files in Task 1. The plan is left as the record of what was planned.
+- The code was checked against the new "Code quality" section of `CLAUDE.md` and brought to it (decisions 36 and 37):
+  - **Behaviour that changed.** `RawRecordStore.findLatest`, `findVersions` and `findLatestByKind` throw `IllegalArgumentException` for a missing record kind or external id. A job argument without `--`, or one given twice, fails the run with exit code 1 and names the argument. `Quarter.of(null)`, `Quarter.contains(null)` and a `SettingService` call with a null key or quarter throw `NullPointerException` with the name of the argument. The web health check logs why the backend counted as down. `WEB_PORT` is checked to be a port number.
+  - **Names.** `SettingRepository.findInForce`, `RawRecordRepository.findLatestVersion` and `findVersions` replace the long generated names; each has an explicit query.
+  - **Removed.** Three unused getters and the `description` attribute of `Setting` (the column stays), the unused `testcontainers-junit-jupiter` dependency. `JobRegistry` is package-private.
+  - **Enforced by the build.** Compiler warnings are errors (`-Xlint:all`), Error Prone 2.53.0 runs in the compiler, Spotless 3.11.0 with palantir-java-format 2.103.0 checks the formatting in `verify`. Web: Prettier 3.10.1, `npm run typecheck`. GitHub Actions runs all of it.
+  - **Tests.** 121 backend tests and 27 web tests. The page component and the port rule now have tests.
+  - **Left as they are, on purpose:** the five-argument `RawRecordStore.store` (fixed by the design), the hand-written job argument parser, plain JUnit assertions. `DataSourceRepository` stays public because design section 7 names it as an interface for later features.
+  - **Open:** `npm audit` reports 16 high-severity findings, all in development dependencies (`picomatch` under `vite`, which Vitest uses); the dependencies that ship have none. The only offered fix is a forced, breaking upgrade, so it is not applied.
+  - **Three earlier open points are now closed:** the silent job arguments, the null quarter, and reads without validation.
 
 ## Final review (one fresh reviewer over the whole branch)
 

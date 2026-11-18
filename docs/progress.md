@@ -8,6 +8,7 @@ One entry per working session, newest at the top. Each entry says what was done,
 - The repository is on GitHub (`origin`, private). `main` and `f01-repository-skeleton` are pushed. F01 is pull request 1.
 - The seven placeholder `package-info.java` files were removed (decision 34).
 - `CLAUDE.md` has a new section "Code quality": production-grade, industry-standard clean code is mandatory (decision 35).
+- The F01 code was checked against that section and fixed. The build now enforces it, and GitHub Actions runs on every pull request (decisions 36 and 37). 121 backend tests, 27 web tests. Detail: `docs/features/F01-repository-skeleton/notes.md`, section "Changed after the build".
 
 **Next**
 - The user reads and merges pull request 1.

@@ -139,7 +139,7 @@ When a record is fetched again and is unchanged, nothing records that it was see
 ### 5.5 Running a job
 
 - `Job` is an interface with a name and a run method. A job is a Spring bean. Names are unique; two jobs with one name stop the application at start.
-- The application is started with `--job=<name>` and further `--key=value` arguments. It then does not open the web port, runs that one job, prints what the job writes to the log, and exits with code 0 when the job returns and 1 when it throws. The failure message is printed.
+- The application is started with `--job=<name>` and further `--key=value` arguments. It then does not open the web port, runs that one job, prints what the job writes to the log, and exits with code 0 when the job returns and 1 when it throws. The failure message is printed. An argument that does not start with `--`, and an argument other than `--job` given more than once, is refused before any job runs (amended 18 Nov 2026, decision 37).
 - An unknown name: the application prints the known job names and exits with 1.
 - Without `--job`, the application starts as the web server and runs no job.
 - Flyway runs before the job, as at every start.

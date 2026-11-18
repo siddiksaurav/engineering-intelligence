@@ -39,6 +39,8 @@ Every decision that shapes the PoC, newest at the bottom. A later entry override
 | 33 | 17 Nov 2026 | A database trigger refuses every update and delete of `raw_record` (migration V2) | `@Immutable` stops updates through Hibernate only; a delete through JPA or plain SQL was still possible. The first rule of the project now holds in the database itself | F01 review |
 | 34 | 18 Nov 2026 | No placeholder files for empty packages. A package is created by the feature that puts its first class there | Seven `package-info.java` files held no behaviour and were noise in the code. The package layout is already in the master plan, section 3 | User, F01 pull request |
 | 35 | 18 Nov 2026 | Production-grade, industry-standard clean code is mandatory for all code in this repository. The rule is in `CLAUDE.md`, section "Code quality" | The PoC is the first slice of the real system, not throwaway code | User |
+| 36 | 18 Nov 2026 | The code quality rule is enforced by the build, not by memory: compiler warnings are errors, Error Prone runs in the compiler, Spotless (palantir-java-format) and Prettier check the formatting, and GitHub Actions runs both builds on every pull request | A rule that nothing checks is forgotten by the next session. Versions: Error Prone 2.53.0, Spotless 3.11.0, palantir-java-format 2.103.0, Prettier 3.10.1 | F01 quality check |
+| 37 | 18 Nov 2026 | A job argument that does not start with `--`, or that is given more than once, is refused before any job runs | Silently ignoring a mistyped argument would run an import with other dates than the person meant | F01 quality check |
 
 ## Not decided yet
 
