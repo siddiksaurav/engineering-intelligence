@@ -2,7 +2,7 @@
 
 One entry per working session, newest at the top. Each entry says what was done, what is next and what is blocked. Read the top entry first.
 
-## 18 Nov 2026: F01 pushed, pull request open
+## 18 Nov 2026: F01 merged into `main`
 
 **Done**
 - The repository is on GitHub (`origin`, private). `main` and `f01-repository-skeleton` are pushed. F01 is pull request 1.
@@ -11,12 +11,12 @@ One entry per working session, newest at the top. Each entry says what was done,
 - The F01 code was checked against that section and fixed. The build now enforces it, and GitHub Actions runs on every pull request (decisions 36 and 37). 121 backend tests, 27 web tests. Detail: `docs/features/F01-repository-skeleton/notes.md`, section "Changed after the build".
 - Amendment 1 to the F01 design, approved by the user: the command-line job runner is withdrawn. Jobs will be started through an HTTP endpoint and every run recorded; F02 builds the launcher, the `job_run` table and the endpoint. F01 keeps `Job`, `JobArguments` and `JobRegistry` (decisions 38 and 39). 106 backend tests.
 
+- Pull request 1 is merged into `main` (merge commit `532b802`). CI is green.
+
 **Next**
-- The user reads and merges pull request 1.
 - F02 GitHub connector: deep dive with the user. It now includes the job launcher (F01 design, section 13). Read `docs/features/F01-repository-skeleton/notes.md`, section "What a later feature should know", first.
 
 **Blocked or needed from the user**
-- Pull request 1 is not merged yet.
 - A read-only GitHub token is needed for F02. It goes into `.env` as `GITHUB_TOKEN`; the user puts it there.
 - An LLM API key is needed from F06.
 
