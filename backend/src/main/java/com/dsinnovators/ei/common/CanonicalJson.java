@@ -7,6 +7,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HexFormat;
+import java.util.List;
 import java.util.Map;
 import tools.jackson.databind.DeserializationFeature;
 import tools.jackson.databind.JsonNode;
@@ -36,11 +37,8 @@ public final class CanonicalJson {
             .disable(JsonNodeFeature.STRIP_TRAILING_BIGDECIMAL_ZEROES)
             .build();
 
-    private static final Comparator<String> BY_CODE_POINT = (left, right) -> {
-        int[] a = left.codePoints().toArray();
-        int[] b = right.codePoints().toArray();
-        return Arrays.compare(a, b);
-    };
+    private static final Comparator<String> BY_CODE_POINT =
+            (left, right) -> Arrays.compare(left.codePoints().toArray(), right.codePoints().toArray());
 
     private CanonicalJson() {}
 
@@ -52,6 +50,7 @@ public final class CanonicalJson {
         return MAPPER.readTree(json);
     }
 
+    /** The canonical form of the value as text. */
     public static String canonicalize(JsonNode node) {
         if (node == null) {
             throw new IllegalArgumentException("A JSON value is required");
@@ -73,30 +72,9 @@ public final class CanonicalJson {
 
     private static void write(JsonNode node, StringBuilder out) {
         if (node.isObject()) {
-            out.append('{');
-            boolean first = true;
-            for (Map.Entry<String, JsonNode> property : node.properties().stream()
-                    .sorted(Map.Entry.comparingByKey(BY_CODE_POINT))
-                    .toList()) {
-                if (!first) {
-                    out.append(',');
-                }
-                first = false;
-                out.append(quote(property.getKey())).append(':');
-                write(property.getValue(), out);
-            }
-            out.append('}');
+            writeObject(node, out);
         } else if (node.isArray()) {
-            out.append('[');
-            boolean first = true;
-            for (JsonNode element : node) {
-                if (!first) {
-                    out.append(',');
-                }
-                first = false;
-                write(element, out);
-            }
-            out.append(']');
+            writeArray(node, out);
         } else if (node.isString()) {
             out.append(quote(node.stringValue()));
         } else if (node.isNumber()) {
@@ -108,6 +86,31 @@ public final class CanonicalJson {
         } else {
             throw new IllegalArgumentException("Not a JSON value: " + node.getNodeType());
         }
+    }
+
+    private static void writeObject(JsonNode object, StringBuilder out) {
+        List<Map.Entry<String, JsonNode>> properties = object.properties().stream()
+                .sorted(Map.Entry.comparingByKey(BY_CODE_POINT))
+                .toList();
+        String separator = "";
+        out.append('{');
+        for (Map.Entry<String, JsonNode> property : properties) {
+            out.append(separator).append(quote(property.getKey())).append(':');
+            write(property.getValue(), out);
+            separator = ",";
+        }
+        out.append('}');
+    }
+
+    private static void writeArray(JsonNode array, StringBuilder out) {
+        String separator = "";
+        out.append('[');
+        for (JsonNode element : array) {
+            out.append(separator);
+            write(element, out);
+            separator = ",";
+        }
+        out.append(']');
     }
 
     /** Plain decimal form, never an exponent: the form PostgreSQL's jsonb gives back. */

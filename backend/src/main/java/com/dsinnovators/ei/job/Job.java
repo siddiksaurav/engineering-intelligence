@@ -7,6 +7,7 @@ package com.dsinnovators.ei.job;
  */
 public interface Job {
 
+    /** The name the job is started by. */
     String name();
 
     /** Runs the job. Returning means success; any exception means failure. */

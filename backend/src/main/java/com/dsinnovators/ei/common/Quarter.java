@@ -1,6 +1,7 @@
 package com.dsinnovators.ei.common;
 
 import java.time.LocalDate;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -31,6 +32,7 @@ public record Quarter(int year, int number) implements Comparable<Quarter> {
     }
 
     public static Quarter of(LocalDate date) {
+        Objects.requireNonNull(date, "date");
         return new Quarter(date.getYear(), (date.getMonthValue() - 1) / 3 + 1);
     }
 
@@ -43,6 +45,7 @@ public record Quarter(int year, int number) implements Comparable<Quarter> {
     }
 
     public boolean contains(LocalDate date) {
+        Objects.requireNonNull(date, "date");
         return !date.isBefore(firstDay()) && !date.isAfter(lastDay());
     }
 

@@ -11,21 +11,27 @@ final class CommandLineJobArguments implements JobArguments {
 
     static final String JOB = "job";
 
+    private static final String PREFIX = "--";
+
     private final Map<String, String> values = new LinkedHashMap<>();
     private final List<String> jobNames = new ArrayList<>();
 
+    /**
+     * @throws IllegalArgumentException for an argument that does not start with {@code --} and for
+     *     an argument other than {@code --job} that is given more than once
+     */
     CommandLineJobArguments(String... args) {
         for (String arg : args) {
-            if (arg == null || !arg.startsWith("--")) {
-                continue;
+            if (arg == null || !arg.startsWith(PREFIX)) {
+                throw new IllegalArgumentException("Argument '" + arg + "' must have the form --key=value or --key");
             }
             int equals = arg.indexOf('=');
-            String name = equals < 0 ? arg.substring(2) : arg.substring(2, equals);
+            String name = equals < 0 ? arg.substring(PREFIX.length()) : arg.substring(PREFIX.length(), equals);
             String value = equals < 0 ? "" : arg.substring(equals + 1);
             if (name.equals(JOB)) {
                 jobNames.add(value);
-            } else {
-                values.putIfAbsent(name, value);
+            } else if (values.putIfAbsent(name, value) != null) {
+                throw new IllegalArgumentException("Argument --" + name + " is given more than once");
             }
         }
     }

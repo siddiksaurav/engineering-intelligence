@@ -11,7 +11,8 @@ import org.hibernate.type.SqlTypes;
 
 /**
  * One value of one setting, in force from a quarter until a row with a later quarter replaces it.
- * A value is changed by SQL or by a migration, never from code.
+ * A value is changed by SQL or by a migration, never from code. The {@code description} column is
+ * for the person who reads the table and is not mapped.
  */
 @Entity
 @Table(name = "setting")
@@ -31,24 +32,10 @@ class Setting {
     @JdbcTypeCode(SqlTypes.JSON)
     private String settingValue;
 
-    private String description;
-
     protected Setting() {}
-
-    String getSettingKey() {
-        return settingKey;
-    }
-
-    String getValidFromQuarter() {
-        return validFromQuarter;
-    }
 
     /** The value as JSON text. */
     String getSettingValue() {
         return settingValue;
-    }
-
-    String getDescription() {
-        return description;
     }
 }

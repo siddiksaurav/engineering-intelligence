@@ -12,13 +12,19 @@ public class JobRunner {
 
     private final JobRegistry registry;
 
-    public JobRunner(JobRegistry registry) {
+    JobRunner(JobRegistry registry) {
         this.registry = registry;
     }
 
     /** @return 0 when the job returns, 1 in every other case */
     public int run(String... args) {
-        CommandLineJobArguments arguments = new CommandLineJobArguments(args);
+        CommandLineJobArguments arguments;
+        try {
+            arguments = new CommandLineJobArguments(args);
+        } catch (IllegalArgumentException e) {
+            log.error("{}. {}", e.getMessage(), knownJobs());
+            return 1;
+        }
         List<String> names = arguments.jobNames();
         if (names.size() != 1 || names.get(0).isBlank()) {
             log.error("Exactly one --job=<name> is needed. {}", knownJobs());

@@ -31,9 +31,7 @@ class JpaRawRecordStore implements RawRecordStore {
         DataSource dataSource = dataSource(dataSourceKey);
         String contentHash = CanonicalJson.sha256Hex(payload);
 
-        Optional<RawRecord> latest =
-                rawRecords.findFirstByDataSourceAndRecordKindAndExternalIdOrderByVersionDesc(
-                        dataSource, recordKind, externalId);
+        Optional<RawRecord> latest = rawRecords.findLatestVersion(dataSource, recordKind, externalId);
         if (latest.isPresent() && latest.get().getContentHash().equals(contentHash)) {
             return new StoreResult(StoreResult.Outcome.UNCHANGED, latest.get());
         }
@@ -47,20 +45,23 @@ class JpaRawRecordStore implements RawRecordStore {
     @Override
     @Transactional(readOnly = true)
     public Optional<RawRecord> findLatest(String dataSourceKey, String recordKind, String externalId) {
-        return rawRecords.findFirstByDataSourceAndRecordKindAndExternalIdOrderByVersionDesc(
-                dataSource(dataSourceKey), recordKind, externalId);
+        requireText(recordKind, "recordKind");
+        requireText(externalId, "externalId");
+        return rawRecords.findLatestVersion(dataSource(dataSourceKey), recordKind, externalId);
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<RawRecord> findVersions(String dataSourceKey, String recordKind, String externalId) {
-        return rawRecords.findByDataSourceAndRecordKindAndExternalIdOrderByVersionAsc(
-                dataSource(dataSourceKey), recordKind, externalId);
+        requireText(recordKind, "recordKind");
+        requireText(externalId, "externalId");
+        return rawRecords.findVersions(dataSource(dataSourceKey), recordKind, externalId);
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<RawRecord> findLatestByKind(String dataSourceKey, String recordKind) {
+        requireText(recordKind, "recordKind");
         return rawRecords.findLatestByKind(dataSource(dataSourceKey), recordKind);
     }
 

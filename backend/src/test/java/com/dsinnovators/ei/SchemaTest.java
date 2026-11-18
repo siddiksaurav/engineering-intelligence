@@ -2,11 +2,14 @@ package com.dsinnovators.ei;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.dao.DataIntegrityViolationException;
 
 class SchemaTest extends DatabaseTest {
@@ -52,10 +55,14 @@ class SchemaTest extends DatabaseTest {
         assertThrows(DataIntegrityViolationException.class, () -> jdbc.update(INSERT_RAW_RECORD, 999_999L, 1));
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = {"2026Q3", "2026-Q5", "2026-q3", "26-Q3"})
+    void aSettingQuarterInAnotherFormIsRefused(String quarter) {
+        assertThrows(DataIntegrityViolationException.class, () -> jdbc.update(INSERT_SETTING, "a", quarter));
+    }
+
     @Test
-    void aSettingQuarterMustHaveTheFormYearDashQuarter() {
-        assertThrows(DataIntegrityViolationException.class, () -> jdbc.update(INSERT_SETTING, "a", "2026Q3"));
-        assertThrows(DataIntegrityViolationException.class, () -> jdbc.update(INSERT_SETTING, "a", "2026-Q5"));
+    void aSettingQuarterInTheFormYearDashQuarterIsAccepted() {
         assertEquals(1, jdbc.update(INSERT_SETTING, "a", "2026-Q3"));
     }
 
@@ -66,13 +73,18 @@ class SchemaTest extends DatabaseTest {
     }
 
     @Test
-    void aPersonLevelIsEmptyOrOneOfTheThreeLevels() {
+    void aPersonLevelOutsideTheThreeLevelsIsRefused() {
         assertThrows(
                 DataIntegrityViolationException.class,
                 () -> jdbc.update("insert into person (display_name, level) values ('A', 'L4')"));
+    }
+
+    @Test
+    void aPersonMayHaveNoLevelAndGetsACreationTime() {
         jdbc.update("insert into person (display_name) values ('B')");
+
         Map<String, Object> row = jdbc.queryForMap("select level, created_at from person where display_name = 'B'");
-        assertEquals(null, row.get("level"));
+        assertNull(row.get("level"));
         assertNotNull(row.get("created_at"));
     }
 

@@ -3,8 +3,8 @@ package com.dsinnovators.ei.setting;
 import com.dsinnovators.ei.common.CanonicalJson;
 import com.dsinnovators.ei.common.Quarter;
 import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.databind.JsonNode;
@@ -22,52 +22,45 @@ class DatabaseSettingService implements SettingService {
     @Override
     public BigDecimal getDecimal(String key, Quarter quarter) {
         JsonNode value = getJson(key, quarter);
-        if (!value.isNumber()) {
-            throw new SettingTypeException(key, "a number", value.toString());
-        }
+        requireKind(value.isNumber(), key, "a number", value);
         return value.decimalValue();
     }
 
     @Override
     public int getInt(String key, Quarter quarter) {
         JsonNode value = getJson(key, quarter);
-        if (!value.isIntegralNumber() || !value.canConvertToInt()) {
-            throw new SettingTypeException(key, "a whole number that fits an int", value.toString());
-        }
+        requireKind(
+                value.isIntegralNumber() && value.canConvertToInt(), key, "a whole number that fits an int", value);
         return value.intValue();
     }
 
     @Override
     public String getText(String key, Quarter quarter) {
         JsonNode value = getJson(key, quarter);
-        if (!value.isString()) {
-            throw new SettingTypeException(key, "a text", value.toString());
-        }
+        requireKind(value.isString(), key, "a text", value);
         return value.stringValue();
     }
 
     @Override
     public List<String> getTextList(String key, Quarter quarter) {
         JsonNode value = getJson(key, quarter);
-        if (!value.isArray()) {
-            throw new SettingTypeException(key, "a list of texts", value.toString());
-        }
-        List<String> texts = new ArrayList<>();
-        for (JsonNode element : value) {
-            if (!element.isString()) {
-                throw new SettingTypeException(key, "a list of texts", value.toString());
-            }
-            texts.add(element.stringValue());
-        }
-        return List.copyOf(texts);
+        requireKind(value.isArray() && value.valueStream().allMatch(JsonNode::isString), key, "a list of texts", value);
+        return value.valueStream().map(JsonNode::stringValue).toList();
     }
 
     @Override
     public JsonNode getJson(String key, Quarter quarter) {
+        Objects.requireNonNull(key, "key");
+        Objects.requireNonNull(quarter, "quarter");
         return settings
-                .findFirstBySettingKeyAndValidFromQuarterLessThanEqualOrderByValidFromQuarterDesc(
-                        key, quarter.toString())
+                .findInForce(key, quarter.toString())
                 .map(setting -> CanonicalJson.parse(setting.getSettingValue()))
                 .orElseThrow(() -> new SettingNotFoundException(key, quarter));
+    }
+
+    private static void requireKind(boolean isOfKind, String key, String expected, JsonNode actual) {
+        if (!isOfKind) {
+            throw new SettingTypeException(key, expected, actual.toString());
+        }
     }
 }

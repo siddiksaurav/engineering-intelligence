@@ -124,6 +124,22 @@ class JobRunnerTest {
     }
 
     @Test
+    void anArgumentWithoutTwoDashesRunsNoJobAndFailsNamingIt(CapturedOutput output) {
+        assertEquals(1, runner.run("--job=echo", "from=2026-07-01"));
+
+        assertTrue(output.getAll().contains("from=2026-07-01"));
+        assertNull(echo.received);
+    }
+
+    @Test
+    void anArgumentGivenTwiceRunsNoJobAndFailsNamingIt(CapturedOutput output) {
+        assertEquals(1, runner.run("--job=echo", "--from=2026-07-01", "--from=2026-08-01"));
+
+        assertTrue(output.getAll().contains("--from is given more than once"));
+        assertNull(echo.received);
+    }
+
+    @Test
     void requireThrowsForAMissingArgument() {
         runner.run("--job=echo");
 

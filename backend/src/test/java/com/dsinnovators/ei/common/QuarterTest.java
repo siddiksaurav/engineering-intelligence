@@ -63,6 +63,14 @@ class QuarterTest {
         assertThrows(IllegalArgumentException.class, () -> Quarter.parse(text));
     }
 
+    @Test
+    void aMissingDateIsRejectedByName() {
+        Quarter quarter = Quarter.parse("2026-Q3");
+
+        assertEquals("date", assertThrows(NullPointerException.class, () -> Quarter.of(null)).getMessage());
+        assertEquals("date", assertThrows(NullPointerException.class, () -> quarter.contains(null)).getMessage());
+    }
+
     @ParameterizedTest
     @ValueSource(ints = {0, 5})
     void rejectsANumberOutsideOneToFour(int number) {

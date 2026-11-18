@@ -11,11 +11,26 @@ interface RawRecordRepository extends Repository<RawRecord, Long> {
 
     RawRecord save(RawRecord record);
 
-    Optional<RawRecord> findFirstByDataSourceAndRecordKindAndExternalIdOrderByVersionDesc(
-            DataSource dataSource, String recordKind, String externalId);
+    @Query("""
+            select r from RawRecord r
+            where r.dataSource = :dataSource and r.recordKind = :recordKind and r.externalId = :externalId
+            order by r.version desc
+            limit 1
+            """)
+    Optional<RawRecord> findLatestVersion(
+            @Param("dataSource") DataSource dataSource,
+            @Param("recordKind") String recordKind,
+            @Param("externalId") String externalId);
 
-    List<RawRecord> findByDataSourceAndRecordKindAndExternalIdOrderByVersionAsc(
-            DataSource dataSource, String recordKind, String externalId);
+    @Query("""
+            select r from RawRecord r
+            where r.dataSource = :dataSource and r.recordKind = :recordKind and r.externalId = :externalId
+            order by r.version
+            """)
+    List<RawRecord> findVersions(
+            @Param("dataSource") DataSource dataSource,
+            @Param("recordKind") String recordKind,
+            @Param("externalId") String externalId);
 
     @Query("""
             select r from RawRecord r
