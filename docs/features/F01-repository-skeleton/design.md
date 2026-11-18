@@ -440,3 +440,67 @@ The evidence (command and output) is written to `notes.md`.
 | Which fields are left out of a payload so that a fetch without a real change does not create a version | F02, F03 | Their deep dives |
 
 **Left to the builder.** The Maven artifact names for Flyway, Testcontainers and the PostgreSQL driver under Spring Boot 4.1.2 (looked up in its documentation at build time, not taken from memory). How the JSONB columns are mapped in Hibernate. How the backend and the web app load the root `.env`. How the job runner keeps the web port closed. The layout of the Next.js page. Class names inside a package that section 7 does not fix.
+
+## 13. Amendment 1: no job mechanism in F01
+
+State: proposed on 2026-11-18, not approved
+
+### 13.1 Why
+
+The approved design gave F01 a command-line job runner (section 5.5). It was chosen because features F02 to F06 must run imports and judgments before any screen exists, and a command was the cheapest trigger.
+
+The user's picture of the product is a web application in which batch work is started by a scheduler or by a person. In that picture the command line has no place. The right door into the application is an HTTP endpoint, and every run should be recorded. That is a different design from section 5.5, and it is best made against the first real job, which F02 brings.
+
+### 13.2 What is settled
+
+These hold for the whole project, not only for F01.
+
+- The import, the judgments and the scoring are product code in the backend. They are never written as scripts outside it.
+- A piece of batch work is a job: a Spring service with a name and arguments.
+- One launcher runs any job and records the run in a `job_run` table: job, arguments, who or what started it, start, end, outcome, counts.
+- A job is started through an HTTP endpoint. During the build, before screens exist, the session starts jobs with `curl`. Later a button calls the same endpoint.
+- There is no command-line runner.
+- A scheduler stays out of scope for the PoC (master plan, "Out of scope"). When it is built, it runs inside the application and calls the launcher.
+
+### 13.3 What changes in F01
+
+The whole `job` package is removed from F01. Nothing replaces it in F01.
+
+This goes one step further than what was agreed in conversation, which was to keep `Job` and `JobRegistry`. With the runner gone, those two would have no caller until F02, and the "Code quality" section of `CLAUDE.md` forbids code that nothing uses. F02 designs the job interface, the launcher, the `job_run` table and the endpoint together.
+
+Removed from the code:
+
+- `Job`, `JobArguments`, `CommandLineJobArguments`, `JobRegistry`, `JobRunner`, `JobConfiguration`.
+- The `--job` switch and `isJobMode` in `EiApplication`. `main` only starts the web server.
+- `JobRunnerTest` and `EiApplicationJobModeTest`.
+
+Changed in this document:
+
+- Section 2: "job runner" leaves the list of what F01 builds. "A REST endpoint that starts a job" stays out of scope for F01 and is named as F02's.
+- Section 5.5, the `job` rows of the tables in sections 5 and 8, the `Job` and `JobArguments` interfaces in section 7, the job command in section 9 and the `--job=nope` check in section 10 are marked as withdrawn.
+
+Changed in `CLAUDE.md`: the job command and its note are removed.
+
+### 13.4 What changes in the master plan
+
+- Section 2, "Way of working": "Jobs are started by a REST endpoint or a command-line runner. There is no scheduler." becomes "Jobs are started by a REST endpoint, and every run is recorded. There is no command-line runner and no scheduler."
+- Section 3, package table: the `job/` row becomes "A job, the launcher that runs it and records the run, the endpoint that starts it", with table `job_run`, built in F02.
+- F01, "Gives to later features": "the way to run a job from the command line" is removed.
+- F02, "Builds": gains "The job mechanism: the job interface, the launcher, the `job_run` table and the endpoint that starts a job. The GitHub import is its first job."
+- F02, "Open questions": gains "Whether a second run of a job may start while one is running. What a run records as counts. Who may call the endpoint while there is no authentication."
+
+`poc-plan.md` 3.6 says "REST endpoints or a command-line runner". It allows either, so it is not changed.
+
+### 13.5 Decisions this replaces
+
+- Decision 26, the part "jobs are `Job` beans started with `--job=<name>`".
+- Decision 31 (the job is run with `$JAVA_HOME/bin/java -jar`).
+- Decision 37 (a malformed or repeated job argument is refused).
+
+A new decision records the settled points of 13.2.
+
+### 13.6 How it is checked
+
+- `./mvnw verify` is green with the package gone.
+- The "Done when" of F01 in the master plan does not mention jobs, so all four checks still hold.
+- CI is green on the pull request.
