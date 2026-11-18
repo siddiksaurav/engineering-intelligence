@@ -1,0 +1,43 @@
+package com.dsinnovators.ei.setting;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
+/**
+ * One value of one setting, in force from a quarter until a row with a later quarter replaces it.
+ * A value is changed by SQL or by a migration, never from code. The {@code description} column is
+ * for the person who reads the table and is not mapped.
+ */
+@Entity
+@Table(name = "setting")
+class Setting {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    // "key" and "value" are keywords in JPQL, so the attributes have other names than the columns.
+    @Column(name = "key")
+    private String settingKey;
+
+    // Read only by the query in SettingRepository.
+    @Column(name = "valid_from_quarter")
+    private String validFromQuarter;
+
+    @Column(name = "value")
+    @JdbcTypeCode(SqlTypes.JSON)
+    private String settingValue;
+
+    protected Setting() {}
+
+    /** The value as JSON text. */
+    String getSettingValue() {
+        return settingValue;
+    }
+}
