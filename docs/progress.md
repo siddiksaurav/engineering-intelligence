@@ -2,6 +2,22 @@
 
 One entry per working session, newest at the top. Each entry says what was done, what is next and what is blocked. Read the top entry first.
 
+## 18 Nov 2026: F01 pushed, pull request open
+
+**Done**
+- The repository is on GitHub (`origin`, private). `main` and `f01-repository-skeleton` are pushed. F01 is pull request 1.
+- The seven placeholder `package-info.java` files were removed (decision 34).
+- `CLAUDE.md` has a new section "Code quality": production-grade, industry-standard clean code is mandatory (decision 35).
+
+**Next**
+- The user reads and merges pull request 1.
+- F02 GitHub connector: deep dive with the user. Read `docs/features/F01-repository-skeleton/notes.md`, section "What a later feature should know", first.
+
+**Blocked or needed from the user**
+- Pull request 1 is not merged yet.
+- A read-only GitHub token is needed for F02. It goes into `.env` as `GITHUB_TOKEN`; the user puts it there.
+- An LLM API key is needed from F06.
+
 ## 17 Nov 2026: F01 built and verified
 
 **Done**

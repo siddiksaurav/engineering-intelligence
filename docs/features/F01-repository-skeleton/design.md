@@ -95,7 +95,7 @@ Every backend command is run with `JAVA_HOME=~/.jdks/temurin-25.0.5`. The Maven 
 - Flyway runs when the application starts. A second start finds `flyway_schema_history` and applies nothing.
 - Health: Spring Boot Actuator, `GET /actuator/health`, with the database check on. It answers `{"status":"UP"}` only when the application runs and reaches PostgreSQL. No other Actuator endpoint is exposed.
 - The server port is read from `BACKEND_PORT`. The database connection is read from `POSTGRES_HOST` (default `localhost`), `POSTGRES_PORT`, `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`.
-- Packages. Each one that holds no class yet gets a `package-info.java` with one sentence that says what belongs there (taken from the master plan section 3).
+- Packages. A package is created by the feature that puts its first class there. F01 creates only the packages below. (Amended 18 Nov 2026, decision 34: the placeholder `package-info.java` files of the first version were removed.)
 
 | Package | F01 puts here |
 | --- | --- |
@@ -104,7 +104,6 @@ Every backend command is run with `JAVA_HOME=~/.jdks/temurin-25.0.5`. The Maven 
 | `...ei.job` | `Job`, `JobArguments`, the job runner |
 | `...ei.setting` | `Setting`, `SettingRepository`, `SettingService` |
 | `...ei.source` | `DataSource`, `DataSourceRepository`, `RawRecord`, `RawRecordRepository`, `RawRecordStore` |
-| `...ei.identity`, `evidence`, `judgment`, `analytics`, `scoring`, `review`, `api` | `package-info.java` only |
 
 `common`, `job` and `setting` are not in the master plan's package table. They are added here because the things they hold belong to no single spec step. The master plan table is updated when F01 closes.
 

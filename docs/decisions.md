@@ -37,6 +37,8 @@ Every decision that shapes the PoC, newest at the bottom. A later entry override
 | 31 | 17 Nov 2026 | A job is run with `$JAVA_HOME/bin/java -jar ...`, not plain `java` | The default `java` on the build machine is 21 and cannot run the jar | F01 build |
 | 32 | 17 Nov 2026 | In the canonical form of JSON a number is written in plain decimal form with its digits kept (`1.50` stays `1.50`, `1E+2` becomes `100`). This narrows decision-level wording in the F01 design ("as the source spelled them") | It is the form PostgreSQL's `jsonb` returns, so a stored payload hashes to its own content hash. Found by the F01 review; fixed before any record is stored, because the rule is frozen after F02 | F01 review |
 | 33 | 17 Nov 2026 | A database trigger refuses every update and delete of `raw_record` (migration V2) | `@Immutable` stops updates through Hibernate only; a delete through JPA or plain SQL was still possible. The first rule of the project now holds in the database itself | F01 review |
+| 34 | 18 Nov 2026 | No placeholder files for empty packages. A package is created by the feature that puts its first class there | Seven `package-info.java` files held no behaviour and were noise in the code. The package layout is already in the master plan, section 3 | User, F01 pull request |
+| 35 | 18 Nov 2026 | Production-grade, industry-standard clean code is mandatory for all code in this repository. The rule is in `CLAUDE.md`, section "Code quality" | The PoC is the first slice of the real system, not throwaway code | User |
 
 ## Not decided yet
 

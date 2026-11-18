@@ -21,6 +21,11 @@ All eight tasks of `plan.md` are built, and two findings of the final review are
 
 None of these changes what F01 does.
 
+## Changed after the build (18 Nov 2026)
+
+- The seven placeholder `package-info.java` files (`identity`, `evidence`, `judgment`, `analytics`, `scoring`, `review`, `api`) were removed at the user's request. A package now appears when a feature puts its first class there; the layout stays in the master plan, section 3. Decision 34.
+- The plan still lists the files in Task 1. The plan is left as the record of what was planned.
+
 ## Final review (one fresh reviewer over the whole branch)
 
 Two findings were fixed, each with a test that failed first:

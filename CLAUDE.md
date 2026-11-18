@@ -44,6 +44,21 @@ When something is unclear or a document is wrong, ask. Do not guess, and do not 
 - Use the names of spec section 3 and the master plan glossary in code, tables and screens.
 - Secrets stay in `.env`. Never print, commit or type a token.
 
+## Code quality
+
+Production-grade, industry-standard clean code is mandatory in this repository. The PoC is the first slice of the real system; nothing is written as throwaway code. This applies to every line produced, tests included.
+
+- Follow the standard conventions of the language and framework: Java and Spring Boot conventions in `backend/`, TypeScript, React and Next.js conventions in `web/`.
+- Names say what a thing is or does. No abbreviations that a new reader must look up.
+- Classes and methods are small and do one thing. No duplicated logic.
+- No dead code, no commented-out code, no placeholder files, no unused dependencies, no `TODO` left without a feature number.
+- Dependencies are injected through constructors. Fields are `final` where they can be. Nothing is more visible than it needs to be.
+- Errors are never swallowed. An exception carries a message that says what went wrong and with which value. No secret appears in a message or a log line.
+- Inputs are validated at the boundary: API, job arguments, connector responses.
+- Every behaviour has a test, written first. Tests are held to the same standard as the code they test.
+- A comment says why, never what. Public interfaces carry a short description.
+- The build is free of compiler warnings and lint errors before a commit.
+
 ## Stack
 
 Java 25, Spring Boot 4.x, Maven, PostgreSQL (Docker Compose), Flyway, Next.js (App Router, TypeScript). Backend in `backend/`, front end in `web/`. Exact versions: `docs/decisions.md`.
