@@ -1,11 +1,11 @@
 package com.dsinnovators.ei.source.github;
 
+import com.dsinnovators.ei.job.FailedItems;
 import com.dsinnovators.ei.job.Job;
 import com.dsinnovators.ei.job.JobArguments;
 import com.dsinnovators.ei.job.JobCounts;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -18,7 +18,6 @@ import org.springframework.stereotype.Component;
 class GitHubImportJob implements Job {
 
     private static final Logger LOG = LoggerFactory.getLogger(GitHubImportJob.class);
-    private static final int FAILED_NUMBERS_SHOWN = 20;
 
     private final MergedPullRequestSearch search;
     private final PullRequestImporter importer;
@@ -68,10 +67,8 @@ class GitHubImportJob implements Job {
         }
         if (!failed.isEmpty()) {
             throw new GitHubImportFailedException(failed.size() + " of " + numbers.size() + " pull requests failed: "
-                    + failed.stream()
-                            .limit(FAILED_NUMBERS_SHOWN)
-                            .map(number -> "#" + number)
-                            .collect(Collectors.joining(", ")));
+                    + FailedItems.named(
+                            failed.stream().map(number -> "#" + number).toList()));
         }
     }
 }

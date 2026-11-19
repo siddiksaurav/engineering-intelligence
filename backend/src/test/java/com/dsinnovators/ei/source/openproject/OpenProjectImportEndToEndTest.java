@@ -1,6 +1,7 @@
 package com.dsinnovators.ei.source.openproject;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
@@ -40,6 +41,7 @@ class OpenProjectImportEndToEndTest extends DatabaseTest {
     private static final int PULL_REQUEST_BY_NUMBER = 26626;
     private static final int PULL_REQUEST_BY_OLD_KEY = 27008;
     private static final int COMPLETION_PULL_REQUEST = 27100;
+    private static final int COMPLETION_PULL_REQUEST_WITHOUT_REFERENCE = 27101;
     private static final String IMPORT = "{\"repository\":\"" + REPOSITORY
             + "\",\"mergedFrom\":\"2026-07-01\",\"mergedTo\":\"2026-07-14\",\"quarter\":\"2026-Q3\"}";
 
@@ -138,7 +140,10 @@ class OpenProjectImportEndToEndTest extends DatabaseTest {
         expectGet("/work_packages/81224/activities", collection(featureClosed()));
         expectGet(
                 "/work_packages/81224/github_pull_requests",
-                collection(listedPullRequest(PULL_REQUEST_BY_NUMBER), listedPullRequest(COMPLETION_PULL_REQUEST)));
+                collection(
+                        listedPullRequest(PULL_REQUEST_BY_NUMBER),
+                        listedPullRequest(COMPLETION_PULL_REQUEST),
+                        listedPullRequest(COMPLETION_PULL_REQUEST_WITHOUT_REFERENCE)));
         expectGet("/work_packages/83452/activities", collection());
         expectGet("/work_packages/83452/github_pull_requests", collection());
         expectGet("/projects/1395", "{\"id\":1395,\"identifier\":\"comms\",\"name\":\"Communications\"}");
@@ -153,8 +158,11 @@ class OpenProjectImportEndToEndTest extends DatabaseTest {
     private void expectTheCompletionPullRequestToBeImported() {
         RecordedGitHub.expectMergedPullRequest(
                 github.server, COMPLETION_PULL_REQUEST, "Part of " + SITE + "/wp/81224", "2026-06-15T08:00:00Z");
-        expectGet(WorkPackageCollectionPath.withIds(List.of("81224"), 100), collection(feature()));
-        expectTheWorkPackagesToBeStored();
+        RecordedGitHub.expectMergedPullRequest(
+                github.server,
+                COMPLETION_PULL_REQUEST_WITHOUT_REFERENCE,
+                "Nothing that names a work package",
+                "2026-06-16T08:00:00Z");
     }
 
     private JsonNode importAndVerify() throws Exception {
@@ -188,9 +196,11 @@ class OpenProjectImportEndToEndTest extends DatabaseTest {
         assertEquals("succeeded", run.get("status").stringValue(), run.toString());
         JsonNode counts = run.get("counts");
         assertEquals(1, counts.get("features_done_in_quarter").longValue());
-        assertEquals(1, counts.get("pull_requests_completed").longValue());
-        assertEquals(1, counts.get("pull_request.created").longValue());
-        assertEquals(1, counts.get("pull_request_diff.created").longValue());
+        assertEquals(2, counts.get("pull_requests_completed").longValue());
+        assertEquals(2, counts.get("pull_request.created").longValue());
+        assertEquals(2, counts.get("pull_request_diff.created").longValue());
+        assertEquals(2, counts.get("work_package.created").longValue());
+        assertNull(counts.get("work_package.unchanged"), "a work package is stored once per run");
         assertEquals(
                 2,
                 count("select count(*) from raw_record where external_id = '" + REPOSITORY + "#"
@@ -201,7 +211,8 @@ class OpenProjectImportEndToEndTest extends DatabaseTest {
                         REPOSITORY + "#26626 81224 81224 pull_request_body resolved",
                         REPOSITORY + "#27008 81224 SE-694 pull_request_title resolved",
                         REPOSITORY + "#27100 81224 81224 openproject resolved",
-                        REPOSITORY + "#27100 81224 81224 pull_request_body resolved"),
+                        REPOSITORY + "#27100 81224 81224 pull_request_body resolved",
+                        REPOSITORY + "#27101 81224 81224 openproject resolved"),
                 links());
     }
 

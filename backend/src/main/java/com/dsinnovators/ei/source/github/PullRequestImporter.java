@@ -2,7 +2,6 @@ package com.dsinnovators.ei.source.github;
 
 import com.dsinnovators.ei.job.JobCounts;
 import java.util.List;
-import java.util.Locale;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -32,10 +31,8 @@ public class PullRequestImporter {
         switch (fetcher.fetch(repository, number)) {
             case PullRequestFetch.Found found -> {
                 List<StoredRecord> stored = recorder.store(found.pullRequest());
-                stored.forEach(record -> counts.add(
-                        record.kind().recordKind() + "."
-                                + record.outcome().name().toLowerCase(Locale.ROOT),
-                        1));
+                stored.forEach(record ->
+                        counts.add(record.outcome().countName(record.kind().recordKind()), 1));
                 if (found.pullRequest().diffTruncated()) {
                     counts.add(GitHubRecordKind.PULL_REQUEST_DIFF.recordKind() + ".truncated", 1);
                 }

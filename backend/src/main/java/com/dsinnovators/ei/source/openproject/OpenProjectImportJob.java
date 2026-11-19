@@ -1,5 +1,6 @@
 package com.dsinnovators.ei.source.openproject;
 
+import com.dsinnovators.ei.job.FailedItems;
 import com.dsinnovators.ei.job.Job;
 import com.dsinnovators.ei.job.JobArguments;
 import com.dsinnovators.ei.job.JobCounts;
@@ -10,13 +11,11 @@ import com.dsinnovators.ei.source.openproject.PullRequestWorkItemLinks.Found;
 import com.dsinnovators.ei.source.openproject.WorkPackageReference.FoundIn;
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Component;
 import tools.jackson.databind.JsonNode;
@@ -28,8 +27,6 @@ import tools.jackson.databind.JsonNode;
  */
 @Component
 class OpenProjectImportJob implements Job {
-
-    private static final int FAILED_NUMBERS_SHOWN = 20;
 
     private final StoredPullRequests storedPullRequests;
     private final OpenProjectSource source;
@@ -80,38 +77,33 @@ class OpenProjectImportJob implements Job {
         OpenProjectImportArguments importArguments = OpenProjectImportArguments.parse(arguments);
         List<RawRecord> pullRequests = selectedPullRequests(importArguments);
         counts.add("pull_requests_read", pullRequests.size());
-        List<WorkPackageImporter.Imported> imports = new ArrayList<>();
-        imports.add(importWorkItemsOf(pullRequests, counts));
+        ImportRun importRun = new ImportRun();
+        importWorkItemsOf(pullRequests, importRun, counts);
         List<String> failedPullRequests = completion.complete(
                 importArguments.repository(),
                 importArguments.quarter(),
                 counts,
-                completed -> imports.add(importWorkItemsOf(completed, counts)));
-        failIfSomethingFailed(imports, failedPullRequests);
+                completed -> importWorkItemsOf(completed, importRun, counts));
+        writeLinks(importRun, counts);
+        failIfSomethingFailed(importRun, failedPullRequests);
     }
 
-    private static void failIfSomethingFailed(
-            List<WorkPackageImporter.Imported> imports, List<String> failedPullRequests) {
-        List<Long> failedNumbers = imports.stream()
-                .flatMap(imported -> imported.failedNumbers().stream())
-                .toList();
-        int total =
-                imports.stream().mapToInt(WorkPackageImporter.Imported::total).sum();
+    private static void failIfSomethingFailed(ImportRun importRun, List<String> failedPullRequests) {
         List<String> problems = new ArrayList<>();
-        if (!failedNumbers.isEmpty()) {
-            problems.add(failedNumbers.size() + " of " + total + " work packages failed: "
-                    + shown(failedNumbers.stream().map(number -> "#" + number).toList()));
+        if (!importRun.failedNumbers().isEmpty()) {
+            problems.add(importRun.failedNumbers().size() + " of " + importRun.totalWorkPackages()
+                    + " work packages failed: "
+                    + FailedItems.named(importRun.failedNumbers().stream()
+                            .map(number -> "#" + number)
+                            .toList()));
         }
         if (!failedPullRequests.isEmpty()) {
-            problems.add(failedPullRequests.size() + " completion pull requests failed: " + shown(failedPullRequests));
+            problems.add(failedPullRequests.size() + " completion pull requests failed: "
+                    + FailedItems.named(failedPullRequests));
         }
         if (!problems.isEmpty()) {
             throw new OpenProjectImportFailedException(String.join("; ", problems));
         }
-    }
-
-    private static String shown(List<String> names) {
-        return names.stream().limit(FAILED_NUMBERS_SHOWN).collect(Collectors.joining(", "));
     }
 
     private List<RawRecord> selectedPullRequests(OpenProjectImportArguments arguments) {
@@ -132,32 +124,53 @@ class OpenProjectImportJob implements Job {
     }
 
     /**
-     * Steps 2 to 6 for these pull requests: finds and resolves their references, stores the work packages
-     * behind them and writes their links.
+     * Steps 2 to 5 for these pull requests: finds and resolves their references and stores the work
+     * packages behind them, all into the run. The links are written once at the end (step 6).
      */
-    private WorkPackageImporter.Imported importWorkItemsOf(List<RawRecord> pullRequests, JobCounts counts)
+    private void importWorkItemsOf(List<RawRecord> pullRequests, ImportRun importRun, JobCounts counts)
             throws InterruptedException {
         WorkPackageReferenceFinder finder =
                 new WorkPackageReferenceFinder(URI.create(source.dataSource().getBaseUrl()));
-        Map<String, List<WorkPackageReference>> referencesByPullRequest = new LinkedHashMap<>();
+        Set<String> newReferences = new LinkedHashSet<>();
         for (RawRecord pullRequest : pullRequests) {
-            referencesByPullRequest.put(
-                    pullRequest.getExternalId(),
-                    finder.find(text(pullRequest.getPayload(), "title"), text(pullRequest.getPayload(), "body")));
+            List<WorkPackageReference> references =
+                    finder.find(text(pullRequest.getPayload(), "title"), text(pullRequest.getPayload(), "body"));
+            importRun.referencesByPullRequest().put(pullRequest.getExternalId(), references);
+            references.stream().map(WorkPackageReference::reference).forEach(newReferences::add);
         }
-        Map<String, ResolvedReference> resolved = resolve(referencesByPullRequest.values(), counts);
+        newReferences.removeAll(importRun.resolved().keySet());
+        List<ResolvedReference> resolved = resolve(newReferences, counts);
+        resolved.forEach(reference -> importRun.resolved().put(reference.reference(), reference));
 
-        Map<Long, JsonNode> collected = collector.collect(resolved.values().stream()
-                .filter(ResolvedReference::visible)
-                .map(ResolvedReference::workPackageId)
-                .collect(Collectors.toCollection(LinkedHashSet::new)));
-        WorkPackageImporter.Imported imported = importer.importAll(collected.values(), counts);
+        List<JsonNode> collected = collector.collect(
+                resolved.stream()
+                        .filter(ResolvedReference::visible)
+                        .map(ResolvedReference::workPackageId)
+                        .collect(Collectors.toCollection(LinkedHashSet::new)),
+                importRun);
+        importRun.add(importer.importAll(collected, counts));
+    }
 
-        Map<String, List<Found>> openProjectSide = linksListedByOpenProject(imported.stored());
-        for (Map.Entry<String, List<WorkPackageReference>> entry : referencesByPullRequest.entrySet()) {
+    private List<ResolvedReference> resolve(Set<String> references, JobCounts counts) throws InterruptedException {
+        List<ResolvedReference> resolved = resolver.resolve(references);
+        long visible = resolved.stream().filter(ResolvedReference::visible).count();
+        counts.add("references_found", resolved.size());
+        counts.add("references_resolved", visible);
+        counts.add("references_not_visible", resolved.size() - visible);
+        return resolved;
+    }
+
+    /**
+     * Step 6: the links of every pull request of the run, from what its text names and from every
+     * work package of the run whose pull request list names it.
+     */
+    private void writeLinks(ImportRun importRun, JobCounts counts) {
+        Map<String, List<Found>> openProjectSide = linksListedByOpenProject(importRun.stored());
+        for (Map.Entry<String, List<WorkPackageReference>> entry :
+                importRun.referencesByPullRequest().entrySet()) {
             List<Found> found = new ArrayList<>();
             for (WorkPackageReference reference : entry.getValue()) {
-                found.add(new Found(resolved.get(reference.reference()), reference.foundIn()));
+                found.add(new Found(importRun.resolved().get(reference.reference()), reference.foundIn()));
             }
             found.addAll(openProjectSide.getOrDefault(entry.getKey(), List.of()));
             links.replace(entry.getKey(), found);
@@ -165,27 +178,6 @@ class OpenProjectImportJob implements Job {
                 counts.add("pull_requests_linked", 1);
             }
         }
-        return imported;
-    }
-
-    private Map<String, ResolvedReference> resolve(Collection<List<WorkPackageReference>> references, JobCounts counts)
-            throws InterruptedException {
-        Set<String> distinct = references.stream()
-                .flatMap(List::stream)
-                .map(WorkPackageReference::reference)
-                .collect(Collectors.toCollection(LinkedHashSet::new));
-        Map<String, ResolvedReference> resolved = resolver.resolve(distinct).stream()
-                .collect(Collectors.toMap(
-                        ResolvedReference::reference,
-                        Function.identity(),
-                        (first, second) -> first,
-                        LinkedHashMap::new));
-        long visible =
-                resolved.values().stream().filter(ResolvedReference::visible).count();
-        counts.add("references_found", resolved.size());
-        counts.add("references_resolved", visible);
-        counts.add("references_not_visible", resolved.size() - visible);
-        return resolved;
     }
 
     /** The links that OpenProject shows on the stored work packages, by the pull request they name. */

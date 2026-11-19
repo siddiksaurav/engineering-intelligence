@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -88,8 +87,7 @@ class WorkPackageImporter {
 
     private static void count(List<StoredRecord> records, JobCounts counts) {
         for (StoredRecord record : records) {
-            counts.add(
-                    record.kind().recordKind() + "." + record.outcome().name().toLowerCase(Locale.ROOT), 1);
+            counts.add(record.outcome().countName(record.kind().recordKind()), 1);
         }
     }
 }

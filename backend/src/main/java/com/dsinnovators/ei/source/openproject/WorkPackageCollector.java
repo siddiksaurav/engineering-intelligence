@@ -2,7 +2,6 @@ package com.dsinnovators.ei.source.openproject;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -26,18 +25,23 @@ class WorkPackageCollector {
 
     /**
      * @param referenced numbers of work packages that pull requests name
-     * @return each work package once as OpenProject returned it, by number, referenced ones first;
-     *     a number that is not visible is missing
+     * @param run the run, which already holds what earlier calls collected; that is not fetched again
+     * @return the work packages added to the run by this call, as OpenProject returned them, referenced
+     *     ones first; a number that is not visible is missing
      * @throws OpenProjectApiException when a call fails after its retries or an answer is malformed
      */
-    Map<Long, JsonNode> collect(Collection<Long> referenced) throws InterruptedException {
-        Map<Long, JsonNode> collected = new LinkedHashMap<>();
-        add(collected, fetcher.fetchWorkPackages(referenced));
-        add(collected, fetcher.fetchWorkPackages(relatedTo(collected)));
+    List<JsonNode> collect(Collection<Long> referenced, ImportRun run) throws InterruptedException {
+        Map<Long, JsonNode> collected = run.collected();
+        List<JsonNode> added = new ArrayList<>();
+        add(collected, added, fetcher.fetchWorkPackages(run.claimUnrequested(referenced)));
+        add(collected, added, fetcher.fetchWorkPackages(run.claimUnrequested(relatedTo(collected))));
         for (JsonNode feature : features(collected)) {
-            add(collected, fetcher.fetchTreeUnder(feature.path("id").asLong()));
+            long number = feature.path("id").asLong();
+            if (run.claimTreeOf(number)) {
+                add(collected, added, fetcher.fetchTreeUnder(number));
+            }
         }
-        return collected;
+        return added;
     }
 
     private static Set<Long> relatedTo(Map<Long, JsonNode> collected) {
@@ -67,9 +71,11 @@ class WorkPackageCollector {
         return features;
     }
 
-    private static void add(Map<Long, JsonNode> collected, List<JsonNode> workPackages) {
+    private static void add(Map<Long, JsonNode> collected, List<JsonNode> added, List<JsonNode> workPackages) {
         for (JsonNode workPackage : workPackages) {
-            collected.putIfAbsent(workPackage.path("id").asLong(), workPackage);
+            if (collected.putIfAbsent(workPackage.path("id").asLong(), workPackage) == null) {
+                added.add(workPackage);
+            }
         }
     }
 }
