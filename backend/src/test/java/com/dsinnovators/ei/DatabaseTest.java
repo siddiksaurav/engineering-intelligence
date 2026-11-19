@@ -5,14 +5,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.context.ActiveProfiles;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
 /**
  * Base class for tests that need the database. A subclass runs as a Spring Boot test against a
  * PostgreSQL 18 container with all Flyway migrations applied. One container serves the whole test
- * run. Every test starts from empty tables, except the seeded {@code data_source} rows.
+ * run. Every test starts from empty tables, except the seeded {@code data_source} rows. The profile
+ * {@code test} keeps the developer's {@code .env} out of the context.
  */
 @SpringBootTest
+@ActiveProfiles("test")
 public abstract class DatabaseTest {
 
     @ServiceConnection
