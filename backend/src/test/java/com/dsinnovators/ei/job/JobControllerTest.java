@@ -4,12 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.dsinnovators.ei.DatabaseTest;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
+import com.dsinnovators.ei.JobEndpointClient;
 import java.net.http.HttpResponse;
-import java.time.Duration;
-import java.time.Instant;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.AfterEach;
@@ -21,13 +17,11 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.json.JsonMapper;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Import(JobControllerTest.TestJobs.class)
 class JobControllerTest extends DatabaseTest {
 
-    private static final JsonMapper JSON = JsonMapper.builder().build();
     // A new latch per test: a released latch would let the slow job end at once.
     private static volatile CountDownLatch releaseSlowJob = new CountDownLatch(1);
 
@@ -80,8 +74,11 @@ class JobControllerTest extends DatabaseTest {
     @Value("${local.server.port}")
     private int port;
 
+    private JobEndpointClient jobs;
+
     @BeforeEach
     void holdTheSlowJob() {
+        jobs = new JobEndpointClient(port);
         releaseSlowJob = new CountDownLatch(1);
     }
 
@@ -90,38 +87,12 @@ class JobControllerTest extends DatabaseTest {
         releaseSlowJob.countDown();
     }
 
-    private HttpResponse<String> post(String path, String body) throws Exception {
-        HttpRequest request = HttpRequest.newBuilder(URI.create("http://localhost:" + port + path))
-                .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(body))
-                .build();
-        return HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
-    }
-
-    private HttpResponse<String> get(String path) throws Exception {
-        HttpRequest request = HttpRequest.newBuilder(URI.create("http://localhost:" + port + path))
-                .build();
-        return HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
-    }
-
-    private JsonNode awaitEnd(long runId) throws Exception {
-        Instant giveUp = Instant.now().plus(Duration.ofSeconds(10));
-        while (Instant.now().isBefore(giveUp)) {
-            JsonNode run = JSON.readTree(get("/api/jobs/runs/" + runId).body());
-            if (!run.get("status").stringValue().equals("running")) {
-                return run;
-            }
-            Thread.sleep(20);
-        }
-        throw new AssertionError("Run " + runId + " did not end within 10 seconds");
-    }
-
     @Test
     void startingAJobAnswers202WithTheRunAndItsLocation() throws Exception {
-        HttpResponse<String> response = post("/api/jobs/quick/runs", "{\"items\":\"3\"}");
+        HttpResponse<String> response = jobs.start("quick", "{\"items\":\"3\"}");
 
         assertEquals(202, response.statusCode());
-        JsonNode run = JSON.readTree(response.body());
+        JsonNode run = JobEndpointClient.json(response);
         long id = run.get("id").longValue();
         assertEquals("quick", run.get("jobName").stringValue());
         assertEquals("running", run.get("status").stringValue());
@@ -134,12 +105,9 @@ class JobControllerTest extends DatabaseTest {
 
     @Test
     void theRunRunsInTheBackgroundAndEndsWithItsCounts() throws Exception {
-        long id = JSON.readTree(
-                        post("/api/jobs/quick/runs", "{\"items\":\"3\"}").body())
-                .get("id")
-                .longValue();
+        long id = jobs.startAccepted("quick", "{\"items\":\"3\"}");
 
-        JsonNode ended = awaitEnd(id);
+        JsonNode ended = jobs.awaitEnd(id);
 
         assertEquals("succeeded", ended.get("status").stringValue());
         assertEquals(3, ended.get("counts").get("items").longValue());
@@ -149,69 +117,67 @@ class JobControllerTest extends DatabaseTest {
 
     @Test
     void anUnknownJobAnswers404WithTheKnownNames() throws Exception {
-        HttpResponse<String> response = post("/api/jobs/nope/runs", "{}");
+        HttpResponse<String> response = jobs.start("nope", "{}");
 
         assertEquals(404, response.statusCode());
-        String detail = JSON.readTree(response.body()).get("detail").stringValue();
+        String detail = JobEndpointClient.json(response).get("detail").stringValue();
         assertTrue(detail.startsWith("No job named 'nope'. Known jobs: ["), detail);
         assertTrue(detail.contains("quick"), detail);
     }
 
     @Test
     void aMissingArgumentAnswers400AndNamesIt() throws Exception {
-        HttpResponse<String> response = post("/api/jobs/quick/runs", "{}");
+        HttpResponse<String> response = jobs.start("quick", "{}");
 
         assertEquals(400, response.statusCode());
         assertEquals(
                 "The argument 'items' is required",
-                JSON.readTree(response.body()).get("detail").stringValue());
+                JobEndpointClient.json(response).get("detail").stringValue());
     }
 
     @Test
     void anArgumentThatIsNotTextAnswers400AndNamesIt() throws Exception {
-        HttpResponse<String> response = post("/api/jobs/quick/runs", "{\"items\":3}");
+        HttpResponse<String> response = jobs.start("quick", "{\"items\":3}");
 
         assertEquals(400, response.statusCode());
         assertEquals(
                 "The argument 'items' must be text, was 3",
-                JSON.readTree(response.body()).get("detail").stringValue());
+                JobEndpointClient.json(response).get("detail").stringValue());
     }
 
     @Test
     void aBodyThatIsNotAnObjectAnswers400() throws Exception {
-        HttpResponse<String> response = post("/api/jobs/quick/runs", "[\"items\"]");
+        HttpResponse<String> response = jobs.start("quick", "[\"items\"]");
 
         assertEquals(400, response.statusCode());
         assertEquals(
                 "The arguments must be a JSON object of texts",
-                JSON.readTree(response.body()).get("detail").stringValue());
+                JobEndpointClient.json(response).get("detail").stringValue());
     }
 
     @Test
     void startingARunningJobAnswers409WithTheRunningRun() throws Exception {
-        long runningId = JSON.readTree(post("/api/jobs/slow/runs", "{}").body())
-                .get("id")
-                .longValue();
+        long runningId = jobs.startAccepted("slow", "{}");
 
-        HttpResponse<String> response = post("/api/jobs/slow/runs", "{}");
+        HttpResponse<String> response = jobs.start("slow", "{}");
 
         assertEquals(409, response.statusCode());
-        JsonNode problem = JSON.readTree(response.body());
+        JsonNode problem = JobEndpointClient.json(response);
         assertEquals(
                 "The job 'slow' is already running as run " + runningId,
                 problem.get("detail").stringValue());
         assertEquals(runningId, problem.get("runningRunId").longValue());
         releaseSlowJob.countDown();
-        assertEquals("succeeded", awaitEnd(runningId).get("status").stringValue());
+        assertEquals("succeeded", jobs.awaitEnd(runningId).get("status").stringValue());
     }
 
     @Test
     void anUnknownRunAnswers404() throws Exception {
-        HttpResponse<String> response = get("/api/jobs/runs/999999");
+        HttpResponse<String> response = jobs.get("/api/jobs/runs/999999");
 
         assertEquals(404, response.statusCode());
         assertEquals(
                 "No job run with id 999999",
-                JSON.readTree(response.body()).get("detail").stringValue());
+                JobEndpointClient.json(response).get("detail").stringValue());
     }
 }

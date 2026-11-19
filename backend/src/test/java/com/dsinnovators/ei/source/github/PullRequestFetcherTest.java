@@ -15,14 +15,10 @@ import static org.springframework.test.web.client.match.MockRestRequestMatchers.
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 import org.junit.jupiter.api.Test;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.client.MockRestServiceServer;
 import tools.jackson.databind.JsonNode;
@@ -32,19 +28,10 @@ import tools.jackson.databind.node.ObjectNode;
 class PullRequestFetcherTest {
 
     private static final JsonMapper JSON = JsonMapper.builder().build();
-    private static final String FILES_URL = "https://api.github.com/repos/opf/openproject/pulls/%d/files?per_page=100";
 
     private final GitHubApiFixture github = new GitHubApiFixture();
     private final MockRestServiceServer server = github.server;
     private final PullRequestFetcher fetcher = new PullRequestFetcher(github.api);
-
-    private static String recorded(String file) {
-        try (InputStream in = PullRequestFetcherTest.class.getResourceAsStream("/github/pr-24204/" + file)) {
-            return new String(in.readAllBytes(), StandardCharsets.UTF_8);
-        } catch (IOException e) {
-            throw new IllegalStateException("Cannot read the recorded response " + file, e);
-        }
-    }
 
     private void expectGraphQl(int number, String after, String answer) {
         server.expect(requestTo(GitHubApiFixture.GRAPHQL))
@@ -57,7 +44,7 @@ class PullRequestFetcherTest {
     }
 
     private void expectFiles(int number, String answer) {
-        server.expect(requestTo(FILES_URL.formatted(number)))
+        server.expect(requestTo("https://api.github.com/repos/opf/openproject/pulls/" + number + "/files?per_page=100"))
                 .andRespond(withSuccess(answer, MediaType.APPLICATION_JSON));
     }
 
@@ -81,16 +68,7 @@ class PullRequestFetcherTest {
 
     @Test
     void aPullRequestIsFetchedWithAllItsParts() throws Exception {
-        expectGraphQl(24204, null, recorded("graphql-pull-request.json"));
-        expectGraphQl(24204, "MTAw", recorded("graphql-files-page-2.json"));
-        HttpHeaders nextPage = new HttpHeaders();
-        nextPage.add(
-                "Link", "<https://api.github.com/repositories/1/pulls/24204/files?per_page=100&page=2>; rel=\"next\"");
-        server.expect(requestTo(FILES_URL.formatted(24204)))
-                .andRespond(withSuccess(recorded("rest-files-page-1.json"), MediaType.APPLICATION_JSON)
-                        .headers(nextPage));
-        server.expect(requestTo("https://api.github.com/repositories/1/pulls/24204/files?per_page=100&page=2"))
-                .andRespond(withSuccess(recorded("rest-files-page-2.json"), MediaType.APPLICATION_JSON));
+        RecordedPullRequest24204.expect(server);
 
         FetchedPullRequest pullRequest = found(fetcher.fetch("opf/openproject", 24204));
 
@@ -117,20 +95,24 @@ class PullRequestFetcherTest {
                         "title",
                         "url"),
                 keys(payload));
-        assertEquals(135, payload.get("files").size());
+        assertEquals(RecordedPullRequest24204.FILES, payload.get("files").size());
         assertEquals(
                 Set.of("additions", "changeType", "deletions", "path"),
                 keys(payload.get("files").get(0)));
         assertEquals("[{\"name\":\"documentation\"}]", payload.get("labels").toString());
-        assertEquals(13, pullRequest.reviews().size());
+        assertEquals(RecordedPullRequest24204.REVIEWS, pullRequest.reviews().size());
         assertEquals(4683447746L, pullRequest.reviews().get(0).get("databaseId").longValue());
-        assertEquals(17, pullRequest.reviewComments().size());
+        assertEquals(
+                RecordedPullRequest24204.REVIEW_COMMENTS,
+                pullRequest.reviewComments().size());
         assertTrue(pullRequest.reviewComments().get(0).has("diffHunk"));
-        assertEquals(3, pullRequest.pullRequestComments().size());
+        assertEquals(
+                RecordedPullRequest24204.PULL_REQUEST_COMMENTS,
+                pullRequest.pullRequestComments().size());
         assertEquals(
                 4956278455L,
                 pullRequest.pullRequestComments().get(0).get("databaseId").longValue());
-        assertEquals(135, pullRequest.diffFiles().size());
+        assertEquals(RecordedPullRequest24204.FILES, pullRequest.diffFiles().size());
         assertTrue(pullRequest.diffFiles().get(0).has("patch"));
         assertFalse(pullRequest.diffTruncated());
     }
