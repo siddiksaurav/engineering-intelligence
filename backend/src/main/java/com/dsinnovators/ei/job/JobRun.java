@@ -101,6 +101,29 @@ class JobRun {
         return Optional.ofNullable(errorMessage);
     }
 
+    void updateCounts(Map<String, Long> counts) {
+        requireRunning();
+        this.counts = toJson(counts);
+    }
+
+    /** Ends the run. A run ends once. */
+    void finish(JobRunStatus status, Map<String, Long> counts, Instant finishedAt, String errorMessage) {
+        requireRunning();
+        if (status == JobRunStatus.RUNNING) {
+            throw new IllegalArgumentException("Run " + id + " cannot finish as running");
+        }
+        this.status = status;
+        this.counts = toJson(counts);
+        this.finishedAt = finishedAt;
+        this.errorMessage = errorMessage;
+    }
+
+    private void requireRunning() {
+        if (status != JobRunStatus.RUNNING) {
+            throw new IllegalStateException("Run " + id + " has already ended as " + status);
+        }
+    }
+
     private static String toJson(Map<String, ?> values) {
         ObjectNode object = JsonNodeFactory.instance.objectNode();
         values.forEach((key, value) -> object.set(key, value(value)));

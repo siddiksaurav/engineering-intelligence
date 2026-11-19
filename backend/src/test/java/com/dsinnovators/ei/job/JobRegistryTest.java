@@ -12,7 +12,10 @@ class JobRegistryTest {
 
     private record NamedJob(String name) implements Job {
         @Override
-        public void run(JobArguments arguments) {}
+        public void checkArguments(JobArguments arguments) {}
+
+        @Override
+        public void run(JobArguments arguments, JobCounts counts) {}
     }
 
     @Test

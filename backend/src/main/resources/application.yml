@@ -20,6 +20,11 @@ management:
       exposure:
         include: health
 
+# Operating settings, not rules of the evaluation (decision 45).
+ei:
+  jobs:
+    count-flush-interval: 30s
+
 ---
 # The one .env at the repository root. Found when started from the root or from backend/.
 # A value set in the real environment wins over the file. Tests run with the profile "test" and
