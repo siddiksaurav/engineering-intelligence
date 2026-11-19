@@ -1,0 +1,3 @@
+fragment Label on Label {
+  name
+}

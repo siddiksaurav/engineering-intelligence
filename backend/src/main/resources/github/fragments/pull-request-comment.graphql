@@ -1,0 +1,9 @@
+# A stored pull_request_comment row: a comment in the conversation (F02 design 6.2).
+fragment PullRequestComment on IssueComment {
+  databaseId
+  url
+  author { ...Actor }
+  body
+  createdAt
+  pullRequest { number repository { nameWithOwner } }
+}

@@ -1,0 +1,16 @@
+# The fields of a stored pull_request row, without its files and labels (F02 design 6.2).
+fragment PullRequestFields on PullRequest {
+  databaseId
+  number
+  url
+  title
+  body
+  author { ...Actor }
+  baseRefName
+  headRefName
+  createdAt
+  mergedAt
+  mergedBy { ...Actor }
+  isDraft
+  repository { nameWithOwner }
+}

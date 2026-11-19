@@ -1,0 +1,13 @@
+# A stored review_comment row: an inline comment on the code (F02 design 6.2).
+fragment ReviewComment on PullRequestReviewComment {
+  databaseId
+  url
+  author { ...Actor }
+  body
+  path
+  diffHunk
+  replyTo { databaseId }
+  pullRequestReview { databaseId }
+  createdAt
+  pullRequest { number repository { nameWithOwner } }
+}

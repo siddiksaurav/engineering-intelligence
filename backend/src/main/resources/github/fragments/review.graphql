@@ -1,0 +1,10 @@
+# A stored review row (F02 design 6.2).
+fragment Review on PullRequestReview {
+  databaseId
+  url
+  author { ...Actor }
+  state
+  body
+  submittedAt
+  pullRequest { number repository { nameWithOwner } }
+}

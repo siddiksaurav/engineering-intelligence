@@ -1,0 +1,13 @@
+# One pull request with the first page of each of its parts (F02 design 5.2 step 2).
+query PullRequest($owner: String!, $name: String!, $number: Int!) {
+  repository(owner: $owner, name: $name) {
+    pullRequest(number: $number) {
+      ...PullRequestFields
+      labels(first: 100) { pageInfo { hasNextPage endCursor } nodes { ...Label } }
+      files(first: 100) { pageInfo { hasNextPage endCursor } nodes { ...ChangedFile } }
+      reviews(first: 100) { pageInfo { hasNextPage endCursor } nodes { ...Review } }
+      reviewThreads(first: 100) { pageInfo { hasNextPage endCursor } nodes { ...ReviewThread } }
+      comments(first: 100) { pageInfo { hasNextPage endCursor } nodes { ...PullRequestComment } }
+    }
+  }
+}
