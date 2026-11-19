@@ -11,7 +11,7 @@ import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestClient;
 
 /** A {@link GitHubApi} that talks to a mock server and only records its waits. */
-final class GitHubApiFixture {
+public final class GitHubApiFixture {
 
     static final String TOKEN = "ghp_test-token-never-shown";
     static final Instant NOW = Instant.parse("2026-11-19T08:00:00Z");
@@ -19,7 +19,7 @@ final class GitHubApiFixture {
 
     final List<Duration> waits = new ArrayList<>();
     final GitHubProperties properties;
-    final MockRestServiceServer server;
+    public final MockRestServiceServer server;
     final GitHubApi api;
 
     GitHubApiFixture() {
