@@ -1,6 +1,6 @@
 # F02 GitHub connector: design
 
-State: draft
+State: approved on 2026-11-19
 
 ## 1. Goal
 

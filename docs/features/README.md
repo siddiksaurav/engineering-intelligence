@@ -24,9 +24,16 @@ The design must be readable alone. The session that implements it may not have r
 
 ## Step 2: task plan, written to `plan.md`
 
-Use the writing-plans skill. The plan lists the files to create or change, then the tasks. Each task has its files, the interfaces it uses and gives, a failing test, the code step, the command to run and the expected result, and a commit. The plan's "Spec" line points to the feature's `design.md`.
+A short plan, not line-by-line code (decision 40). Its "Spec" line points to the feature's `design.md`, which carries the detail. Then one entry per task, in build order:
 
-The user approves it and chooses how it is executed. Set the state to "plan approved".
+- what the task builds, in one or two lines;
+- the files it creates or changes;
+- the first failing test, named, with what it checks;
+- the commit message.
+
+Close with the command that verifies the whole feature. Do not use the full-code format of the writing-plans skill: the code is written once, in step 3.
+
+Once the plan is written, set the state to "plan approved" and go on to step 3. The user may stop the session to review the plan first.
 
 ## Step 3: implementation
 

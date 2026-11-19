@@ -152,7 +152,7 @@ Each block below gives a new session enough to start the deep dive. "Open questi
 
 **Read first.** `poc-plan.md` section 1 (GitHub), 3.1 item 1, 3.7 step 2. Spec section 5, source 1.
 
-**Gives to later features.** `raw_record` content for each PR with its reviews, review comments, files and diff, with external id, URL and content hash (the row layout is an open question below). A way to list PRs by merge date and by author, and to fetch PRs by number. The list of bot accounts.
+**Gives to later features.** `raw_record` rows for each PR, its diff, reviews, review comments and conversation comments, with external id, URL and content hash (layout: F02 design 6.2). The job `github-import`, which fetches PRs by merge date or by number. The bot list in setting `github.bot_logins`. The job launcher, `job_run` and the endpoint. Readers that list stored PRs by merge date or author are built by F03, their first user (decision 46).
 
 **Done when.** The row count of merged PRs for the two weeks equals the count GitHub's search shows for the same range. A second run adds no rows. A changed PR is stored as a new version, and the old one is kept.
 
@@ -392,7 +392,7 @@ Update this table when a feature changes state. States: not started, in design, 
 | Id | Feature | State | Design | Plan |
 | --- | --- | --- | --- | --- |
 | F01 | Repository skeleton | done | `docs/features/F01-repository-skeleton/design.md` | `docs/features/F01-repository-skeleton/plan.md` |
-| F02 | GitHub connector | in design | `docs/features/F02-github-connector/design.md` | |
+| F02 | GitHub connector | plan approved | `docs/features/F02-github-connector/design.md` | `docs/features/F02-github-connector/plan.md` |
 | F03 | OpenProject connector | not started | | |
 | F04 | Identity | not started | | |
 | F05 | Evidence builders without AI, list page | not started | | |

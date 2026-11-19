@@ -19,12 +19,12 @@ Read in this order:
 One feature at a time, in the order of the master plan. Each feature goes through five steps (`docs/features/README.md` has the detail):
 
 1. Deep dive with the user, written to `design.md`. The user approves.
-2. Task plan, written to `plan.md`. The user approves.
+2. Short task plan, written to `plan.md`: the tasks in order, the files each touches, the first failing test of each, the commit. No code in the plan (decision 40). Once it is written, the session goes on to step 3; the user may stop it to review the plan.
 3. Implementation, test first, one task at a time, one commit per task.
 4. Verification against the feature's "Done when" in the master plan.
 5. Update the status table, `progress.md`, `decisions.md` and the commands below.
 
-A written design or plan is not an approved one. Do not start step 2 before the user approves step 1, or step 3 before the user approves step 2.
+A written design is not an approved one. Do not start step 2 before the user approves step 1.
 
 A feature starts when the user asks for it. Documents are committed in the same step that changes them. "Checked by hand" in a plan means the session prepares the list and the user checks it.
 
