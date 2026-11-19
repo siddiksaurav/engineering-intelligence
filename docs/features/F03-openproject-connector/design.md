@@ -1,6 +1,6 @@
 # F03 OpenProject connector: design
 
-State: draft
+State: approved on 2026-11-19, through the question brief
 
 ## Goal
 
@@ -35,7 +35,7 @@ After F03 the database holds an unchanged copy of the OpenProject work items beh
 - **`poc-plan.md` 1, OpenProject** (checked 16 Nov 2026): "Hierarchy exists: Epic > Feature > Implementation / Task / Bug. About half of items have a parent. Full status history per item, with who and when. Statuses include 'review failed' and 'test failed', which can stand in for reopens. Each work item lists its GitHub PRs, so the link works from both sides. Custom fields 'Developers' and 'Module' exist. Work items have two ids: a number (81224) and a project key (COMMS-1078). The key changes when an item moves project (SE-694 and COMMS-1078 are the same item)."
 - **`poc-plan.md` 1, "Missing or weak".** "Assignee is cleared at each hand-over; only 21% of items have one. Use the PR author, the 'Developers' field and the status history."
 - **`poc-plan.md` 3.1 item 1.** "Collect PRs and work items (with history, parent, linked PRs) for one quarter, Q3 2026 (1 Jul to 30 Sep), plus one month on each side. In addition, for every feature that reached a done status in the quarter, all its linked PRs are pulled whatever their date, so long features are complete."
-- **`poc-plan.md` 3.7 step 3.** "OpenProject connector: work items referenced by those PRs, their ancestors, children, activities; and for each feature done in the window, all its linked PRs whatever their date." The master plan follows 3.1 (the quarter); this is question Q2.
+- **`poc-plan.md` 3.7 step 3.** "OpenProject connector: work items referenced by those PRs, their ancestors, children, activities; and for each feature done in the window, all its linked PRs whatever their date." The PoC follows 3.1: the quarter (decision 68).
 - **Master plan 2.** "OpenProject through API v3 without login." "Thresholds, weights and done statuses are rows in `setting` (spec 14)." "`raw_record` is an unchanged copy of the source. It is never edited."
 - **Decision 23.** One `raw_record` row per version; a different content hash writes the next version.
 - **Decision 41 and F02 design 6.2.** "The query is the definition of what is stored"; fields that change without a real change are never requested.
@@ -66,7 +66,7 @@ Data source `openproject` (exists since F01, base URL `https://community.openpro
 | --- | --- | --- | --- |
 | `work_package` | `81224` | `https://community.openproject.org/work_packages/81224` | The element of the collection answer, as returned (no `_embedded`) |
 | `work_package_activity` | `1756926` (activity id) | `https://community.openproject.org/work_packages/81224/activity` | The activity element, as returned |
-| `work_package_pull_requests` | `81224` | `https://community.openproject.org/work_packages/81224/tabs/github` | Per Q3: the list of linked pull requests (see Open points) |
+| `work_package_pull_requests` | `81224` | `https://community.openproject.org/work_packages/81224/tabs/github` | A reduced copy (decision 69): `{"reduced": true, "pullRequests": [...]}`, each entry with `id`, `number`, `repository`, `htmlUrl`, `title`, `state`, `draft`, `merged`, `mergedAt`, `createdAt` and `githubUser` (the login), in the order OpenProject returned them. Counters, update times and CI check runs are left out |
 | `project` | `1395` | `https://community.openproject.org/projects/{identifier}` | `GET /api/v3/projects/{id}`, as returned |
 
 ### New table `pull_request_work_item`
@@ -91,7 +91,13 @@ One row per OpenProject project seen on a stored work package, from its `project
 
 ### New setting
 
-`openproject.done_statuses`, valid from `2026-Q2`, a list of status names. Value per Q1. Description: "OpenProject statuses that mean a work item is done. A Feature that changes into one of them within a quarter is done in that quarter. Read by F03 and F05."
+`openproject.done_statuses`, valid from `2026-Q2`, a list of status names (decision 67):
+
+```json
+["tested", "deployed", "resolved", "released", "closed"]
+```
+
+`rejected`, `no service provided` and the sales and invoice statuses are not done, although OpenProject marks them closed. Description: "OpenProject statuses that mean a work item is done. A Feature that changes into one of them within a quarter is done in that quarter. Read by F03 and F05."
 
 ## Main flows
 
@@ -223,38 +229,25 @@ The master plan's "Done when", made exact. Evidence goes into `notes.md`.
 
 No architecture test is disabled for F03.
 
-## Open points
+## Decisions
 
-The question brief, as shown to the user on 19 Nov 2026.
+Every point of this design is closed. Numbers are those of `docs/decisions.md`.
 
-**1. Business questions**
+| # | Decision | By |
+| --- | --- | --- |
+| 56 | Work items are found only through pull requests: referenced items, their ancestors, their direct children, the whole tree under each Feature reached. None by update date | Session |
+| 57 | Links from OpenProject URLs in the PR body and a `[KEY-n]` in the title; not branch names | Session |
+| 58 | References resolved by the server: collection calls of 100, single fetch for unmatched (moved) keys, one at a time after `400`, `404` is not visible. External id of a work package is its number | Session |
+| 59 | A work package is stored as the collection element; one row per activity and per project; `project` filled from project rows | Session |
+| 60 | Derived link table `pull_request_work_item`, rewritten per pull request; every link kept | Session |
+| 61 | Completion inside the same run through one import service shared with `github-import`; rounds until nothing new; merged pull requests of the run's repository only | Session |
+| 62 | F03 builds the stored pull request readers it uses (merge date, number); by author, reviews and comments go to F04 and F05 | Session |
+| 63 | One call at a time with a pause, three retries, generic User-Agent, `ei.openproject` properties | Session |
+| 64 | "Done in the quarter" read from activity status texts, matched against the known names | Session |
+| 65 | References to hidden items kept as `not_visible` links; F10 decides how they count | Session |
+| 66 | Job `openproject-import` arguments; first run 1 to 14 Jul 2026, quarter 2026-Q3 | Session |
+| 67 | Done statuses: `tested`, `deployed`, `resolved`, `released`, `closed` (Q1, option "QA passed") | User |
+| 68 | Pull all pull requests of Features done in the quarter only, not the window (Q2) | User |
+| 69 | The OpenProject pull request list is stored as a reduced copy of stable fields (Q3) | User |
 
-- **Q1. Which OpenProject statuses mean "done"?** A Feature that moves into one of them during the quarter is done in that quarter, and all its pull requests are pulled. F05 uses the same list for the quarter a Feature work item counts in. Real path: `merged > in test > tested > closed`; `closed` is set in release batches weeks later, and some Features stay at `tested`.
-  - A. `tested`, `deployed`, `resolved`, `released`, `closed`: done once QA has passed or later. Catches Features that stay at `tested`; the done date is close to when the work ended. **AI recommendation:** it matches when the developer's work is finished, and no Feature is missed for waiting on a release batch.
-  - B. `closed`, `released`, `deployed`: done when shipped. Fewer, later dates; Features left at `tested` never count.
-  - C. `merged` and everything after it: done once the code is in. Earliest date, but counts work QA may still send back.
-  - In every option `rejected`, `no service provided` and the sales and invoice statuses are not done, although OpenProject marks them closed.
-- **Q2. Pull all pull requests of Features done in which period: the quarter, or the whole window?**
-  - A. The quarter (1 Jul to 30 Sep 2026). **AI recommendation:** only Features done in the quarter are scored; it is what `poc-plan.md` 3.1 and the master plan say.
-  - B. The window (1 Jun to 31 Oct 2026). More pull requests are pulled, for Features done in June and October that are not scored this quarter.
-
-**2. Technical decisions I need your direction on**
-
-- **Q3. How is OpenProject's list of linked pull requests on each work item stored?** Each entry carries, besides which pull request it is, counters (comments, lines), update times and the CI check runs, which change whenever CI runs or someone comments; 8 entries take 184 KB, most of it check runs.
-  - A. Keep, per entry, only what says which pull request it is and its state: `id`, `number`, `repository`, `htmlUrl`, `title`, `state`, `draft`, `merged`, `mergedAt`, `createdAt`, the GitHub login. The row is marked as a reduced copy. **AI recommendation:** the same rule as F02 ("fields that change without a real change are never requested"); GitHub's own rows already hold the full pull request.
-  - B. Store the answer as returned. A true copy, but a new version of the row whenever CI runs or a comment is added on any linked pull request, and "a second run adds no rows" fails on any active item.
-  - C. Do not store it; use it during the run only to find the pull requests of done Features. Smallest, but the link from the OpenProject side is lost to F05 and F10.
-
-**3. Decisions I made myself** (overrule any by number)
-
-- D56. Work items are found only through pull requests: the referenced items, their ancestors, their direct children, and the whole tree under each Feature reached. None by update date.
-- D57. Links come from OpenProject URLs in the PR body (three URL forms, key or number) and a `[KEY-n]` in the title; branch names are not used.
-- D58. References are resolved by the server: collection calls of 100, a single fetch for a key the answer does not match (moved keys), one at a time after a `400`, `404` means not visible. A work package's external id is its number.
-- D59. A work package is stored as the element of the collection answer (no embedded copies of other records); one row per activity; one row per project; `project` is filled from those rows.
-- D60. Links go into a new derived table `pull_request_work_item`, rewritten per pull request on each run; every link is kept, F05 chooses.
-- D61. The completion step imports missing pull requests inside the same run, through one import service shared with `github-import`; it repeats until no new pull request turns up; only merged pull requests of the run's repository.
-- D62. F03 builds the stored pull request readers it uses (by merge date, by number). Readers by author and of reviews and comments are built by F04 and F05, their first users.
-- D63. OpenProject is called one call at a time with a pause, three retries, a generic User-Agent; operating numbers under `ei.openproject`.
-- D64. "Done in the quarter" is read from the activities: a status change into a done status whose time lies in the quarter, matched against the known status names.
-- D65. A reference to an item the public API hides is kept as a link marked `not_visible`; how it counts in hygiene is decided by F10.
-- D66. Job `openproject-import` with `repository`, a merge-date range or PR numbers, and `quarter`. First run: 1 to 14 Jul 2026, quarter 2026-Q3.
+The question brief was asked on 19 Nov 2026, one question at a time; the user took the recommended option of each.

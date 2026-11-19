@@ -2,6 +2,22 @@
 
 One entry per working session, newest at the top. Each entry says what was done, what is next and what is blocked. Read the top entry first.
 
+## 19 Nov 2026: F03 design approved, plan written
+
+**Done**
+- Branch `feature/F03` from `main` (local `main` fast-forwarded to `origin/main`, which has F02 merged as pull request 2).
+- Deep dive on the real data (checked 19 Nov 2026): 133 of 172 human pull requests of 1 to 14 Jul resolve to a visible work item (77%); old keys resolve on the server (`SE-694` is 81224); 12 references point to non-public projects. Detail: `docs/features/F03-openproject-connector/design.md`.
+- Question brief answered by the user, one question at a time: done statuses `tested`, `deployed`, `resolved`, `released`, `closed`; all pull requests pulled for Features done in the quarter only; OpenProject's pull request lists stored as a reduced copy. Decisions 56 to 69.
+- The master plan's F03 block now says F03 builds only the readers it uses (decision 62).
+- `plan.md` with 12 tasks; empty `notes.md`.
+
+**Next**
+- `/clear`, then `/build F03`.
+
+**Blocked or needed from the user**
+- Nothing for F03 (no login needed; `GITHUB_TOKEN` is already in `.env` for the completion step).
+- An LLM API key is needed from F06.
+
 ## 19 Nov 2026: Claude Code workflow set up
 
 **Done**
