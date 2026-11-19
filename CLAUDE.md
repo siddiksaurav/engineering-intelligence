@@ -114,6 +114,10 @@ curl -s -X POST localhost:8080/api/jobs/github-import/runs \
   -H 'Content-Type: application/json' \
   -d '{"repository":"opf/openproject","mergedFrom":"2026-07-01","mergedTo":"2026-07-14"}'
                                                              start a job (backend running); answers with the run id
+curl -s -X POST localhost:8080/api/jobs/openproject-import/runs \
+  -H 'Content-Type: application/json' \
+  -d '{"repository":"opf/openproject","mergedFrom":"2026-07-01","mergedTo":"2026-07-14","quarter":"2026-Q3"}'
+                                                             link stored PRs to OpenProject work items (after github-import)
 curl -s localhost:8080/api/jobs/runs/1                       see a run: status, counts, error
 ```
 
