@@ -29,8 +29,10 @@ public class StoredWorkPackages {
     private static final String WORK_PACKAGE_PATH = "/api/v3/work_packages/";
 
     // The html form of a status change keeps the two names apart even when a name holds the word "to".
+    // A status "set" is the first status of a work package or one a workflow sets: also a change
+    // into that status (decision 64).
     private static final Pattern STATUS_CHANGE =
-            Pattern.compile("<strong>Status</strong> changed from <i>.*?</i> to <i>(.*)</i>");
+            Pattern.compile("<strong>Status</strong> (?:changed from <i>.*?</i> to|set to) <i>(.*)</i>");
 
     private static final Pattern TRAILING_NUMBER = Pattern.compile("/([0-9]+)$");
 

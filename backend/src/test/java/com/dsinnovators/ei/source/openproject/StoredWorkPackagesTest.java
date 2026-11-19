@@ -129,4 +129,19 @@ class StoredWorkPackagesTest extends DatabaseTest {
         assertTrue(stored.isDoneIn(23, Q3));
         assertFalse(stored.isDoneIn(24, Q3));
     }
+
+    @Test
+    void aStatusSetToADoneStatusInTheQuarterAlsoMakesTheFeatureDone() {
+        store(
+                30,
+                "Feature",
+                null,
+                "{\"id\":300,\"createdAt\":\"2026-08-01T10:00:00.000Z\",\"details\":[{\"raw\":\"Status set to closed\","
+                        + "\"html\":\"<strong>Status</strong> set to <i>closed</i>\"}],\"_links\":{\"workPackage\":{\"href\":\"/api/v3/work_packages/30\"}}}");
+
+        assertTrue(stored.isDoneIn(30, Q3));
+        assertEquals(
+                List.of(new StatusChange("closed", Instant.parse("2026-08-01T10:00:00Z"), null)),
+                stored.statusChanges(30));
+    }
 }
