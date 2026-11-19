@@ -34,8 +34,6 @@ public class StoredWorkPackages {
     private static final Pattern STATUS_CHANGE =
             Pattern.compile("<strong>Status</strong> (?:changed from <i>.*?</i> to|set to) <i>(.*)</i>");
 
-    private static final Pattern TRAILING_NUMBER = Pattern.compile("/([0-9]+)$");
-
     private final RawRecordStore rawRecords;
     private final WorkPackageActivityRecords activityRecords;
     private final PullRequestWorkItemLinkRepository links;
@@ -80,7 +78,7 @@ public class StoredWorkPackages {
                     workPackage.get().path("_links").path("type").path("title").asString())) {
                 return current;
             }
-            current = trailingNumber(
+            current = HrefNumbers.trailingNumber(
                     workPackage.get().path("_links").path("parent").path("href").asString(""));
         }
         return Optional.empty();
@@ -118,7 +116,7 @@ public class StoredWorkPackages {
 
     private static Stream<StatusChange> statusChangesOf(JsonNode activity) {
         Instant at = Instant.parse(activity.path("createdAt").asString());
-        Long userId = trailingNumber(
+        Long userId = HrefNumbers.trailingNumber(
                         activity.path("_links").path("user").path("href").asString(""))
                 .orElse(null);
         return activity.path("details")
@@ -126,10 +124,5 @@ public class StoredWorkPackages {
                 .map(detail -> STATUS_CHANGE.matcher(detail.path("html").asString("")))
                 .filter(Matcher::matches)
                 .map(matcher -> new StatusChange(matcher.group(1), at, userId));
-    }
-
-    private static Optional<Long> trailingNumber(String href) {
-        Matcher matcher = TRAILING_NUMBER.matcher(href);
-        return matcher.find() ? Optional.of(Long.parseLong(matcher.group(1))) : Optional.empty();
     }
 }

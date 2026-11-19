@@ -30,4 +30,14 @@ class OpenProjectConfiguration {
         RestClient client = configure(RestClient.builder(), properties).build();
         return new OpenProjectApi(client, properties, Thread::sleep);
     }
+
+    @Bean
+    WorkPackageFetcher workPackageFetcher(OpenProjectApi api, OpenProjectProperties properties) {
+        return new WorkPackageFetcher(api, properties);
+    }
+
+    @Bean
+    WorkPackageReferenceResolver workPackageReferenceResolver(OpenProjectApi api, OpenProjectProperties properties) {
+        return new WorkPackageReferenceResolver(api, properties);
+    }
 }
