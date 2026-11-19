@@ -1,12 +1,6 @@
 spring:
   application:
     name: ei
-  config:
-    # The one .env at the repository root. Found when started from the root or from backend/.
-    # A value set in the real environment wins over the file.
-    import:
-      - optional:file:.env[.properties]
-      - optional:file:../.env[.properties]
   datasource:
     url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5433}/${POSTGRES_DB:ei}
     username: ${POSTGRES_USER:ei}
@@ -25,3 +19,28 @@ management:
     web:
       exposure:
         include: health
+
+# Operating settings, not rules of the evaluation (decision 45).
+ei:
+  jobs:
+    count-flush-interval: 30s
+  github:
+    api-url: https://api.github.com
+    # Read-only. From .env; never committed, never printed.
+    token: ${GITHUB_TOKEN:}
+    rate-limit-reserve: 50
+    retries: 3
+    retry-wait: 2s
+    timeout: 60s
+
+---
+# The one .env at the repository root. Found when started from the root or from backend/.
+# A value set in the real environment wins over the file. Tests run with the profile "test" and
+# never read it: it holds real tokens, and a test must never reach a real, paid service.
+spring:
+  config:
+    activate:
+      on-profile: "!test"
+    import:
+      - optional:file:.env[.properties]
+      - optional:file:../.env[.properties]

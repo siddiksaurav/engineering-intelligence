@@ -1,0 +1,6 @@
+fragment ChangedFile on PullRequestChangedFile {
+  path
+  additions
+  deletions
+  changeType
+}

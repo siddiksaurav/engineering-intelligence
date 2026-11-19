@@ -2,6 +2,41 @@
 
 One entry per working session, newest at the top. Each entry says what was done, what is next and what is blocked. Read the top entry first.
 
+## 19 Nov 2026: Claude Code workflow set up
+
+**Done**
+- Three project commands in `.claude/skills/`: `/design FNN`, `/build FNN`, `/done FNN`, and two subagents in `.claude/agents/`: `implementer` (Sonnet, one task, test first, commits only when green) and `reviewer` (Opus, read-only, reports problems or APPROVED). Decision 50.
+- The question brief: the session decides clear technical points alone and asks only business questions and unclear technical decisions, with options and an AI recommendation. The answer approves design and plan.
+- Permissions in `.claude/settings.json` (decision 54). No hooks.
+- Architecture tests in `backend/src/test/java/com/dsinnovators/ei/architecture/`: append-only code and tables, the `JudgmentModel` boundary, no number constants in the rule packages. 7 run now; 12 are disabled until F05, F06, F10 and F11 (decisions 51 to 53). ArchUnit 1.5.1 added as a test dependency. No feature code changed.
+- `CLAUDE.md`, `docs/master-plan.md`, `docs/features/README.md` and `_template-design.md` describe the new flow.
+
+**Next**
+- Pull request 2 (`f02-github-connector`), which now also carries this setup, is merged by the user.
+- Then `/design F03` from an up-to-date `main`.
+
+**Blocked or needed from the user**
+- Merging pull request 2.
+- An LLM API key is needed from F06.
+
+## 19 Nov 2026: F02 done
+
+**Done**
+- F02 deep dive with the user; design approved (`docs/features/F02-github-connector/design.md`). The user asked for fewer questions: only real business or technical choices are asked, the rest are stated as the session's calls.
+- New way of working for this PoC (decision 40): `plan.md` is a short task list without code, and the session goes on to the build once it is written. `CLAUDE.md` and `docs/features/README.md` say so.
+- F02 built in 13 tasks on branch `f02-github-connector`, one commit per task: tests no longer read `.env`, NUL escaping in `raw_record`, `job_run`, the job launcher, `POST /api/jobs/{name}/runs` and `GET /api/jobs/runs/{id}` (local callers only), setting `github.bot_logins`, the GitHub client, the day-by-day PR search, the PR fetcher, the recorder, the `github-import` job, an end-to-end test. 248 backend tests.
+- First real import, 1 to 14 Jul 2026: 215 of 215 merged PRs stored with 674 reviews, 735 inline comments, 367 conversation comments; 6 min 22 s. A second run added no rows. Evidence: `docs/features/F02-github-connector/notes.md`.
+- Decisions 40 to 49.
+- Pushed; pull request 2 opened; CI green (Backend and Web).
+
+**Next**
+- Pull request 2 (`f02-github-connector`) is open and CI is green. The user merges it.
+- Then F03 OpenProject connector: deep dive with the user. Read F02 `notes.md`, "What a later feature should know", first.
+
+**Blocked or needed from the user**
+- Merging pull request 2.
+- An LLM API key is needed from F06.
+
 ## 18 Nov 2026: F01 merged into `main`
 
 **Done**

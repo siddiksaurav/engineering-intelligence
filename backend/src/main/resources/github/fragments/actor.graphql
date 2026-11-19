@@ -1,0 +1,7 @@
+# Who wrote something. databaseId stays when a login is renamed (F02 design 6.2).
+fragment Actor on Actor {
+  login
+  __typename
+  ... on User { databaseId }
+  ... on Bot { databaseId }
+}

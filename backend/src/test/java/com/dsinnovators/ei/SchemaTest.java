@@ -5,11 +5,14 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.dao.DataIntegrityViolationException;
 
 class SchemaTest extends DatabaseTest {
@@ -26,12 +29,14 @@ class SchemaTest extends DatabaseTest {
     }
 
     @Test
-    void theSixBaseTablesExist() {
+    void theTablesOfTheMigrationsExist() {
         List<String> tables = jdbc.queryForList(
                 "select table_name from information_schema.tables where table_schema = 'public'"
                         + " and table_name <> 'flyway_schema_history' order by table_name",
                 String.class);
-        assertEquals(List.of("data_source", "person", "person_identity", "project", "raw_record", "setting"), tables);
+        assertEquals(
+                List.of("data_source", "job_run", "person", "person_identity", "project", "raw_record", "setting"),
+                tables);
     }
 
     @Test
@@ -104,9 +109,18 @@ class SchemaTest extends DatabaseTest {
     }
 
     @Test
-    void flywayAppliedVersionsOneAndTwo() {
+    void everyMigrationFileIsAppliedSuccessfullyAndInOrder() throws Exception {
+        List<String> fileVersions = Arrays.stream(
+                        new PathMatchingResourcePatternResolver().getResources("classpath:db/migration/V*__*.sql"))
+                .map(resource -> resource.getFilename()
+                        .substring(1, resource.getFilename().indexOf("__")))
+                .sorted(Comparator.comparingInt(Integer::parseInt))
+                .toList();
+
         assertEquals(
-                List.of("1", "2"),
-                jdbc.queryForList("select version from flyway_schema_history order by installed_rank", String.class));
+                fileVersions,
+                jdbc.queryForList(
+                        "select version from flyway_schema_history where success order by installed_rank",
+                        String.class));
     }
 }

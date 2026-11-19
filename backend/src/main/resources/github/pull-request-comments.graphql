@@ -1,0 +1,8 @@
+# A further page of the comments of a pull request.
+query PullRequestComments($owner: String!, $name: String!, $number: Int!, $after: String!) {
+  repository(owner: $owner, name: $name) {
+    pullRequest(number: $number) {
+      page: comments(first: 100, after: $after) { pageInfo { hasNextPage endCursor } nodes { ...PullRequestComment } }
+    }
+  }
+}

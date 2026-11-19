@@ -273,4 +273,34 @@ class RawRecordStoreTest extends DatabaseTest {
                 store.store(GITHUB, PULL_REQUEST, "110", URL, read.getPayload()).outcome());
         assertEquals(1, rowCount());
     }
+
+    @Test
+    void aNulCharacterIsStoredEscapedAndTheRowIsMarked() {
+        StoreResult result = store.store(
+                GITHUB, PULL_REQUEST, "120", URL, json("{\"body\":\"a\\u0000b\",\"k\\u0000\":[\"\\u0000\"]}"));
+
+        RawRecord record = result.record();
+        assertTrue(record.isNulEscaped());
+        assertEquals(json("{\"body\":\"a\\\\u0000b\",\"k\\\\u0000\":[\"\\\\u0000\"]}"), record.getPayload());
+        assertEquals(CanonicalJson.sha256Hex(record.getPayload()), record.getContentHash());
+        assertTrue(jdbc.queryForObject("select nul_escaped from raw_record where external_id = '120'", Boolean.class));
+    }
+
+    @Test
+    void aPayloadWithANulStoredAgainIsUnchanged() {
+        store.store(GITHUB, PULL_REQUEST, "121", URL, json("{\"body\":\"a\\u0000b\"}"));
+        StoreResult again = store.store(GITHUB, PULL_REQUEST, "121", URL, json("{\"body\":\"a\\u0000b\"}"));
+
+        assertEquals(Outcome.UNCHANGED, again.outcome());
+        assertEquals(1, rowCount());
+    }
+
+    @Test
+    void aPayloadWithoutANulIsNotMarked() {
+        StoreResult result = store.store(GITHUB, PULL_REQUEST, "122", URL, json("{\"body\":\"plain \\\\u0000 text\"}"));
+
+        assertFalse(result.record().isNulEscaped());
+        assertEquals(
+                json("{\"body\":\"plain \\\\u0000 text\"}"), result.record().getPayload());
+    }
 }

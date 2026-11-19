@@ -1,0 +1,8 @@
+# A thread of inline comments. Its id is used only to read more of its comments; threads are not stored.
+fragment ReviewThread on PullRequestReviewThread {
+  id
+  comments(first: 100) {
+    pageInfo { hasNextPage endCursor }
+    nodes { ...ReviewComment }
+  }
+}

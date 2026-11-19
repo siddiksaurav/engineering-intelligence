@@ -8,7 +8,9 @@ import tools.jackson.databind.JsonNode;
 public interface RawRecordStore {
 
     /**
-     * Stores a copy of a pulled record if its content differs from the latest stored version.
+     * Stores a copy of a pulled record if its content differs from the latest stored version. Any
+     * character U+0000 is stored as the text {@code \u0000} and the row is marked (see {@link
+     * RawRecord#isNulEscaped()}); the content hash is taken over the stored form.
      *
      * @throws IllegalArgumentException for an unknown data source key or a missing argument
      */

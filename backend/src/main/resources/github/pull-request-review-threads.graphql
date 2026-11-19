@@ -1,0 +1,8 @@
+# A further page of the reviewThreads of a pull request.
+query PullRequestReviewThreads($owner: String!, $name: String!, $number: Int!, $after: String!) {
+  repository(owner: $owner, name: $name) {
+    pullRequest(number: $number) {
+      page: reviewThreads(first: 100, after: $after) { pageInfo { hasNextPage endCursor } nodes { ...ReviewThread } }
+    }
+  }
+}

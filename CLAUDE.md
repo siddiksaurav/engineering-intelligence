@@ -18,13 +18,29 @@ Read in this order:
 
 One feature at a time, in the order of the master plan. Each feature goes through five steps (`docs/features/README.md` has the detail):
 
-1. Deep dive with the user, written to `design.md`. The user approves.
-2. Task plan, written to `plan.md`. The user approves.
+1. Deep dive, written to `design.md`, closed by a question brief the user answers.
+2. Short task plan, written to `plan.md`: the tasks in order, the files each touches, the first failing test of each, the commit. No code in the plan (decision 40).
 3. Implementation, test first, one task at a time, one commit per task.
 4. Verification against the feature's "Done when" in the master plan.
 5. Update the status table, `progress.md`, `decisions.md` and the commands below.
 
-A written design or plan is not an approved one. Do not start step 2 before the user approves step 1, or step 3 before the user approves step 2.
+Three commands run these steps. Each takes the feature id, for example `/design F03`.
+
+| Command | Does | Ends with |
+| --- | --- | --- |
+| `/design FNN` | Branch `feature/FNN` from `main`, `design.md`, the question brief; after the user's answer, `decisions.md`, the final `design.md` and `plan.md` (steps 1 and 2) | "Plan ready. Run /build FNN." |
+| `/build FNN` | Coordinates: one `implementer` subagent per task, the full tests, the `reviewer` subagent (at most 3 rounds), every "Done when" line, `summary.md` (steps 3 and 4) | The summary, shown to the user |
+| `/done FNN` | Marks the feature done in the status table and adds a line to `progress.md` (step 5) | A commit, for the user to push |
+
+The flow of one feature: `/design FNN`, the user answers the brief, `/clear`, `/build FNN`, the user reviews and pushes, `/done FNN`.
+
+**The question brief.** A deep dive sorts every open point into a business question, an unclear technical decision or a clear technical decision. The session decides the clear technical decisions alone and logs each in `decisions.md`. It asks the user only the first two kinds, in a brief with three parts: "Business questions", "Technical decisions I need your direction on", "Decisions I made myself". Each question has usually 2 to 4 options with a one-line trade-off and one "AI recommendation". When unsure whether a point is clear, it is asked. The user answers with option letters, "OK" for all recommendations, or their own answer. That answer counts as approval of the design and of the plan. The exact rules are in `.claude/skills/design/SKILL.md`.
+
+A written design is not an approved one. Do not start step 2 before the user has answered the question brief.
+
+**Anything a later session needs goes into a file, not only the chat.** The chat is cleared between `/design` and `/build`; a decision, a fact about the data or a blocker that lives only in the chat is lost.
+
+Architecture tests in `backend/src/test/java/com/dsinnovators/ei/architecture/` check the rules that never change. A test disabled with a feature id in its reason is enabled by that feature, in the task that creates what it checks.
 
 A feature starts when the user asks for it. Documents are committed in the same step that changes them. "Checked by hand" in a plan means the session prepares the list and the user checks it.
 
@@ -94,10 +110,17 @@ cd web && npm test                                           run the web tests
 cd web && npm run lint                                       lint the web app
 cd web && npm run typecheck                                  type-check the web app
 cd web && npm run format                                     format the web code (format:check only checks)
+curl -s -X POST localhost:8080/api/jobs/github-import/runs \
+  -H 'Content-Type: application/json' \
+  -d '{"repository":"opf/openproject","mergedFrom":"2026-07-01","mergedTo":"2026-07-14"}'
+                                                             start a job (backend running); answers with the run id
+curl -s localhost:8080/api/jobs/runs/1                       see a run: status, counts, error
 ```
 
 - Backend tests need Docker running. They start their own PostgreSQL container and never use the Compose database.
-- No job can be started yet. F02 adds the launcher and the endpoint that starts a job; there is no command-line runner.
+- Jobs are started only through `POST /api/jobs/{name}/runs`, from the machine the backend runs on. Every run is recorded in `job_run`. A second start of a running job answers `409`. `github-import` takes `repository` and either `mergedFrom` and `mergedTo` or `pullRequestNumbers` (comma-separated).
+- `github-import` needs a read-only `GITHUB_TOKEN` in `.env` (a fine-grained token with public repository access). Two weeks take about six minutes.
+- Tests run with the profile `test` and never read `.env`. They never call GitHub; `GitHubApiFixture` gives a client on a mock server.
 - Health: `curl -s localhost:8080/actuator/health`. The web page at `localhost:3000` shows "backend up" or "backend down".
 - A test that needs the database extends `com.dsinnovators.ei.DatabaseTest`.
 - Do not put quotes around values in `.env`: the backend would read them as part of the value.

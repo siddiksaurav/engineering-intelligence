@@ -50,6 +50,8 @@ public class RawRecord {
 
     private Instant fetchedAt;
 
+    private boolean nulEscaped;
+
     protected RawRecord() {}
 
     RawRecord(
@@ -60,6 +62,7 @@ public class RawRecord {
             String url,
             String contentHash,
             JsonNode payload,
+            boolean nulEscaped,
             Instant fetchedAt) {
         this.dataSource = dataSource;
         this.recordKind = recordKind;
@@ -68,6 +71,7 @@ public class RawRecord {
         this.url = url;
         this.contentHash = contentHash;
         this.payload = CanonicalJson.canonicalize(payload);
+        this.nulEscaped = nulEscaped;
         this.fetchedAt = fetchedAt;
     }
 
@@ -105,5 +109,14 @@ public class RawRecord {
 
     public Instant getFetchedAt() {
         return fetchedAt;
+    }
+
+    /**
+     * True when the source text held the character U+0000, which {@code jsonb} cannot store. Each
+     * one is stored as the six characters {@code \u0000}; replacing those with U+0000 restores the
+     * source.
+     */
+    public boolean isNulEscaped() {
+        return nulEscaped;
     }
 }

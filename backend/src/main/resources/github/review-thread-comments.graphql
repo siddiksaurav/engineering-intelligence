@@ -1,0 +1,8 @@
+# A further page of the comments of one review thread.
+query ReviewThreadComments($id: ID!, $after: String!) {
+  node(id: $id) {
+    ... on PullRequestReviewThread {
+      page: comments(first: 100, after: $after) { pageInfo { hasNextPage endCursor } nodes { ...ReviewComment } }
+    }
+  }
+}

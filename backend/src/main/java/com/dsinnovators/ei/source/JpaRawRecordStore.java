@@ -29,15 +29,24 @@ class JpaRawRecordStore implements RawRecordStore {
             throw new IllegalArgumentException("payload is required");
         }
         DataSource dataSource = dataSource(dataSourceKey);
-        String contentHash = CanonicalJson.sha256Hex(payload);
+        NulCharacters.Escaped escaped = NulCharacters.escape(payload);
+        String contentHash = CanonicalJson.sha256Hex(escaped.payload());
 
         Optional<RawRecord> latest = rawRecords.findLatestVersion(dataSource, recordKind, externalId);
         if (latest.isPresent() && latest.get().getContentHash().equals(contentHash)) {
             return new StoreResult(StoreResult.Outcome.UNCHANGED, latest.get());
         }
         int version = latest.map(record -> record.getVersion() + 1).orElse(1);
-        RawRecord written = rawRecords.save(
-                new RawRecord(dataSource, recordKind, externalId, version, url, contentHash, payload, Instant.now()));
+        RawRecord written = rawRecords.save(new RawRecord(
+                dataSource,
+                recordKind,
+                externalId,
+                version,
+                url,
+                contentHash,
+                escaped.payload(),
+                escaped.anyEscaped(),
+                Instant.now()));
         return new StoreResult(version == 1 ? StoreResult.Outcome.CREATED : StoreResult.Outcome.NEW_VERSION, written);
     }
 
