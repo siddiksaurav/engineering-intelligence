@@ -35,7 +35,15 @@ class SchemaTest extends DatabaseTest {
                         + " and table_name <> 'flyway_schema_history' order by table_name",
                 String.class);
         assertEquals(
-                List.of("data_source", "job_run", "person", "person_identity", "project", "raw_record", "setting"),
+                List.of(
+                        "data_source",
+                        "job_run",
+                        "person",
+                        "person_identity",
+                        "project",
+                        "pull_request_work_item",
+                        "raw_record",
+                        "setting"),
                 tables);
     }
 
@@ -106,6 +114,44 @@ class SchemaTest extends DatabaseTest {
                 + " values ((select id from person where display_name = ?), ?, 'u1', 'login')";
         jdbc.update(insert, "A", githubId());
         assertThrows(DataIntegrityViolationException.class, () -> jdbc.update(insert, "B", githubId()));
+    }
+
+    private static final String INSERT_PULL_REQUEST_WORK_ITEM =
+            "insert into pull_request_work_item (pull_request_external_id, work_package_id, reference, found_in, state)"
+                    + " values ('opf/openproject#1', ?, '81224', ?, ?)";
+
+    @Test
+    void pullRequestWorkItemRefusesAResolvedLinkWithoutAWorkPackage() {
+        assertThrows(
+                DataIntegrityViolationException.class,
+                () -> jdbc.update(INSERT_PULL_REQUEST_WORK_ITEM, null, "pull_request_body", "resolved"));
+    }
+
+    @Test
+    void pullRequestWorkItemRefusesANotVisibleLinkWithAWorkPackage() {
+        assertThrows(
+                DataIntegrityViolationException.class,
+                () -> jdbc.update(INSERT_PULL_REQUEST_WORK_ITEM, 81224L, "pull_request_body", "not_visible"));
+    }
+
+    @Test
+    void pullRequestWorkItemAcceptsANotVisibleLinkWithoutAWorkPackage() {
+        assertEquals(1, jdbc.update(INSERT_PULL_REQUEST_WORK_ITEM, null, "openproject", "not_visible"));
+    }
+
+    @Test
+    void pullRequestWorkItemRefusesAPlaceItWasNotFoundIn() {
+        assertThrows(
+                DataIntegrityViolationException.class,
+                () -> jdbc.update(INSERT_PULL_REQUEST_WORK_ITEM, 81224L, "commit_message", "resolved"));
+    }
+
+    @Test
+    void pullRequestWorkItemLinkIsUniquePerPullRequestPlaceAndReference() {
+        jdbc.update(INSERT_PULL_REQUEST_WORK_ITEM, 81224L, "pull_request_body", "resolved");
+        assertThrows(
+                DataIntegrityViolationException.class,
+                () -> jdbc.update(INSERT_PULL_REQUEST_WORK_ITEM, 81224L, "pull_request_body", "resolved"));
     }
 
     @Test
