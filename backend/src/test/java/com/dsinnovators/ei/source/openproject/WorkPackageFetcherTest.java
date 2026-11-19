@@ -102,4 +102,54 @@ class WorkPackageFetcherTest {
 
         assertThrows(OpenProjectApiException.class, () -> fetcher.fetchTreeUnder(1));
     }
+
+    private void expectTreeElements(String elements) {
+        fixture.server
+                .expect(requestTo(URI.create(filteredUrl("ancestor", "\"1\"", 2))))
+                .andRespond(withSuccess(
+                        "{\"total\":1,\"_embedded\":{\"elements\":[" + elements + "]}}", MediaType.APPLICATION_JSON));
+    }
+
+    private OpenProjectApiException refusedTree(String elements) {
+        expectTreeElements(elements);
+        return assertThrows(OpenProjectApiException.class, () -> fetcher.fetchTreeUnder(1));
+    }
+
+    @Test
+    void refusesAnElementWithoutAnIdNamingTheCallAndTheField() {
+        OpenProjectApiException failure =
+                refusedTree("{\"_type\":\"WorkPackage\",\"_links\":{\"self\":{\"href\":\"/x\"}}}");
+
+        assertTrue(failure.getMessage().contains("/work_packages?filters="), failure.getMessage());
+        assertTrue(failure.getMessage().contains("\"id\""), failure.getMessage());
+    }
+
+    @Test
+    void refusesAnElementWithoutLinks() {
+        OpenProjectApiException failure = refusedTree("{\"_type\":\"WorkPackage\",\"id\":5}");
+
+        assertTrue(failure.getMessage().contains("\"_links\""), failure.getMessage());
+    }
+
+    @Test
+    void refusesAnElementOfTheWrongType() {
+        OpenProjectApiException failure =
+                refusedTree("{\"_type\":\"Project\",\"id\":5,\"_links\":{\"self\":{\"href\":\"/x\"}}}");
+
+        assertTrue(failure.getMessage().contains("\"_type\""), failure.getMessage());
+    }
+
+    @Test
+    void refusesActivitiesWhoseElementsAreNotAList() throws Exception {
+        JsonNode workPackage = CanonicalJson.parse(recorded("work-package-81224.json"));
+        fixture.server
+                .expect(requestTo(URI.create(API + "/work_packages/81224/activities")))
+                .andRespond(withSuccess("{\"_embedded\":{\"elements\":{}}}", MediaType.APPLICATION_JSON));
+
+        OpenProjectApiException failure =
+                assertThrows(OpenProjectApiException.class, () -> fetcher.fetchWithDetails(workPackage));
+
+        assertTrue(failure.getMessage().contains("work package 81224"), failure.getMessage());
+        assertTrue(failure.getMessage().contains("_embedded.elements"), failure.getMessage());
+    }
 }

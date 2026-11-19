@@ -49,6 +49,7 @@ public class WorkPackageFetcher {
         }
         long number = id.asLong();
         JsonNode activities = api.get("/work_packages/" + number + "/activities");
+        OpenProjectAnswers.elementsOf(activities, "the activities of work package " + number);
         JsonNode pullRequestList =
                 PullRequestListReducer.reduce(api.get("/work_packages/" + number + "/github_pull_requests"));
         return new FetchedWorkPackage(number, workPackage, activities, pullRequestList);
@@ -63,13 +64,15 @@ public class WorkPackageFetcher {
         List<JsonNode> elements = new ArrayList<>();
         for (int page = 1; ; page++) {
             JsonNode answer = api.get(page == 1 ? firstPagePath : firstPagePath + "&offset=" + page);
-            JsonNode pageElements = answer.path("_embedded").path("elements");
+            JsonNode pageElements = OpenProjectAnswers.elementsOf(answer, firstPagePath);
             JsonNode total = answer.path("total");
-            if (!pageElements.isArray() || !total.isIntegralNumber()) {
-                throw new OpenProjectApiException(
-                        "OpenProject's answer to " + firstPagePath + " has no list of elements or no total");
+            if (!total.isIntegralNumber()) {
+                throw new OpenProjectApiException("OpenProject's answer to " + firstPagePath + " has no total");
             }
-            pageElements.forEach(elements::add);
+            for (JsonNode element : pageElements) {
+                OpenProjectAnswers.requireWorkPackage(element, firstPagePath);
+                elements.add(element);
+            }
             if (pageElements.isEmpty() || elements.size() >= total.asInt()) {
                 return elements;
             }

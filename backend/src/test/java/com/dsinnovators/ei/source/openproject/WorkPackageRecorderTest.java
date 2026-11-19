@@ -54,6 +54,19 @@ class WorkPackageRecorderTest extends DatabaseTest {
     }
 
     @Test
+    void activitiesThatAreNotAListAreRefusedAndNothingIsStored() {
+        FetchedWorkPackage withBrokenActivities = workPackage("{}");
+
+        OpenProjectApiException failure =
+                assertThrows(OpenProjectApiException.class, () -> recorder.store(withBrokenActivities));
+
+        assertEquals(
+                "OpenProject's answer to the activities of work package 81224 has no list in \"_embedded.elements\"",
+                failure.getMessage());
+        assertEquals(List.of(), rows());
+    }
+
+    @Test
     void storesOneRowPerRecordWithTheUrlsOfTheDesign() {
         List<StoredRecord> stored = recorder.store(workPackage(TWO_ACTIVITIES));
 

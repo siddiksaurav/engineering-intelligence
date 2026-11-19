@@ -78,7 +78,7 @@ class ProjectRecorderTest extends DatabaseTest {
 
         OpenProjectApiException failure = assertThrows(OpenProjectApiException.class, () -> recorder.store(broken));
 
-        assertEquals("A project has no identifier: {\"id\":1395,\"name\":\"Communications\"}", failure.getMessage());
+        assertEquals("The answer for project 1395 has no identifier", failure.getMessage());
         assertEquals(List.of(), projectRows());
     }
 }

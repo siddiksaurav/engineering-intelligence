@@ -46,7 +46,8 @@ class ProjectRecorder {
     private static String text(JsonNode project, String field) {
         JsonNode value = project.path(field);
         if (!value.isValueNode() || value.isNull() || value.asString().isBlank()) {
-            throw new OpenProjectApiException("A project has no " + field + ": " + project);
+            throw new OpenProjectApiException(
+                    "The answer for project " + project.path("id").asString("unknown") + " has no " + field);
         }
         return value.asString();
     }

@@ -15,7 +15,7 @@ import tools.jackson.databind.JsonNode;
  * References go in collection calls of up to one page. A reference the answer does not name, such as an
  * old key that the server answers under its new key, is fetched alone. One value the server does not accept
  * fails a whole collection call with {@code 400}; the references of that call are then fetched one at a
- * time. A reference answered {@code 404} is not visible to the public API.
+ * time. A reference answered {@code 404}, or {@code 400} when fetched alone, is not visible to the public API.
  */
 public class WorkPackageReferenceResolver {
 
@@ -74,18 +74,14 @@ public class WorkPackageReferenceResolver {
         try {
             JsonNode workPackage = api.get("/work_packages/" + URLEncoder.encode(reference, StandardCharsets.UTF_8));
             return ResolvedReference.resolved(reference, numberOf(workPackage, "the work package " + reference));
-        } catch (OpenProjectNotFoundException hidden) {
+        } catch (OpenProjectNotFoundException | OpenProjectBadRequestException hidden) {
             return ResolvedReference.notVisible(reference);
         }
     }
 
     /** Both the number and the current key of each element name it; an old key names nothing. */
     private static Map<String, Long> numbersByNameOf(JsonNode collection) {
-        JsonNode elements = collection.path("_embedded").path("elements");
-        if (!elements.isArray()) {
-            throw new OpenProjectApiException(
-                    "OpenProject's answer to " + COLLECTION_CALL + " has no list of elements");
-        }
+        JsonNode elements = OpenProjectAnswers.elementsOf(collection, COLLECTION_CALL);
         Map<String, Long> numbersByName = new HashMap<>();
         for (JsonNode element : elements) {
             long number = numberOf(element, "an element of " + COLLECTION_CALL);

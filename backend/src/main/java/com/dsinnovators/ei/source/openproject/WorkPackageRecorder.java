@@ -26,7 +26,7 @@ class WorkPackageRecorder {
      * Stores the work package, then each activity, then the pull request list, and says what each
      * store did.
      *
-     * @throws OpenProjectApiException when an activity has no id; nothing is stored
+     * @throws OpenProjectApiException when an activity has no id or the activities are not a list; nothing is stored
      */
     @Transactional
     List<StoredRecord> store(FetchedWorkPackage fetched) {
@@ -34,7 +34,8 @@ class WorkPackageRecorder {
         String url = source.dataSource().getBaseUrl() + "/work_packages/" + number;
         List<PendingRecord> records = new ArrayList<>();
         records.add(new PendingRecord(OpenProjectRecordKind.WORK_PACKAGE, number, url, fetched.workPackage()));
-        for (JsonNode activity : fetched.activities().path("_embedded").path("elements")) {
+        for (JsonNode activity :
+                OpenProjectAnswers.elementsOf(fetched.activities(), "the activities of work package " + number)) {
             records.add(new PendingRecord(
                     OpenProjectRecordKind.WORK_PACKAGE_ACTIVITY,
                     activityId(activity, number),

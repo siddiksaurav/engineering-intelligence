@@ -92,6 +92,20 @@ class WorkPackageReferenceResolverTest {
     }
 
     @Test
+    void marksAReferenceNotVisibleWhenItsSingleFetchAlsoAnswersABadRequest() throws Exception {
+        expectGet(
+                collectionUrl(100, "81224", "bad key"), error(HttpStatus.BAD_REQUEST, "work-packages-bad-filter.json"));
+        expectGet(WORK_PACKAGES + "/81224", json("work-package-81224.json"));
+        expectGet(WORK_PACKAGES + "/bad+key", error(HttpStatus.BAD_REQUEST, "work-packages-bad-filter.json"));
+
+        List<ResolvedReference> resolved = resolver.resolve(List.of("81224", "bad key"));
+
+        assertEquals(
+                List.of(ResolvedReference.resolved("81224", 81224), ResolvedReference.notVisible("bad key")), resolved);
+        fixture.server.verify();
+    }
+
+    @Test
     void marksAnUnmatchedKeyThatTheServerDoesNotKnowNotVisible() throws Exception {
         expectGet(collectionUrl(100, "81224", "SC-9"), json("work-packages-81224-by-id-and-keys.json"));
         expectGet(WORK_PACKAGES + "/SC-9", error(HttpStatus.NOT_FOUND, "work-package-not-found.json"));

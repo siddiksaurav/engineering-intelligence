@@ -18,8 +18,6 @@ import tools.jackson.databind.JsonNode;
 @Component
 class WorkPackageCollector {
 
-    private static final String FEATURE_TYPE = "Feature";
-
     private final WorkPackageFetcher fetcher;
 
     WorkPackageCollector(WorkPackageFetcher fetcher) {
@@ -62,8 +60,7 @@ class WorkPackageCollector {
     private static List<JsonNode> features(Map<Long, JsonNode> collected) {
         List<JsonNode> features = new ArrayList<>();
         for (JsonNode workPackage : collected.values()) {
-            if (FEATURE_TYPE.equals(
-                    workPackage.path("_links").path("type").path("title").asString())) {
+            if (WorkPackageType.isFeature(workPackage)) {
                 features.add(workPackage);
             }
         }

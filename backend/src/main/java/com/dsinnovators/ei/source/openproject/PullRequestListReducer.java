@@ -25,10 +25,7 @@ final class PullRequestListReducer {
      * @throws OpenProjectApiException when the answer has no list of elements
      */
     static JsonNode reduce(JsonNode answer) {
-        JsonNode elements = answer.path("_embedded").path("elements");
-        if (!elements.isArray()) {
-            throw new OpenProjectApiException("OpenProject's pull request list has no list of elements");
-        }
+        JsonNode elements = OpenProjectAnswers.elementsOf(answer, "the pull request list");
         JsonNodeFactory factory = JsonNodeFactory.instance;
         ArrayNode pullRequests = factory.arrayNode();
         for (JsonNode element : elements) {

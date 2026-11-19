@@ -98,7 +98,7 @@ class FeatureCompletion {
             LOG.error("Pull request {}#{} could not be imported", repository, number, failure);
             counts.add("pull_requests_failed", 1);
             failed.add(repository + "#" + number);
-            return java.util.Optional.empty();
+            return Optional.empty();
         }
         return storedPullRequests.find(repository, number);
     }

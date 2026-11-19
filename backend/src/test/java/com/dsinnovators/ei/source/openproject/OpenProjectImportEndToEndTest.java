@@ -98,13 +98,13 @@ class OpenProjectImportEndToEndTest extends DatabaseTest {
     }
 
     private static String feature() {
-        return "{\"id\":81224,\"displayId\":\"COMMS-1078\",\"subject\":\"Notify desktop users\",\"_links\":{"
+        return "{\"_type\":\"WorkPackage\",\"id\":81224,\"displayId\":\"COMMS-1078\",\"subject\":\"Notify desktop users\",\"_links\":{"
                 + "\"type\":{\"title\":\"Feature\"},\"project\":{\"href\":\"/api/v3/projects/1395\"},"
                 + "\"ancestors\":[],\"children\":[{\"href\":\"/api/v3/work_packages/83452\"}]}}";
     }
 
     private static String task() {
-        return "{\"id\":83452,\"displayId\":\"COMMS-1100\",\"subject\":\"Build the worker\",\"_links\":{"
+        return "{\"_type\":\"WorkPackage\",\"id\":83452,\"displayId\":\"COMMS-1100\",\"subject\":\"Build the worker\",\"_links\":{"
                 + "\"type\":{\"title\":\"Task\"},\"project\":{\"href\":\"/api/v3/projects/1395\"},"
                 + "\"ancestors\":[{\"href\":\"/api/v3/work_packages/81224\"}],\"children\":[]}}";
     }

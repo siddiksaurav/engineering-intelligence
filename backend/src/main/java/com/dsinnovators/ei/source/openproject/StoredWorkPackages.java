@@ -11,12 +11,10 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,7 +24,6 @@ import tools.jackson.databind.JsonNode;
 @Component
 public class StoredWorkPackages {
 
-    private static final String FEATURE_TYPE = "Feature";
     private static final String DONE_STATUSES_SETTING = "openproject.done_statuses";
     private static final String WORK_PACKAGE_PATH = "/api/v3/work_packages/";
 
@@ -76,7 +73,7 @@ public class StoredWorkPackages {
             if (workPackage.isEmpty()) {
                 return Optional.empty();
             }
-            if (FEATURE_TYPE.equals(typeOf(workPackage.get()))) {
+            if (WorkPackageType.isFeature(workPackage.get())) {
                 return current;
             }
             current = HrefNumbers.trailingNumber(
@@ -88,7 +85,7 @@ public class StoredWorkPackages {
     /** The Features that changed into a done status within the quarter (see {@link #isDoneIn}), by number. */
     public List<Long> featuresDoneIn(Quarter quarter) {
         return latestWorkPackages()
-                .filter(workPackage -> FEATURE_TYPE.equals(typeOf(workPackage.getPayload())))
+                .filter(workPackage -> WorkPackageType.isFeature(workPackage.getPayload()))
                 .map(workPackage -> Long.parseLong(workPackage.getExternalId()))
                 .filter(number -> isDoneIn(number, quarter))
                 .sorted()
@@ -142,26 +139,20 @@ public class StoredWorkPackages {
     /**
      * Whether the status of the work package changed into a done status within the quarter
      * (decision 64). The done statuses are the setting {@code openproject.done_statuses} of that
-     * quarter; names are compared without regard to case. The day of a change is read in UTC.
+     * quarter; a name must match exactly, keeping its case. The day of a change is read in UTC.
      */
     public boolean isDoneIn(long number, Quarter quarter) {
-        Set<String> doneStatuses = settings.getTextList(DONE_STATUSES_SETTING, quarter).stream()
-                .map(status -> status.toLowerCase(Locale.ROOT))
-                .collect(Collectors.toSet());
+        Set<String> doneStatuses = Set.copyOf(settings.getTextList(DONE_STATUSES_SETTING, quarter));
         return statusChanges(number).stream()
                 .filter(change ->
                         quarter.contains(change.at().atOffset(ZoneOffset.UTC).toLocalDate()))
-                .anyMatch(change -> doneStatuses.contains(change.status().toLowerCase(Locale.ROOT)));
+                .anyMatch(change -> doneStatuses.contains(change.status()));
     }
 
     private Stream<RawRecord> latestWorkPackages() {
         return rawRecords
                 .findLatestByKind(OpenProjectSource.KEY, OpenProjectRecordKind.WORK_PACKAGE.recordKind())
                 .stream();
-    }
-
-    private static String typeOf(JsonNode workPackage) {
-        return workPackage.path("_links").path("type").path("title").asString();
     }
 
     private static Set<Long> ancestorsOf(JsonNode workPackage) {

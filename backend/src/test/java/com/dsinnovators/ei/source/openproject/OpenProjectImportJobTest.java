@@ -103,7 +103,8 @@ class OpenProjectImportJobTest extends DatabaseTest {
         String childLinks = Arrays.stream(children)
                 .mapToObj(OpenProjectImportJobTest::href)
                 .collect(Collectors.joining(",", "[", "]"));
-        return "{\"id\":" + id + ",\"subject\":\"Work package " + id + "\",\"_links\":{\"type\":{\"title\":\"" + type
+        return "{\"_type\":\"WorkPackage\",\"id\":" + id + ",\"subject\":\"Work package " + id
+                + "\",\"_links\":{\"type\":{\"title\":\"" + type
                 + "\"},\"project\":{\"href\":\"/api/v3/projects/1395\"},\"parent\":"
                 + (parent == null ? "{\"href\":null}" : href(parent)) + ",\"ancestors\":" + ancestors
                 + ",\"children\":" + childLinks + "}}";

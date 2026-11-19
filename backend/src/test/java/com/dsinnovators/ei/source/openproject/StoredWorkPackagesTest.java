@@ -121,12 +121,14 @@ class StoredWorkPackagesTest extends DatabaseTest {
         storeFeatureChangedInto(21, "tested", "2026-10-01T00:00:00.000Z");
         storeFeatureChangedInto(22, "rejected", "2026-09-15T10:00:00.000Z");
         storeFeatureChangedInto(23, "Closed", "2026-08-15T10:00:00.000Z");
+        storeFeatureChangedInto(25, "closed", "2026-08-15T10:00:00.000Z");
         store(24, "Feature", null);
 
         assertTrue(stored.isDoneIn(20, Q3));
         assertFalse(stored.isDoneIn(21, Q3));
         assertFalse(stored.isDoneIn(22, Q3));
-        assertTrue(stored.isDoneIn(23, Q3));
+        assertFalse(stored.isDoneIn(23, Q3), "a status name is matched exactly, keeping its case");
+        assertTrue(stored.isDoneIn(25, Q3));
         assertFalse(stored.isDoneIn(24, Q3));
     }
 
