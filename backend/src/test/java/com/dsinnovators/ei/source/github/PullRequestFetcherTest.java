@@ -1,5 +1,11 @@
 package com.dsinnovators.ei.source.github;
 
+import static com.dsinnovators.ei.source.github.GitHubResponses.answer;
+import static com.dsinnovators.ei.source.github.GitHubResponses.connection;
+import static com.dsinnovators.ei.source.github.GitHubResponses.node;
+import static com.dsinnovators.ei.source.github.GitHubResponses.notFound;
+import static com.dsinnovators.ei.source.github.GitHubResponses.page;
+import static com.dsinnovators.ei.source.github.GitHubResponses.pullRequest;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
@@ -21,7 +27,6 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.client.MockRestServiceServer;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
-import tools.jackson.databind.node.ArrayNode;
 import tools.jackson.databind.node.ObjectNode;
 
 class PullRequestFetcherTest {
@@ -58,57 +63,6 @@ class PullRequestFetcherTest {
 
     private static FetchedPullRequest found(PullRequestFetch fetch) {
         return assertInstanceOf(PullRequestFetch.Found.class, fetch).pullRequest();
-    }
-
-    // A small pull request, built in the test, for the cases the recorded one does not have.
-
-    private static ObjectNode connection(String hasNextPage, String endCursor, JsonNode... nodes) {
-        ObjectNode connection = JSON.createObjectNode();
-        connection
-                .putObject("pageInfo")
-                .put("hasNextPage", Boolean.parseBoolean(hasNextPage))
-                .put("endCursor", endCursor);
-        ArrayNode list = connection.putArray("nodes");
-        for (JsonNode node : nodes) {
-            list.add(node);
-        }
-        return connection;
-    }
-
-    private static ObjectNode node(String json) {
-        return (ObjectNode) JSON.readTree(json);
-    }
-
-    private static ObjectNode smallPullRequest() {
-        ObjectNode pullRequest = node(
-                "{\"databaseId\":1,\"number\":7,\"url\":\"https://github.com/opf/openproject/pull/7\","
-                        + "\"title\":\"T\",\"body\":\"B\",\"author\":{\"login\":\"dev\",\"__typename\":\"User\",\"databaseId\":5},"
-                        + "\"baseRefName\":\"dev\",\"headRefName\":\"feature\",\"createdAt\":\"2026-07-01T08:00:00Z\","
-                        + "\"mergedAt\":\"2026-07-02T08:00:00Z\",\"mergedBy\":{\"login\":\"dev\",\"__typename\":\"User\","
-                        + "\"databaseId\":5},\"isDraft\":false,\"repository\":{\"nameWithOwner\":\"opf/openproject\"}}");
-        pullRequest.set("labels", connection("false", null));
-        pullRequest.set(
-                "files",
-                connection(
-                        "false",
-                        null,
-                        node("{\"path\":\"a.rb\",\"additions\":1,\"deletions\":0,\"changeType\":\"ADDED\"}")));
-        pullRequest.set("reviews", connection("false", null));
-        pullRequest.set("reviewThreads", connection("false", null));
-        pullRequest.set("comments", connection("false", null));
-        return pullRequest;
-    }
-
-    private static String answer(JsonNode pullRequest) {
-        ObjectNode answer = JSON.createObjectNode();
-        answer.putObject("data").putObject("repository").set("pullRequest", pullRequest);
-        return answer.toString();
-    }
-
-    private static String page(JsonNode connection) {
-        ObjectNode pullRequest = JSON.createObjectNode();
-        pullRequest.set("page", connection);
-        return answer(pullRequest);
     }
 
     private static ObjectNode review(long id) {
@@ -183,12 +137,12 @@ class PullRequestFetcherTest {
 
     @Test
     void everyPageOfReviewsAndConversationCommentsIsRead() throws Exception {
-        ObjectNode pullRequest = smallPullRequest();
-        pullRequest.set("reviews", connection("true", "r1", review(1)));
-        pullRequest.set("comments", connection("true", "c1", comment(10)));
+        ObjectNode pullRequest = pullRequest(7);
+        pullRequest.set("reviews", connection(true, "r1", review(1)));
+        pullRequest.set("comments", connection(true, "c1", comment(10)));
         expectGraphQl(7, null, answer(pullRequest));
-        expectGraphQl(7, "r1", page(connection("false", null, review(2))));
-        expectGraphQl(7, "c1", page(connection("false", null, comment(11))));
+        expectGraphQl(7, "r1", page(connection(false, null, review(2))));
+        expectGraphQl(7, "c1", page(connection(false, null, comment(11))));
         expectFiles(7, "[{\"filename\":\"a.rb\",\"patch\":\"@@\"}]");
 
         FetchedPullRequest fetched = found(fetcher.fetch("opf/openproject", 7));
@@ -209,12 +163,12 @@ class PullRequestFetcherTest {
     @Test
     void everyCommentOfALongThreadIsRead() throws Exception {
         ObjectNode thread = node("{\"id\":\"thread-1\"}");
-        thread.set("comments", connection("true", "t1", comment(20)));
-        ObjectNode pullRequest = smallPullRequest();
-        pullRequest.set("reviewThreads", connection("false", null, thread));
+        thread.set("comments", connection(true, "t1", comment(20)));
+        ObjectNode pullRequest = pullRequest(7);
+        pullRequest.set("reviewThreads", connection(false, null, thread));
         expectGraphQl(7, null, answer(pullRequest));
         ObjectNode node = JSON.createObjectNode();
-        node.putObject("data").putObject("node").set("page", connection("false", null, comment(21)));
+        node.putObject("data").putObject("node").set("page", connection(false, null, comment(21)));
         server.expect(requestTo(GitHubApiFixture.GRAPHQL))
                 .andExpect(jsonPath("$.variables.id").value("thread-1"))
                 .andExpect(jsonPath("$.variables.after").value("t1"))
@@ -232,18 +186,14 @@ class PullRequestFetcherTest {
 
     @Test
     void aPullRequestThatDoesNotExistIsNotFound() throws Exception {
-        expectGraphQl(
-                999999,
-                null,
-                "{\"data\":{\"repository\":{\"pullRequest\":null}},\"errors\":[{\"type\":\"NOT_FOUND\","
-                        + "\"message\":\"Could not resolve to a PullRequest with the number of 999999.\"}]}");
+        expectGraphQl(999999, null, notFound(999999));
 
         assertInstanceOf(PullRequestFetch.NotFound.class, fetcher.fetch("opf/openproject", 999999));
     }
 
     @Test
     void aPullRequestThatIsNotMergedIsReportedAsSuch() throws Exception {
-        ObjectNode pullRequest = smallPullRequest();
+        ObjectNode pullRequest = pullRequest(7);
         pullRequest.putNull("mergedAt");
         expectGraphQl(7, null, answer(pullRequest));
 
@@ -253,11 +203,11 @@ class PullRequestFetcherTest {
 
     @Test
     void moreFilesThanTheRestListGivesMarkTheDiffTruncated() throws Exception {
-        ObjectNode pullRequest = smallPullRequest();
+        ObjectNode pullRequest = pullRequest(7);
         pullRequest.set(
                 "files",
                 connection(
-                        "false",
+                        false,
                         null,
                         node("{\"path\":\"a.rb\",\"additions\":1,\"deletions\":0,\"changeType\":\"ADDED\"}"),
                         node("{\"path\":\"b.rb\",\"additions\":1,\"deletions\":0,\"changeType\":\"ADDED\"}")));
@@ -269,7 +219,7 @@ class PullRequestFetcherTest {
 
     @Test
     void aFileWithoutPatchIsKeptAsGitHubGaveIt() throws Exception {
-        expectGraphQl(7, null, answer(smallPullRequest()));
+        expectGraphQl(7, null, answer(pullRequest(7)));
         expectFiles(7, "[{\"filename\":\"a.rb\",\"status\":\"added\"}]");
 
         FetchedPullRequest fetched = found(fetcher.fetch("opf/openproject", 7));
@@ -281,7 +231,7 @@ class PullRequestFetcherTest {
 
     @Test
     void anAuthorWhoseAccountWasDeletedIsNull() throws Exception {
-        ObjectNode pullRequest = smallPullRequest();
+        ObjectNode pullRequest = pullRequest(7);
         pullRequest.putNull("author");
         expectGraphQl(7, null, answer(pullRequest));
         expectFiles(7, "[{\"filename\":\"a.rb\",\"patch\":\"@@\"}]");
