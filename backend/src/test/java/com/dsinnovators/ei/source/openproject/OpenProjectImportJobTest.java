@@ -2,6 +2,7 @@ package com.dsinnovators.ei.source.openproject;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
 import static org.springframework.test.web.client.ExpectedCount.times;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
@@ -13,6 +14,7 @@ import com.dsinnovators.ei.common.CanonicalJson;
 import com.dsinnovators.ei.job.JobArguments;
 import com.dsinnovators.ei.job.JobCounts;
 import com.dsinnovators.ei.source.RawRecordStore;
+import com.dsinnovators.ei.source.github.PullRequestImporter;
 import com.dsinnovators.ei.source.github.StoredPullRequests;
 import java.io.IOException;
 import java.net.URI;
@@ -55,6 +57,11 @@ class OpenProjectImportJobTest extends DatabaseTest {
     @Autowired
     private PullRequestWorkItemLinks links;
 
+    @Autowired
+    private StoredWorkPackages storedWorkPackages;
+
+    private final PullRequestImporter pullRequestImporter = mock(PullRequestImporter.class);
+
     private OpenProjectApiFixture openProject = new OpenProjectApiFixture();
 
     private final Map<String, Long> counts = new TreeMap<>();
@@ -68,7 +75,8 @@ class OpenProjectImportJobTest extends DatabaseTest {
                 new WorkPackageReferenceResolver(openProject.api, openProject.properties),
                 new WorkPackageCollector(fetcher),
                 new WorkPackageImporter(fetcher, workPackageRecorder, projectRecorder),
-                links);
+                links,
+                new FeatureCompletion(storedWorkPackages, storedPullRequests, pullRequestImporter));
     }
 
     private static JobArguments range() {

@@ -23,7 +23,8 @@ import tools.jackson.databind.JsonNode;
 
 /**
  * Links stored pull requests to the OpenProject work items they name and stores those work items
- * with what hangs on them (F03 design, "Steps" 1 to 6). Running it again stores only what changed.
+ * with what hangs on them, then completes the Features done in a quarter (F03 design, "Steps").
+ * Running it again stores only what changed.
  */
 @Component
 class OpenProjectImportJob implements Job {
@@ -36,6 +37,7 @@ class OpenProjectImportJob implements Job {
     private final WorkPackageCollector collector;
     private final WorkPackageImporter importer;
     private final PullRequestWorkItemLinks links;
+    private final FeatureCompletion completion;
 
     OpenProjectImportJob(
             StoredPullRequests storedPullRequests,
@@ -43,13 +45,15 @@ class OpenProjectImportJob implements Job {
             WorkPackageReferenceResolver resolver,
             WorkPackageCollector collector,
             WorkPackageImporter importer,
-            PullRequestWorkItemLinks links) {
+            PullRequestWorkItemLinks links,
+            FeatureCompletion completion) {
         this.storedPullRequests = storedPullRequests;
         this.source = source;
         this.resolver = resolver;
         this.collector = collector;
         this.importer = importer;
         this.links = links;
+        this.completion = completion;
     }
 
     @Override
@@ -67,22 +71,47 @@ class OpenProjectImportJob implements Job {
     }
 
     /**
-     * Fails at once when a call that lists work packages fails. A work package that fails on its own is
-     * counted and the run goes on; the run then fails at the end, naming it.
+     * Fails at once when a call that lists work packages fails. A work package or a completion pull
+     * request that fails on its own is counted and the run goes on; the run then fails at the end,
+     * naming them.
      */
     @Override
     public void run(JobArguments arguments, JobCounts counts) throws InterruptedException {
-        List<RawRecord> pullRequests = selectedPullRequests(OpenProjectImportArguments.parse(arguments));
+        OpenProjectImportArguments importArguments = OpenProjectImportArguments.parse(arguments);
+        List<RawRecord> pullRequests = selectedPullRequests(importArguments);
         counts.add("pull_requests_read", pullRequests.size());
-        WorkPackageImporter.Imported imported = importWorkItemsOf(pullRequests, counts);
-        if (!imported.failedNumbers().isEmpty()) {
-            throw new OpenProjectImportFailedException(imported.failedNumbers().size() + " of " + imported.total()
-                    + " work packages failed: "
-                    + imported.failedNumbers().stream()
-                            .limit(FAILED_NUMBERS_SHOWN)
-                            .map(number -> "#" + number)
-                            .collect(Collectors.joining(", ")));
+        List<WorkPackageImporter.Imported> imports = new ArrayList<>();
+        imports.add(importWorkItemsOf(pullRequests, counts));
+        List<String> failedPullRequests = completion.complete(
+                importArguments.repository(),
+                importArguments.quarter(),
+                counts,
+                completed -> imports.add(importWorkItemsOf(completed, counts)));
+        failIfSomethingFailed(imports, failedPullRequests);
+    }
+
+    private static void failIfSomethingFailed(
+            List<WorkPackageImporter.Imported> imports, List<String> failedPullRequests) {
+        List<Long> failedNumbers = imports.stream()
+                .flatMap(imported -> imported.failedNumbers().stream())
+                .toList();
+        int total =
+                imports.stream().mapToInt(WorkPackageImporter.Imported::total).sum();
+        List<String> problems = new ArrayList<>();
+        if (!failedNumbers.isEmpty()) {
+            problems.add(failedNumbers.size() + " of " + total + " work packages failed: "
+                    + shown(failedNumbers.stream().map(number -> "#" + number).toList()));
         }
+        if (!failedPullRequests.isEmpty()) {
+            problems.add(failedPullRequests.size() + " completion pull requests failed: " + shown(failedPullRequests));
+        }
+        if (!problems.isEmpty()) {
+            throw new OpenProjectImportFailedException(String.join("; ", problems));
+        }
+    }
+
+    private static String shown(List<String> names) {
+        return names.stream().limit(FAILED_NUMBERS_SHOWN).collect(Collectors.joining(", "));
     }
 
     private List<RawRecord> selectedPullRequests(OpenProjectImportArguments arguments) {

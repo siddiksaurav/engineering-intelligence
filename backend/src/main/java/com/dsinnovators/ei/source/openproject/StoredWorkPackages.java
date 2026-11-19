@@ -6,8 +6,10 @@ import com.dsinnovators.ei.source.RawRecord;
 import com.dsinnovators.ei.source.RawRecordStore;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -74,14 +76,52 @@ public class StoredWorkPackages {
             if (workPackage.isEmpty()) {
                 return Optional.empty();
             }
-            if (FEATURE_TYPE.equals(
-                    workPackage.get().path("_links").path("type").path("title").asString())) {
+            if (FEATURE_TYPE.equals(typeOf(workPackage.get()))) {
                 return current;
             }
             current = HrefNumbers.trailingNumber(
                     workPackage.get().path("_links").path("parent").path("href").asString(""));
         }
         return Optional.empty();
+    }
+
+    /** The Features that changed into a done status within the quarter (see {@link #isDoneIn}), by number. */
+    public List<Long> featuresDoneIn(Quarter quarter) {
+        return latestWorkPackages()
+                .filter(workPackage -> FEATURE_TYPE.equals(typeOf(workPackage.getPayload())))
+                .map(workPackage -> Long.parseLong(workPackage.getExternalId()))
+                .filter(number -> isDoneIn(number, quarter))
+                .sorted()
+                .toList();
+    }
+
+    /** The Feature and every stored work package that has it among its ancestors, by number. */
+    public Set<Long> numbersUnder(long feature) {
+        Set<Long> numbers = new LinkedHashSet<>();
+        numbers.add(feature);
+        latestWorkPackages()
+                .filter(workPackage -> ancestorsOf(workPackage.getPayload()).contains(feature))
+                .map(workPackage -> Long.parseLong(workPackage.getExternalId()))
+                .sorted()
+                .forEach(numbers::add);
+        return numbers;
+    }
+
+    /** The pull requests OpenProject lists on a stored work package (decision 69); empty when it is not stored. */
+    public List<ListedPullRequest> listedPullRequests(long number) {
+        List<ListedPullRequest> listed = new ArrayList<>();
+        rawRecords
+                .findLatest(
+                        OpenProjectSource.KEY,
+                        OpenProjectRecordKind.WORK_PACKAGE_PULL_REQUESTS.recordKind(),
+                        String.valueOf(number))
+                .ifPresent(record -> record.getPayload()
+                        .path("pullRequests")
+                        .forEach(pullRequest -> listed.add(new ListedPullRequest(
+                                pullRequest.path("repository").asString(),
+                                pullRequest.path("number").asInt(),
+                                pullRequest.path("merged").asBoolean(false)))));
+        return listed;
     }
 
     /** The changes of status of a work package, read from its activities, oldest first. */
@@ -112,6 +152,24 @@ public class StoredWorkPackages {
                 .filter(change ->
                         quarter.contains(change.at().atOffset(ZoneOffset.UTC).toLocalDate()))
                 .anyMatch(change -> doneStatuses.contains(change.status().toLowerCase(Locale.ROOT)));
+    }
+
+    private Stream<RawRecord> latestWorkPackages() {
+        return rawRecords
+                .findLatestByKind(OpenProjectSource.KEY, OpenProjectRecordKind.WORK_PACKAGE.recordKind())
+                .stream();
+    }
+
+    private static String typeOf(JsonNode workPackage) {
+        return workPackage.path("_links").path("type").path("title").asString();
+    }
+
+    private static Set<Long> ancestorsOf(JsonNode workPackage) {
+        Set<Long> ancestors = new HashSet<>();
+        for (JsonNode ancestor : workPackage.path("_links").path("ancestors")) {
+            HrefNumbers.trailingNumber(ancestor.path("href").asString("")).ifPresent(ancestors::add);
+        }
+        return ancestors;
     }
 
     private static Stream<StatusChange> statusChangesOf(JsonNode activity) {

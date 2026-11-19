@@ -13,7 +13,7 @@ import java.util.Optional;
  *
  * @param mergeRange the days of merge to read, both included; empty when numbers are given
  * @param pullRequestNumbers the numbers of stored pull requests; empty when a range is given
- * @param quarter the quarter of the completion step; F03 task 11 reads it
+ * @param quarter the quarter whose done Features the completion step pulls
  */
 record OpenProjectImportArguments(
         String repository, Optional<MergeRange> mergeRange, List<Integer> pullRequestNumbers, Quarter quarter) {
