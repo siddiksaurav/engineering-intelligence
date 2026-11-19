@@ -50,6 +50,9 @@ Every decision that shapes the PoC, newest at the bottom. A later entry override
 | 44 | 19 Nov 2026 | The job endpoint `POST /api/jobs/{name}/runs` answers only callers on the same machine (loopback). A run is recorded in `job_run`, runs in the background, and a second run of the same job is refused while one runs. A run cut off by a restart is marked `interrupted` | No authentication in the PoC; two imports of one source at once would race on versions | User and F02 design 11 |
 | 45 | 19 Nov 2026 | Operating numbers of connectors and the launcher (retries, rate-limit reserve, count flush interval) are Spring configuration properties. `setting` holds the rules of the evaluation, valid by quarter | A retry count changes no score; the `setting` rule is about the spec's numbers | F02 design 11 |
 | 46 | 19 Nov 2026 | The readers of stored GitHub rows are built by F03, their first user, not by F02 | No code waits unused | F02 design 11 |
+| 47 | 19 Nov 2026 | Tests run with the Spring profile `test`, and `.env` is imported only outside it | `.env` holds real tokens; a test must never reach a real, paid service | F02 build |
+| 48 | 19 Nov 2026 | `DatabaseTest` keeps the `setting` rows the migrations seed: it reads them once from the fresh database and puts them back after each truncate | Seeded settings (bot list now, done statuses and weights later) are part of the schema's starting state | F02 build |
+| 49 | 19 Nov 2026 | GraphQL queries live as files under `github/`; each fragment lives once under `github/fragments/` and is added to every query that uses it | Every page of a part asks for the same fields, so the content hash of a record does not depend on which page it came from | F02 build |
 
 ## Not decided yet
 

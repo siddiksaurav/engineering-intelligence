@@ -2,6 +2,23 @@
 
 One entry per working session, newest at the top. Each entry says what was done, what is next and what is blocked. Read the top entry first.
 
+## 19 Nov 2026: F02 built and verified on real data
+
+**Done**
+- F02 deep dive with the user; design approved (`docs/features/F02-github-connector/design.md`). The user asked for fewer questions: only real business or technical choices are asked, the rest are stated as the session's calls.
+- New way of working for this PoC (decision 40): `plan.md` is a short task list without code, and the session goes on to the build once it is written. `CLAUDE.md` and `docs/features/README.md` say so.
+- F02 built in 13 tasks on branch `f02-github-connector`, one commit per task: tests no longer read `.env`, NUL escaping in `raw_record`, `job_run`, the job launcher, `POST /api/jobs/{name}/runs` and `GET /api/jobs/runs/{id}` (local callers only), setting `github.bot_logins`, the GitHub client, the day-by-day PR search, the PR fetcher, the recorder, the `github-import` job, an end-to-end test. 248 backend tests.
+- First real import, 1 to 14 Jul 2026: 215 of 215 merged PRs stored with 674 reviews, 735 inline comments, 367 conversation comments; 6 min 22 s. A second run added no rows. Evidence: `docs/features/F02-github-connector/notes.md`.
+- Decisions 40 to 49.
+
+**Next**
+- Push `f02-github-connector`, open the pull request, see CI green; then F02 is done (user decides when to push).
+- Then F03 OpenProject connector: deep dive with the user. Read F02 `notes.md`, "What a later feature should know", first.
+
+**Blocked or needed from the user**
+- Approval to push and open the pull request.
+- An LLM API key is needed from F06.
+
 ## 18 Nov 2026: F01 merged into `main`
 
 **Done**

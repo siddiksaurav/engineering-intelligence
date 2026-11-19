@@ -166,7 +166,7 @@ Each block below gives a new session enough to start the deep dive. "Open questi
 
 **Goal.** The work items behind the PRs, with enough history to know the feature, the people and the done date.
 
-**Builds.** A connector that reads `community.openproject.org/api/v3` without login and stores: every work item referenced by a stored PR, its ancestors up to the top, its children, its activities (status history with who and when), its custom fields "Developers" and "Module", and its list of linked GitHub PRs. For each Feature that reached a done status in the quarter, it also has F02 pull all linked PRs whatever their date. It fills `project`.
+**Builds.** A connector that reads `community.openproject.org/api/v3` without login and stores: every work item referenced by a stored PR, its ancestors up to the top, its children, its activities (status history with who and when), its custom fields "Developers" and "Module", and its list of linked GitHub PRs. For each Feature that reached a done status in the quarter, it also has F02 pull all linked PRs whatever their date. It fills `project`. It also builds the readers of the stored GitHub rows that it and later features need: list PRs by merge date and by author, fetch a PR's reviews and comments (decision 46; row layout in F02 design 6.2). F02's `github-import` job fetches PRs by number with `pullRequestNumbers`.
 
 **Read first.** `poc-plan.md` section 1 (OpenProject and the "missing or weak" table), 3.1 item 1, 3.7 step 3. Spec section 5, source 2.
 

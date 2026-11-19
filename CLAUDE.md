@@ -94,10 +94,17 @@ cd web && npm test                                           run the web tests
 cd web && npm run lint                                       lint the web app
 cd web && npm run typecheck                                  type-check the web app
 cd web && npm run format                                     format the web code (format:check only checks)
+curl -s -X POST localhost:8080/api/jobs/github-import/runs \
+  -H 'Content-Type: application/json' \
+  -d '{"repository":"opf/openproject","mergedFrom":"2026-07-01","mergedTo":"2026-07-14"}'
+                                                             start a job (backend running); answers with the run id
+curl -s localhost:8080/api/jobs/runs/1                       see a run: status, counts, error
 ```
 
 - Backend tests need Docker running. They start their own PostgreSQL container and never use the Compose database.
-- No job can be started yet. F02 adds the launcher and the endpoint that starts a job; there is no command-line runner.
+- Jobs are started only through `POST /api/jobs/{name}/runs`, from the machine the backend runs on. Every run is recorded in `job_run`. A second start of a running job answers `409`. `github-import` takes `repository` and either `mergedFrom` and `mergedTo` or `pullRequestNumbers` (comma-separated).
+- `github-import` needs a read-only `GITHUB_TOKEN` in `.env` (a fine-grained token with public repository access). Two weeks take about six minutes.
+- Tests run with the profile `test` and never read `.env`. They never call GitHub; `GitHubApiFixture` gives a client on a mock server.
 - Health: `curl -s localhost:8080/actuator/health`. The web page at `localhost:3000` shows "backend up" or "backend down".
 - A test that needs the database extends `com.dsinnovators.ei.DatabaseTest`.
 - Do not put quotes around values in `.env`: the backend would read them as part of the value.
