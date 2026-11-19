@@ -1,6 +1,7 @@
 package com.dsinnovators.ei.source.openproject;
 
 import com.dsinnovators.ei.common.CanonicalJson;
+import com.dsinnovators.ei.common.Sleeper;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
