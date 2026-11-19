@@ -1,0 +1,1 @@
+{"_type":"Collection","total":1,"count":1,"pageSize":2,"offset":1,"_embedded":{"elements":[{"_type":"WorkPackage","id":56343,"displayId":"56343","_links":{"self":{"href":"/api/v3/work_packages/56343"}}}]},"_links":{"self":{"href":"/api/v3/work_packages"}}}

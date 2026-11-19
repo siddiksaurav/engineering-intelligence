@@ -1,0 +1,388 @@
+{
+ "_type": "Collection",
+ "total": 2,
+ "count": 2,
+ "_embedded": {
+  "elements": [
+   {
+    "_embedded": {
+     "githubUser": {
+      "_type": "GithubUser",
+      "login": "akabiru",
+      "htmlUrl": "https://github.com/akabiru",
+      "avatarUrl": "https://avatars.githubusercontent.com/u/17295175?v=4",
+      "_links": {
+       "self": {
+        "href": "github_users/246"
+       }
+      }
+     },
+     "checkRuns": [
+      {
+       "_type": "GithubCheckRun",
+       "htmlUrl": "https://github.com/opf/openproject/actions/runs/44489713235/job/135441942191",
+       "appOwnerAvatarUrl": "https://avatars.githubusercontent.com/u/9919?v=4",
+       "name": "ai-involvement-check",
+       "status": "completed",
+       "conclusion": "success",
+       "detailsUrl": "https://github.com/opf/openproject/actions/runs/44489713235/job/135441942191",
+       "startedAt": "2026-11-19T08:41:17.000Z",
+       "completedAt": "2026-11-19T08:41:24.000Z",
+       "_links": {
+        "self": {
+         "href": "github_check_run/703207"
+        }
+       }
+      }
+     ]
+    },
+    "_type": "GithubPullRequest",
+    "id": 13835,
+    "number": 26626,
+    "htmlUrl": "https://github.com/opf/openproject/pull/26626",
+    "state": "open",
+    "repository": "opf/openproject",
+    "repositoryHtmlUrl": "https://github.com/opf/openproject",
+    "githubUpdatedAt": "2026-11-19T08:41:12.000Z",
+    "title": "[COMMS-1125] Build the service worker as its own TypeScript package",
+    "body": {
+     "format": "markdown",
+     "raw": "omitted"
+    },
+    "draft": false,
+    "merged": false,
+    "mergedAt": null,
+    "commentsCount": 17,
+    "reviewCommentsCount": 17,
+    "additionsCount": 5316,
+    "deletionsCount": 610,
+    "changedFilesCount": 54,
+    "labels": [
+     {
+      "name": "pullpreview",
+      "color": "fca037"
+     }
+    ],
+    "createdAt": "2026-11-04T08:19:35.435Z",
+    "updatedAt": "2026-11-19T08:41:42.543Z",
+    "_links": {
+     "githubUser": {
+      "href": "github_users/246",
+      "title": "akabiru"
+     },
+     "mergedBy": {
+      "href": null
+     },
+     "checkRuns": [
+      {
+       "href": "github_check_run/703207",
+       "title": "ai-involvement-check"
+      },
+      {
+       "href": "github_check_run/700968",
+       "title": "Analyze (javascript-typescript)"
+      },
+      {
+       "href": "github_check_run/700980",
+       "title": "Analyze (ruby)"
+      },
+      {
+       "href": "github_check_run/700966",
+       "title": "Brakeman Scan"
+      },
+      {
+       "href": "github_check_run/700970",
+       "title": "Check internal links in documentation"
+      },
+      {
+       "href": "github_check_run/700972",
+       "title": "Check README.md case in documentation"
+      },
+      {
+       "href": "github_check_run/700982",
+       "title": "Check README.md YAML header syntax in documentation"
+      },
+      {
+       "href": "github_check_run/700961",
+       "title": "CLAAssistant"
+      },
+      {
+       "href": "github_check_run/696220",
+       "title": "copilot-pull-request-reviewer"
+      },
+      {
+       "href": "github_check_run/700975",
+       "title": "danger"
+      },
+      {
+       "href": "github_check_run/700978",
+       "title": "db:migrate without optional Postgres extensions"
+      },
+      {
+       "href": "github_check_run/700974",
+       "title": "dependency-review"
+      },
+      {
+       "href": "github_check_run/700981",
+       "title": "deploy"
+      },
+      {
+       "href": "github_check_run/700967",
+       "title": "ERB lint"
+      },
+      {
+       "href": "github_check_run/700971",
+       "title": "ESLint"
+      },
+      {
+       "href": "github_check_run/700963",
+       "title": "Herb lint"
+      },
+      {
+       "href": "github_check_run/700986",
+       "title": "I18n inconsistency check"
+      },
+      {
+       "href": "github_check_run/666174",
+       "title": "label-contribution"
+      },
+      {
+       "href": "github_check_run/700979",
+       "title": "Resolve Playwright version"
+      },
+      {
+       "href": "github_check_run/700973",
+       "title": "RuboCop"
+      },
+      {
+       "href": "github_check_run/700983",
+       "title": "Run zizmor 🌈"
+      },
+      {
+       "href": "github_check_run/700976",
+       "title": "SaaS tests"
+      },
+      {
+       "href": "github_check_run/700984",
+       "title": "Semgrep Scan"
+      },
+      {
+       "href": "github_check_run/700985",
+       "title": "Typecheck"
+      },
+      {
+       "href": "github_check_run/700964",
+       "title": "Typecheck, lint, test and build"
+      },
+      {
+       "href": "github_check_run/700969",
+       "title": "Typos"
+      },
+      {
+       "href": "github_check_run/700987",
+       "title": "Units (chromium)"
+      },
+      {
+       "href": "github_check_run/700977",
+       "title": "Units + Features"
+      },
+      {
+       "href": "github_check_run/700988",
+       "title": "Units (firefox)"
+      },
+      {
+       "href": "github_check_run/700989",
+       "title": "Units (webkit)"
+      },
+      {
+       "href": "github_check_run/671430",
+       "title": "version-skew"
+      },
+      {
+       "href": "github_check_run/703206",
+       "title": "work-package-check"
+      },
+      {
+       "href": "github_check_run/684462",
+       "title": ".github/dependabot.yml"
+      },
+      {
+       "href": "github_check_run/700992",
+       "title": "Brakeman"
+      },
+      {
+       "href": "github_check_run/700994",
+       "title": "CodeQL"
+      },
+      {
+       "href": "github_check_run/700993",
+       "title": "Semgrep OSS"
+      },
+      {
+       "href": "github_check_run/700990",
+       "title": "zizmor"
+      }
+     ]
+    }
+   },
+   {
+    "_embedded": {
+     "githubUser": {
+      "_type": "GithubUser",
+      "login": "akabiru",
+      "htmlUrl": "https://github.com/akabiru",
+      "avatarUrl": "https://avatars.githubusercontent.com/u/17295175?v=4",
+      "_links": {
+       "self": {
+        "href": "github_users/246"
+       }
+      }
+     },
+     "checkRuns": [
+      {
+       "_type": "GithubCheckRun",
+       "htmlUrl": "https://github.com/opf/openproject/actions/runs/43835056473/job/133189521882",
+       "appOwnerAvatarUrl": "https://avatars.githubusercontent.com/u/9919?v=4",
+       "name": "ai-involvement-check",
+       "status": "completed",
+       "conclusion": "success",
+       "detailsUrl": "https://github.com/opf/openproject/actions/runs/43835056473/job/133189521882",
+       "startedAt": "2026-11-16T08:57:14.000Z",
+       "completedAt": "2026-11-16T08:57:19.000Z",
+       "_links": {
+        "self": {
+         "href": "github_check_run/696100"
+        }
+       }
+      }
+     ]
+    },
+    "_type": "GithubPullRequest",
+    "id": 14091,
+    "number": 27008,
+    "htmlUrl": "https://github.com/opf/openproject/pull/27008",
+    "state": "open",
+    "repository": "opf/openproject",
+    "repositoryHtmlUrl": "https://github.com/opf/openproject",
+    "githubUpdatedAt": "2026-11-16T08:54:17.000Z",
+    "title": "[SE-694] Refuse a held push endpoint without retrying",
+    "body": {
+     "format": "markdown",
+     "raw": "omitted"
+    },
+    "draft": false,
+    "merged": false,
+    "mergedAt": null,
+    "commentsCount": 0,
+    "reviewCommentsCount": 0,
+    "additionsCount": 14,
+    "deletionsCount": 13,
+    "changedFilesCount": 2,
+    "labels": [
+     {
+      "name": "ai: Collaborative 💻",
+      "color": "6366F1"
+     }
+    ],
+    "createdAt": "2026-11-16T08:49:42.941Z",
+    "updatedAt": "2026-11-16T09:04:33.710Z",
+    "_links": {
+     "githubUser": {
+      "href": "github_users/246",
+      "title": "akabiru"
+     },
+     "mergedBy": {
+      "href": null
+     },
+     "checkRuns": [
+      {
+       "href": "github_check_run/696100",
+       "title": "ai-involvement-check"
+      },
+      {
+       "href": "github_check_run/696037",
+       "title": "Analyze (javascript-typescript)"
+      },
+      {
+       "href": "github_check_run/696040",
+       "title": "Analyze (ruby)"
+      },
+      {
+       "href": "github_check_run/696039",
+       "title": "Brakeman Scan"
+      },
+      {
+       "href": "github_check_run/696049",
+       "title": "CLAAssistant"
+      },
+      {
+       "href": "github_check_run/696098",
+       "title": "copilot-pull-request-reviewer"
+      },
+      {
+       "href": "github_check_run/696043",
+       "title": "danger"
+      },
+      {
+       "href": "github_check_run/696048",
+       "title": "db:migrate without optional Postgres extensions"
+      },
+      {
+       "href": "github_check_run/696044",
+       "title": "dependency-review"
+      },
+      {
+       "href": "github_check_run/696045",
+       "title": "I18n inconsistency check"
+      },
+      {
+       "href": "github_check_run/696050",
+       "title": "label-contribution"
+      },
+      {
+       "href": "github_check_run/696046",
+       "title": "RuboCop"
+      },
+      {
+       "href": "github_check_run/696035",
+       "title": "SaaS tests"
+      },
+      {
+       "href": "github_check_run/696038",
+       "title": "Semgrep Scan"
+      },
+      {
+       "href": "github_check_run/696036",
+       "title": "Typos"
+      },
+      {
+       "href": "github_check_run/696041",
+       "title": "Units + Features"
+      },
+      {
+       "href": "github_check_run/696097",
+       "title": "work-package-check"
+      },
+      {
+       "href": "github_check_run/696053",
+       "title": "Brakeman"
+      },
+      {
+       "href": "github_check_run/696051",
+       "title": "CodeQL"
+      },
+      {
+       "href": "github_check_run/696052",
+       "title": "Semgrep OSS"
+      }
+     ]
+    }
+   }
+  ]
+ },
+ "_links": {
+  "self": {
+   "href": "/api/v3/work_packages/81224/github_pull_requests"
+  }
+ }
+}

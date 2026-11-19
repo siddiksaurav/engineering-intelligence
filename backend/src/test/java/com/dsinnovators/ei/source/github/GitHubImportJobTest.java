@@ -42,8 +42,7 @@ class GitHubImportJobTest extends DatabaseTest {
     private GitHubImportJob job() {
         return new GitHubImportJob(
                 new MergedPullRequestSearch(github.api, github.properties),
-                new PullRequestFetcher(github.api),
-                recorder);
+                new PullRequestImporter(new PullRequestFetcher(github.api), recorder));
     }
 
     private static JobArguments numbers(String numbers) {

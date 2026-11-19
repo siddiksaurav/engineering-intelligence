@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 /**
  * The arguments of {@code github-import} (F02 design 5.2): a repository and either a range of
@@ -17,9 +18,10 @@ import java.util.regex.Pattern;
  * @param mergeRange the days to list, both included; empty when numbers are given
  * @param pullRequestNumbers the numbers to fetch, in the given order; empty when a range is given
  */
-record GitHubImportArguments(String repository, Optional<MergeRange> mergeRange, List<Integer> pullRequestNumbers) {
+public record GitHubImportArguments(
+        String repository, Optional<MergeRange> mergeRange, List<Integer> pullRequestNumbers) {
 
-    record MergeRange(LocalDate from, LocalDate to) {}
+    public record MergeRange(LocalDate from, LocalDate to) {}
 
     static final String REPOSITORY = "repository";
     static final String MERGED_FROM = "mergedFrom";
@@ -36,10 +38,22 @@ record GitHubImportArguments(String repository, Optional<MergeRange> mergeRange,
      * @throws IllegalArgumentException that names the argument and its value
      */
     static GitHubImportArguments parse(JobArguments arguments) {
+        return parse(arguments, List.of());
+    }
+
+    /**
+     * Reads and checks the arguments of a job that takes these and some of its own.
+     *
+     * @param ownArguments the names the calling job reads itself; they are not refused here
+     * @throws IllegalArgumentException that names the argument and its value
+     */
+    public static GitHubImportArguments parse(JobArguments arguments, List<String> ownArguments) {
+        List<String> known =
+                Stream.concat(KNOWN.stream(), ownArguments.stream()).toList();
         for (String name : arguments.names()) {
-            if (!KNOWN.contains(name)) {
+            if (!known.contains(name)) {
                 throw new IllegalArgumentException(
-                        "Unknown argument '" + name + "'. Known: " + String.join(", ", KNOWN));
+                        "Unknown argument '" + name + "'. Known: " + String.join(", ", known));
             }
         }
         String repository = arguments.require(REPOSITORY);

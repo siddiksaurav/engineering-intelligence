@@ -10,33 +10,15 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
-import org.springframework.context.annotation.Primary;
 import tools.jackson.databind.JsonNode;
 
 /** {@code github-import} started over HTTP, as a person would, with GitHub's answers recorded. */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@Import(GitHubImportEndToEndTest.RecordedGitHub.class)
+@Import(RecordedGitHub.class)
 class GitHubImportEndToEndTest extends DatabaseTest {
 
     private static final String IMPORT_24204 = "{\"repository\":\"opf/openproject\",\"pullRequestNumbers\":\"24204\"}";
-
-    @TestConfiguration
-    static class RecordedGitHub {
-
-        @Bean
-        GitHubApiFixture gitHubApiFixture() {
-            return new GitHubApiFixture();
-        }
-
-        @Bean
-        @Primary
-        GitHubApi recordedGitHubApi(GitHubApiFixture fixture) {
-            return fixture.api;
-        }
-    }
 
     @Value("${local.server.port}")
     private int port;

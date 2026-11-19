@@ -2,6 +2,40 @@
 
 One entry per working session, newest at the top. Each entry says what was done, what is next and what is blocked. Read the top entry first.
 
+## 19 Nov 2026: F03 built, merged without the last review round
+
+**Done**
+- `/build F03`: 12 tasks on `feature/F03`, one commit each, plus fixes from two review rounds (14 problems: fetch each work package once per run, `openproject` links for every pull request, answers checked at the boundary, exact done-status match, shared helpers instead of copies, missing tests, dead code). Decisions 70 and 71 found while building.
+- Backend `./mvnw verify`: 378 tests, 0 failures, 12 skipped (architecture tests disabled until later features). Web: format, lint, type check, 27 tests, build all green.
+- At the user's request, review round 3 was not run and the branch was pushed, opened as a pull request and merged.
+
+**Not done**
+- The real-data checks of the design's "How it will be tested" (resolved share about 77% on 1 to 14 Jul 2026, PRs 26057 and 26061 to 81224, a second run adds no rows, completion pull requests of two done Features checked by hand). No `summary.md` yet.
+- The status table still says "in progress".
+
+**Next**
+- Run `openproject-import` on real data and record the evidence in `docs/features/F03-openproject-connector/notes.md`, section "Verification"; then `/done F03`.
+
+**Blocked or needed from the user**
+- `GITHUB_TOKEN` in `.env` for the completion step.
+- An LLM API key is needed from F06.
+
+## 19 Nov 2026: F03 design approved, plan written
+
+**Done**
+- Branch `feature/F03` from `main` (local `main` fast-forwarded to `origin/main`, which has F02 merged as pull request 2).
+- Deep dive on the real data (checked 19 Nov 2026): 133 of 172 human pull requests of 1 to 14 Jul resolve to a visible work item (77%); old keys resolve on the server (`SE-694` is 81224); 12 references point to non-public projects. Detail: `docs/features/F03-openproject-connector/design.md`.
+- Question brief answered by the user, one question at a time: done statuses `tested`, `deployed`, `resolved`, `released`, `closed`; all pull requests pulled for Features done in the quarter only; OpenProject's pull request lists stored as a reduced copy. Decisions 56 to 69.
+- The master plan's F03 block now says F03 builds only the readers it uses (decision 62).
+- `plan.md` with 12 tasks; empty `notes.md`.
+
+**Next**
+- `/clear`, then `/build F03`.
+
+**Blocked or needed from the user**
+- Nothing for F03 (no login needed; `GITHUB_TOKEN` is already in `.env` for the completion step).
+- An LLM API key is needed from F06.
+
 ## 19 Nov 2026: Claude Code workflow set up
 
 **Done**
