@@ -16,11 +16,8 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
 import java.io.IOException;
 import java.net.SocketTimeoutException;
 import java.net.URI;
-import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.ZoneOffset;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
@@ -29,24 +26,22 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.client.MockRestServiceServer;
-import org.springframework.web.client.RestClient;
 import tools.jackson.databind.JsonNode;
 
 class GitHubApiTest {
 
-    private static final String TOKEN = "ghp_test-token-never-shown";
-    private static final Instant NOW = Instant.parse("2026-11-19T08:00:00Z");
-    private static final String GRAPHQL = "https://api.github.com/graphql";
+    private static final String TOKEN = GitHubApiFixture.TOKEN;
+    private static final Instant NOW = GitHubApiFixture.NOW;
+    private static final String GRAPHQL = GitHubApiFixture.GRAPHQL;
 
-    private final List<Duration> waits = new ArrayList<>();
+    private List<Duration> waits;
     private MockRestServiceServer server;
 
     private GitHubApi api(String token) {
-        GitHubProperties properties = new GitHubProperties(
-                URI.create("https://api.github.com"), token, 50, 3, Duration.ofSeconds(2), Duration.ofSeconds(60));
-        RestClient.Builder builder = GitHubConfiguration.configure(RestClient.builder(), properties);
-        server = MockRestServiceServer.bindTo(builder).build();
-        return new GitHubApi(builder.build(), properties, Clock.fixed(NOW, ZoneOffset.UTC), waits::add);
+        GitHubApiFixture fixture = new GitHubApiFixture(token);
+        waits = fixture.waits;
+        server = fixture.server;
+        return fixture.api;
     }
 
     private GitHubApi api() {

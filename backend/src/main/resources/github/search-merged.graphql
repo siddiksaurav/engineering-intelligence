@@ -1,0 +1,8 @@
+# Pull requests merged on one day, 100 a page (F02 design 5.2 step 1).
+query SearchMerged($query: String!, $after: String) {
+  search(query: $query, type: ISSUE, first: 100, after: $after) {
+    issueCount
+    pageInfo { hasNextPage endCursor }
+    nodes { ... on PullRequest { number } }
+  }
+}
