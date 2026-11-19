@@ -56,6 +56,7 @@ Every feature follows these. A feature design may not change one without a new e
 **Way of working**
 - Test first. Each task in a feature plan has its test before its code.
 - One commit per task.
+- A feature is designed with `/design FNN`, built with `/build FNN` and closed with `/done FNN` (`CLAUDE.md`, "How work is done"). The user's answer to the question brief counts as design and plan approval.
 - Secrets (GitHub token, LLM API key) live in a local `.env` that is not committed. `.env.example` lists the names.
 - Jobs are started by a REST endpoint, and every run is recorded. There is no command-line runner and no scheduler.
 
@@ -387,7 +388,7 @@ F05 is the first point where something can be shown. F08 is the first point wher
 
 ## 7. Status
 
-Update this table when a feature changes state. States: not started, in design, design approved, plan approved, in progress, done. Only the user moves a feature to "design approved" or "plan approved".
+Update this table when a feature changes state. States: not started, in design, design approved, plan approved, in progress, done. Only the user moves a feature to "design approved" or "plan approved". The user's answer to the question brief of `/design` counts as approval of both the design and the plan, so the feature then goes to "plan approved" (decision 50).
 
 | Id | Feature | State | Design | Plan |
 | --- | --- | --- | --- | --- |

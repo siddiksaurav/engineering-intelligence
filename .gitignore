@@ -24,3 +24,6 @@ out/
 
 # Local data exports (blind-check sheets may hold labels)
 /data/
+
+# Claude Code personal settings
+.claude/settings.local.json

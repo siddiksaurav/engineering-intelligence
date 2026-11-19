@@ -1,55 +1,41 @@
 # FNN Feature name: design
 
-State: draft | approved on YYYY-MM-DD
+State: draft | approved on YYYY-MM-DD, through the question brief
 
-## 1. Goal
+## Goal
 
 One or two sentences. What exists after this feature that did not exist before, and who sees it.
 
-## 2. Scope
+## In scope / Out of scope
 
 **In.** What this feature builds.
 
 **Out.** What it does not build, and which feature does.
 
-## 3. Rules from the spec and the PoC plan
+## Data and tables
 
-Copy every table and rule this feature uses, in full, with its source (`spec 6.2`, `poc-plan.md 3.2`). Where the PoC differs from the spec, say so and give the reason.
+Tables and columns created or changed, with types and meaning. For JSONB columns, the shape of the content. What is never updated. New rows in `setting`.
 
-## 4. What the real data looks like
+Copy every spec table and rule this feature uses, in full, with its source (`spec 6.2`, `poc-plan.md 3.2`). Where the PoC differs from the spec, say so and give the reason.
 
-Facts this design rests on, each with the date it was checked and how (the API call or the record looked at). Include one or two real examples.
+Facts about the real data this design rests on, each with the date it was checked and how (the API call or the record looked at). Include one or two real examples.
 
-## 5. Behaviour
+## Main flows
 
-What the feature does, step by step. Inputs, outputs, the rule for each decision.
-
-## 6. Data
-
-Tables and columns created or changed, with types and meaning. For JSONB columns, the shape of the content. What is never updated.
-
-## 7. Interfaces
+What the feature does, step by step: inputs, outputs, the rule for each decision. The command or endpoint that starts it and its parameters.
 
 **Uses** (from earlier features): exact class, method and table names.
 
 **Gives** (to later features): exact class, method, endpoint and table names, with types.
 
-## 8. Cases that must work
+## Edge cases
 
 The unusual inputs and failures, and what happens for each. Examples: an empty result, a record seen twice, a call that fails halfway, a very large input.
 
-## 9. How it is run
+## How it will be tested
 
-The command or endpoint that starts it, its parameters, and what it prints.
+The acceptance checks from the master plan's "Done when", made exact: the command or the manual check, and the expected result. The architecture tests this feature enables.
 
-## 10. How it is checked
+## Open points
 
-The acceptance checks from the master plan's "Done when", made exact: the command or the manual check, and the expected result.
-
-## 11. Decisions made in this deep dive
-
-Each open question from the master plan, with the answer and the reason. These are also added to `docs/decisions.md`.
-
-## 12. Still open
-
-Anything not decided, and who decides it.
+While in draft: the question brief (business questions, technical decisions for the user, decisions made by the session). Once approved, this section is named "Decisions" and lists every decision with its number in `docs/decisions.md`; no open point is left.

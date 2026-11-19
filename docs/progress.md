@@ -2,6 +2,23 @@
 
 One entry per working session, newest at the top. Each entry says what was done, what is next and what is blocked. Read the top entry first.
 
+## 19 Nov 2026: Claude Code workflow set up
+
+**Done**
+- Three project commands in `.claude/skills/`: `/design FNN`, `/build FNN`, `/done FNN`, and two subagents in `.claude/agents/`: `implementer` (Sonnet, one task, test first, commits only when green) and `reviewer` (Opus, read-only, reports problems or APPROVED). Decision 50.
+- The question brief: the session decides clear technical points alone and asks only business questions and unclear technical decisions, with options and an AI recommendation. The answer approves design and plan.
+- Permissions in `.claude/settings.json` (decision 54). No hooks.
+- Architecture tests in `backend/src/test/java/com/dsinnovators/ei/architecture/`: append-only code and tables, the `JudgmentModel` boundary, no number constants in the rule packages. 7 run now; 12 are disabled until F05, F06, F10 and F11 (decisions 51 to 53). ArchUnit 1.5.1 added as a test dependency. No feature code changed.
+- `CLAUDE.md`, `docs/master-plan.md`, `docs/features/README.md` and `_template-design.md` describe the new flow.
+
+**Next**
+- Pull request 2 (`f02-github-connector`), which now also carries this setup, is merged by the user.
+- Then `/design F03` from an up-to-date `main`.
+
+**Blocked or needed from the user**
+- Merging pull request 2.
+- An LLM API key is needed from F06.
+
 ## 19 Nov 2026: F02 done
 
 **Done**
