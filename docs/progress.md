@@ -11,10 +11,12 @@ One entry per working session, newest at the top. Each entry says what was done,
 
 **Not done**
 - The real-data checks of the design's "How it will be tested" (resolved share about 77% on 1 to 14 Jul 2026, PRs 26057 and 26061 to 81224, a second run adds no rows, completion pull requests of two done Features checked by hand). No `summary.md` yet.
-- The status table still says "in progress".
+
+- `F03` done (branch `feature/F03`, pull request 3, merged). Marked done at the user's word while the real-data checks above are still open; there is no `summary.md`.
 
 **Next**
-- Run `openproject-import` on real data and record the evidence in `docs/features/F03-openproject-connector/notes.md`, section "Verification"; then `/done F03`.
+- F04 Identity: `/design F04`.
+- Still open from F03: run `openproject-import` on real data (1 to 14 Jul 2026, quarter 2026-Q3) and record the evidence in `docs/features/F03-openproject-connector/notes.md`, section "Verification".
 
 **Blocked or needed from the user**
 - `GITHUB_TOKEN` in `.env` for the completion step.
