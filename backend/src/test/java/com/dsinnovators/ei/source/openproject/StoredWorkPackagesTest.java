@@ -146,4 +146,16 @@ class StoredWorkPackagesTest extends DatabaseTest {
                 List.of(new StatusChange("closed", Instant.parse("2026-08-01T10:00:00Z"), null)),
                 stored.statusChanges(30));
     }
+
+    @Test
+    void theWalkUpEndsAtAParentThatTheApiHides() {
+        recorder.store(new FetchedWorkPackage(
+                8,
+                json("{\"id\":8,\"_links\":{\"type\":{\"title\":\"Task\"},\"parent\":{\"href\":"
+                        + "\"urn:openproject-org:api:v3:undisclosed\"}}}"),
+                json("{\"_embedded\":{\"elements\":[]}}"),
+                json("{\"reduced\":true,\"pullRequests\":[]}")));
+
+        assertEquals(Optional.empty(), stored.nearestFeature(8));
+    }
 }

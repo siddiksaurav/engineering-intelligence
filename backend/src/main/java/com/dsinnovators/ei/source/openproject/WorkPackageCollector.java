@@ -51,7 +51,6 @@ class WorkPackageCollector {
             linkedNumbers(links.path("ancestors"), related);
             linkedNumbers(links.path("children"), related);
         }
-        related.removeAll(collected.keySet());
         return related;
     }
 

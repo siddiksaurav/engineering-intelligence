@@ -39,9 +39,15 @@ final class ImportRun {
         return collected;
     }
 
-    /** The numbers that no earlier call of the run asked for, which are now taken; a hidden one is asked once. */
+    /**
+     * The numbers that the run neither holds nor has asked for, which are now taken; a number that the
+     * API hides is asked once.
+     */
     List<Long> claimUnrequested(Collection<Long> numbers) {
-        return numbers.stream().filter(requested::add).toList();
+        return numbers.stream()
+                .filter(number -> !collected.containsKey(number))
+                .filter(requested::add)
+                .toList();
     }
 
     /** Claims the collection of the tree under a Feature; false when an earlier round took it. */

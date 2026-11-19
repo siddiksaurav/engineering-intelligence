@@ -37,12 +37,7 @@ class WorkPackageImporter {
      * @param stored the work packages that were stored or found unchanged
      * @param failedNumbers the work packages that could not be fetched or stored
      */
-    record Imported(List<FetchedWorkPackage> stored, List<Long> failedNumbers) {
-
-        int total() {
-            return stored.size() + failedNumbers.size();
-        }
-    }
+    record Imported(List<FetchedWorkPackage> stored, List<Long> failedNumbers) {}
 
     /**
      * Counts {@code <kind>.<outcome>} for each stored record and {@code work_packages_failed}. A work

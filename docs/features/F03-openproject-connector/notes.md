@@ -35,3 +35,17 @@ Recorded by the coordinator of `/build F03` as each task reported. The reason fo
 
 - The activities of a work package are found by a jsonb path on `raw_record` (`WorkPackageActivityRecords`) without an index. Fine for the PoC; a feature that reads many work packages may need an expression index.
 - Status names on community.openproject.org are lower case ("in development", "review approved"); `openproject.done_statuses` matches them exactly (decision 70).
+
+## Kept for later features
+
+Used by tests only for now; each carries a comment naming the feature that reads it.
+
+| Code | Read by |
+| --- | --- |
+| `StoredWorkPackages.find` | F05 |
+| `StoredWorkPackages.linksOf` | F05 |
+| `StoredWorkPackages.nearestFeature` | F05 |
+| `StoredWorkPackages.statusChanges` (production code reads it through `isDoneIn`) | F04, F05 |
+| `PullRequestWorkItemLink.getPullRequestExternalId`, `getReference`, `getLinkedAt` | F05 |
+
+The `Project` entity is gone: no feature reads a project row through an entity (the repository stands in for the project), so `ProjectRepository` upserts the row with one native query. A feature that needs to read projects adds the entity then.

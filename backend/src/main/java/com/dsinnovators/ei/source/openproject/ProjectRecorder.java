@@ -23,10 +23,14 @@ class ProjectRecorder {
     /**
      * Stores the project as OpenProject gave it and brings its row up to date.
      *
-     * @throws OpenProjectApiException when the project has no id or no identifier; nothing is stored
+     * @throws OpenProjectApiException when the answer is not a project or has no id, identifier or name; nothing is stored
      */
     @Transactional
     StoredRecord store(JsonNode project) {
+        if (!"Project".equals(project.path("_type").asString())) {
+            throw new OpenProjectApiException(
+                    "The answer for project " + project.path("id").asString("unknown") + " is not of the kind Project");
+        }
         String externalId = text(project, "id");
         String identifier = text(project, "identifier");
         String name = text(project, "name");
@@ -36,10 +40,7 @@ class ProjectRecorder {
                 OpenProjectRecordKind.PROJECT,
                 store.store(OpenProjectSource.KEY, OpenProjectRecordKind.PROJECT.recordKind(), externalId, url, project)
                         .outcome());
-        projects.findByExternalId(OpenProjectSource.KEY, externalId)
-                .ifPresentOrElse(
-                        existing -> existing.update(identifier, name, url),
-                        () -> projects.save(new Project(dataSource, externalId, identifier, name, url)));
+        projects.upsert(OpenProjectSource.KEY, externalId, identifier, name, url);
         return stored;
     }
 

@@ -3,6 +3,7 @@ package com.dsinnovators.ei.source.openproject;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withStatus;
@@ -158,5 +159,36 @@ class WorkPackageReferenceResolverTest {
     void resolvesNothingWithoutACall() throws Exception {
         assertEquals(List.of(), resolver.resolve(List.of()));
         fixture.server.verify();
+    }
+
+    @Test
+    void failsNamingTheReferenceWhenAWorkPackageFetchedAloneIsNotAWorkPackage() {
+        expectGet(
+                collectionUrl(100, "SE-694"),
+                withSuccess("{\"_embedded\":{\"elements\":[]}}", MediaType.APPLICATION_JSON));
+        expectGet(
+                WORK_PACKAGES + "/SE-694",
+                withSuccess("{\"_type\":\"Error\",\"id\":5,\"_links\":{}}", MediaType.APPLICATION_JSON));
+
+        OpenProjectApiException failure =
+                assertThrows(OpenProjectApiException.class, () -> resolver.resolve(List.of("SE-694")));
+
+        assertTrue(failure.getMessage().contains("work package SE-694"), failure.getMessage());
+        assertTrue(failure.getMessage().contains("\"_type\""), failure.getMessage());
+    }
+
+    @Test
+    void failsNamingTheReferenceWhenAWorkPackageFetchedAloneHasNoLinks() {
+        expectGet(
+                collectionUrl(100, "SE-694"),
+                withSuccess("{\"_embedded\":{\"elements\":[]}}", MediaType.APPLICATION_JSON));
+        expectGet(
+                WORK_PACKAGES + "/SE-694",
+                withSuccess("{\"_type\":\"WorkPackage\",\"id\":5}", MediaType.APPLICATION_JSON));
+
+        OpenProjectApiException failure =
+                assertThrows(OpenProjectApiException.class, () -> resolver.resolve(List.of("SE-694")));
+
+        assertTrue(failure.getMessage().contains("\"_links\""), failure.getMessage());
     }
 }

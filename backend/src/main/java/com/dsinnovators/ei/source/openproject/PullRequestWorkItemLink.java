@@ -48,6 +48,7 @@ public class PullRequestWorkItemLink {
         this.linkedAt = linkedAt;
     }
 
+    // Read by F05, which lists the links of a pull request; not yet by production code.
     public String getPullRequestExternalId() {
         return pullRequestExternalId;
     }
@@ -57,6 +58,7 @@ public class PullRequestWorkItemLink {
         return workPackageId;
     }
 
+    // Read by F05, which shows the reference as the author wrote it; not yet by production code.
     /** The reference as written: a key such as {@code FND-101}, or a number. */
     public String getReference() {
         return reference;
@@ -70,6 +72,7 @@ public class PullRequestWorkItemLink {
         return RESOLVED.equals(state);
     }
 
+    // Read by F05, which orders links by when they were found; not yet by production code.
     public Instant getLinkedAt() {
         return linkedAt;
     }

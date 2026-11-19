@@ -22,7 +22,8 @@ final class PullRequestListReducer {
      * @param answer the collection answer of {@code /work_packages/{id}/github_pull_requests}
      * @return {@code {"reduced": true, "pullRequests": [...]}} in the order of the answer, each entry
      *     with the kept fields and {@code githubUser} (the login)
-     * @throws OpenProjectApiException when the answer has no list of elements
+     * @throws OpenProjectApiException when the answer has no list of elements or an entry has no
+     *     numeric {@code number} or no {@code repository}
      */
     static JsonNode reduce(JsonNode answer) {
         JsonNode elements = OpenProjectAnswers.elementsOf(answer, "the pull request list");
@@ -38,6 +39,7 @@ final class PullRequestListReducer {
     }
 
     private static ObjectNode reduceEntry(JsonNode element, JsonNodeFactory factory) {
+        requireIdentity(element);
         ObjectNode entry = factory.objectNode();
         for (String field : KEPT_FIELDS) {
             entry.set(field, orNull(element.path(field), factory));
@@ -46,6 +48,20 @@ final class PullRequestListReducer {
                 "githubUser",
                 orNull(element.path("_embedded").path("githubUser").path("login"), factory));
         return entry;
+    }
+
+    private static void requireIdentity(JsonNode element) {
+        if (!element.path("number").isIntegralNumber()) {
+            throw malformed(element, "\"number\"");
+        }
+        if (element.path("repository").asString("").isBlank()) {
+            throw malformed(element, "\"repository\"");
+        }
+    }
+
+    private static OpenProjectApiException malformed(JsonNode element, String field) {
+        return new OpenProjectApiException("OpenProject's answer to the pull request list has entry "
+                + element.path("id").asString("unknown") + " without " + field);
     }
 
     private static JsonNode orNull(JsonNode value, JsonNodeFactory factory) {

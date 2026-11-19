@@ -18,7 +18,8 @@ class ProjectRecorderTest extends DatabaseTest {
     private ProjectRecorder recorder;
 
     private static JsonNode project(String identifier, String name) {
-        return CanonicalJson.parse("{\"id\":1395,\"identifier\":\"" + identifier + "\",\"name\":\"" + name + "\"}");
+        return CanonicalJson.parse(
+                "{\"_type\":\"Project\",\"id\":1395,\"identifier\":\"" + identifier + "\",\"name\":\"" + name + "\"}");
     }
 
     private List<Map<String, Object>> projectRows() {
@@ -74,11 +75,23 @@ class ProjectRecorderTest extends DatabaseTest {
 
     @Test
     void aProjectWithoutAnIdentifierIsRefusedAndNothingIsStored() {
-        JsonNode broken = CanonicalJson.parse("{\"id\":1395,\"name\":\"Communications\"}");
+        JsonNode broken = CanonicalJson.parse("{\"_type\":\"Project\",\"id\":1395,\"name\":\"Communications\"}");
 
         OpenProjectApiException failure = assertThrows(OpenProjectApiException.class, () -> recorder.store(broken));
 
         assertEquals("The answer for project 1395 has no identifier", failure.getMessage());
+        assertEquals(List.of(), projectRows());
+    }
+
+    @Test
+    void anAnswerThatIsNotAProjectIsRefusedAndNothingIsStored() {
+        JsonNode notAProject = CanonicalJson.parse(
+                "{\"_type\":\"Error\",\"id\":1395,\"identifier\":\"comms\",\"name\":\"Communications\"}");
+
+        OpenProjectApiException failure =
+                assertThrows(OpenProjectApiException.class, () -> recorder.store(notAProject));
+
+        assertEquals("The answer for project 1395 is not of the kind Project", failure.getMessage());
         assertEquals(List.of(), projectRows());
     }
 }

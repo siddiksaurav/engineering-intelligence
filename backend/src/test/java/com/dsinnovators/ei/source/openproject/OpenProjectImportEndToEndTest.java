@@ -146,7 +146,9 @@ class OpenProjectImportEndToEndTest extends DatabaseTest {
                         listedPullRequest(COMPLETION_PULL_REQUEST_WITHOUT_REFERENCE)));
         expectGet("/work_packages/83452/activities", collection());
         expectGet("/work_packages/83452/github_pull_requests", collection());
-        expectGet("/projects/1395", "{\"id\":1395,\"identifier\":\"comms\",\"name\":\"Communications\"}");
+        expectGet(
+                "/projects/1395",
+                "{\"_type\":\"Project\",\"id\":1395,\"identifier\":\"comms\",\"name\":\"Communications\"}");
     }
 
     private void expectTheRangeToBeImported() {

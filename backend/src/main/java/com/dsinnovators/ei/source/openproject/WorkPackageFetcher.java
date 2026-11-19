@@ -49,7 +49,7 @@ public class WorkPackageFetcher {
         }
         long number = id.asLong();
         JsonNode activities = api.get("/work_packages/" + number + "/activities");
-        OpenProjectAnswers.elementsOf(activities, "the activities of work package " + number);
+        OpenProjectAnswers.requireActivities(activities, number);
         JsonNode pullRequestList =
                 PullRequestListReducer.reduce(api.get("/work_packages/" + number + "/github_pull_requests"));
         return new FetchedWorkPackage(number, workPackage, activities, pullRequestList);

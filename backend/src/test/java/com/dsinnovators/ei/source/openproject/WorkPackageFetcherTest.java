@@ -152,4 +152,30 @@ class WorkPackageFetcherTest {
         assertTrue(failure.getMessage().contains("work package 81224"), failure.getMessage());
         assertTrue(failure.getMessage().contains("_embedded.elements"), failure.getMessage());
     }
+
+    private OpenProjectApiException refusedActivities(String elements) throws Exception {
+        JsonNode workPackage = CanonicalJson.parse(recorded("work-package-81224.json"));
+        fixture.server
+                .expect(requestTo(URI.create(API + "/work_packages/81224/activities")))
+                .andRespond(
+                        withSuccess("{\"_embedded\":{\"elements\":[" + elements + "]}}", MediaType.APPLICATION_JSON));
+        return assertThrows(OpenProjectApiException.class, () -> fetcher.fetchWithDetails(workPackage));
+    }
+
+    @Test
+    void refusesAnActivityWithoutATimeNamingTheWorkPackageAndTheActivity() throws Exception {
+        OpenProjectApiException failure = refusedActivities("{\"id\":1756926}");
+
+        assertTrue(failure.getMessage().contains("work package 81224"), failure.getMessage());
+        assertTrue(failure.getMessage().contains("activity 1756926"), failure.getMessage());
+        assertTrue(failure.getMessage().contains("\"createdAt\""), failure.getMessage());
+    }
+
+    @Test
+    void refusesAnActivityWhoseTimeIsNotATimestamp() throws Exception {
+        OpenProjectApiException failure = refusedActivities("{\"id\":1756926,\"createdAt\":\"yesterday\"}");
+
+        assertTrue(failure.getMessage().contains("activity 1756926"), failure.getMessage());
+        assertTrue(failure.getMessage().contains("yesterday"), failure.getMessage());
+    }
 }

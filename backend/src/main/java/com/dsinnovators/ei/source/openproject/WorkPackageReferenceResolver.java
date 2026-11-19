@@ -73,7 +73,8 @@ public class WorkPackageReferenceResolver {
     private ResolvedReference fetchAlone(String reference) throws InterruptedException {
         try {
             JsonNode workPackage = api.get("/work_packages/" + URLEncoder.encode(reference, StandardCharsets.UTF_8));
-            return ResolvedReference.resolved(reference, numberOf(workPackage, "the work package " + reference));
+            OpenProjectAnswers.requireWorkPackage(workPackage, "the work package " + reference);
+            return ResolvedReference.resolved(reference, workPackage.path("id").asLong());
         } catch (OpenProjectNotFoundException | OpenProjectBadRequestException hidden) {
             return ResolvedReference.notVisible(reference);
         }

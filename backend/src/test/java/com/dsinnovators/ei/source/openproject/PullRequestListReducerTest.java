@@ -76,4 +76,23 @@ class PullRequestListReducerTest {
     private static Comparator<String> order() {
         return Comparator.comparingInt(KEPT_FIELDS::indexOf);
     }
+
+    private static OpenProjectApiException refusedEntry(String entry) {
+        JsonNode answer = CanonicalJson.parse("{\"_embedded\":{\"elements\":[" + entry + "]}}");
+        return assertThrows(OpenProjectApiException.class, () -> PullRequestListReducer.reduce(answer));
+    }
+
+    @Test
+    void refusesAnEntryWithoutANumber() {
+        OpenProjectApiException failure = refusedEntry("{\"id\":7,\"repository\":\"opf/openproject\"}");
+
+        assertTrue(failure.getMessage().contains("\"number\""), failure.getMessage());
+    }
+
+    @Test
+    void refusesAnEntryWithoutARepository() {
+        OpenProjectApiException failure = refusedEntry("{\"id\":7,\"number\":24204,\"repository\":\" \"}");
+
+        assertTrue(failure.getMessage().contains("\"repository\""), failure.getMessage());
+    }
 }
