@@ -58,6 +58,7 @@ Every decision that shapes the PoC, newest at the bottom. A later entry override
 | 52 | 19 Nov 2026 | `evidence_item` and `judgment` get a row trigger that refuses update and delete, as `raw_record` has (decision 33) | Append-only must hold in the database, not only in the Java code; the disabled architecture tests expect it | Workflow setup |
 | 53 | 19 Nov 2026 | The packages `evidence`, `judgment`, `analytics` and `scoring` hold no number constant (no static final number, no number on an enum constant). Numbers of the spec come from `setting`; operating numbers are configuration properties (decision 45) | The only way to check "no spec number in code" in the compiled classes; inline literals are left to the reviewer | Workflow setup |
 | 54 | 19 Nov 2026 | Claude Code permissions are in `.claude/settings.json`: Maven, Docker Compose, npm and the git commands for add, commit, checkout, branch, status, diff and log are allowed; `git push`, `rm -rf` and reading or writing `.env` are refused. No hooks | The user pushes; secrets stay out of every session | User |
+| 55 | 19 Nov 2026 | `git push`, `git fetch`, `git pull` and the `gh pr` and `gh run` commands are allowed, so a session can push a branch, open a pull request and watch CI. A force push stays refused. This replaces the push part of decision 54 | User's choice | User |
 
 ## Not decided yet
 
