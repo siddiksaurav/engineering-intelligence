@@ -30,6 +30,7 @@ public abstract class DatabaseTest {
 
     @BeforeEach
     void emptyTables() {
-        jdbc.execute("truncate raw_record, setting, person_identity, person, project restart identity cascade");
+        jdbc.execute(
+                "truncate raw_record, setting, person_identity, person, project, job_run restart identity cascade");
     }
 }

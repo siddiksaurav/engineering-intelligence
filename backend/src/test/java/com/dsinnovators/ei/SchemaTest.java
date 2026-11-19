@@ -29,12 +29,14 @@ class SchemaTest extends DatabaseTest {
     }
 
     @Test
-    void theSixBaseTablesExist() {
+    void theTablesOfTheMigrationsExist() {
         List<String> tables = jdbc.queryForList(
                 "select table_name from information_schema.tables where table_schema = 'public'"
                         + " and table_name <> 'flyway_schema_history' order by table_name",
                 String.class);
-        assertEquals(List.of("data_source", "person", "person_identity", "project", "raw_record", "setting"), tables);
+        assertEquals(
+                List.of("data_source", "job_run", "person", "person_identity", "project", "raw_record", "setting"),
+                tables);
     }
 
     @Test
