@@ -32,6 +32,14 @@ ei:
     retries: 3
     retry-wait: 2s
     timeout: 60s
+  openproject:
+    api-url: https://community.openproject.org/api/v3
+    page-size: 100
+    # Calls are made one at a time with this wait between them, to be polite to a public server.
+    pause: 200ms
+    retries: 3
+    retry-wait: 2s
+    timeout: 60s
 
 ---
 # The one .env at the repository root. Found when started from the root or from backend/.
