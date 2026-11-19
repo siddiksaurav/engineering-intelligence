@@ -8,7 +8,6 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import tools.jackson.databind.JsonNode;
 
 /**
@@ -50,7 +49,7 @@ public class WorkPackageReferenceResolver {
     private List<ResolvedReference> resolvePage(List<String> page) throws InterruptedException {
         JsonNode answer;
         try {
-            answer = api.get(collectionPath(page));
+            answer = api.get(WorkPackageCollectionPath.withIds(page, properties.pageSize()));
         } catch (OpenProjectBadRequestException invalidValue) {
             return fetchEachAlone(page);
         }
@@ -78,14 +77,6 @@ public class WorkPackageReferenceResolver {
         } catch (OpenProjectNotFoundException hidden) {
             return ResolvedReference.notVisible(reference);
         }
-    }
-
-    private String collectionPath(List<String> references) {
-        String values =
-                references.stream().map(reference -> "\"" + reference + "\"").collect(Collectors.joining(","));
-        String filters = "[{\"id\":{\"operator\":\"=\",\"values\":[" + values + "]}}]";
-        return "/work_packages?filters=" + URLEncoder.encode(filters, StandardCharsets.UTF_8) + "&pageSize="
-                + properties.pageSize();
     }
 
     /** Both the number and the current key of each element name it; an old key names nothing. */
