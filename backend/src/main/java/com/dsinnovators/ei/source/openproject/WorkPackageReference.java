@@ -10,10 +10,15 @@ import java.util.Locale;
  */
 public record WorkPackageReference(String reference, FoundIn foundIn) {
 
-    /** The part of a pull request a reference is read from (decision 57). */
+    /**
+     * Where a link between a pull request and a work item was found: a part of the pull request
+     * (decision 57), or the list of pull requests OpenProject shows on the work item. The lower
+     * case name is the value of {@code pull_request_work_item.found_in}.
+     */
     public enum FoundIn {
         PULL_REQUEST_BODY,
-        PULL_REQUEST_TITLE
+        PULL_REQUEST_TITLE,
+        OPENPROJECT
     }
 
     public WorkPackageReference {
