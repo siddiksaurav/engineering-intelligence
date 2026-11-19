@@ -24,6 +24,14 @@ management:
 ei:
   jobs:
     count-flush-interval: 30s
+  github:
+    api-url: https://api.github.com
+    # Read-only. From .env; never committed, never printed.
+    token: ${GITHUB_TOKEN:}
+    rate-limit-reserve: 50
+    retries: 3
+    retry-wait: 2s
+    timeout: 60s
 
 ---
 # The one .env at the repository root. Found when started from the root or from backend/.
