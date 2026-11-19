@@ -392,7 +392,7 @@ Update this table when a feature changes state. States: not started, in design, 
 | Id | Feature | State | Design | Plan |
 | --- | --- | --- | --- | --- |
 | F01 | Repository skeleton | done | `docs/features/F01-repository-skeleton/design.md` | `docs/features/F01-repository-skeleton/plan.md` |
-| F02 | GitHub connector | in progress | `docs/features/F02-github-connector/design.md` | `docs/features/F02-github-connector/plan.md` |
+| F02 | GitHub connector | done | `docs/features/F02-github-connector/design.md` | `docs/features/F02-github-connector/plan.md` |
 | F03 | OpenProject connector | not started | | |
 | F04 | Identity | not started | | |
 | F05 | Evidence builders without AI, list page | not started | | |

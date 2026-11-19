@@ -2,7 +2,7 @@
 
 ## Result
 
-All 13 tasks of `plan.md` are built, one commit per task, test first. 248 backend tests pass. The first real import of 1 to 14 Jul 2026 stored all 215 merged pull requests; a second run added no rows. The "Done when" evidence is at the end of this file. Still open before "done": the pull request and a green CI run.
+All 13 tasks of `plan.md` are built, one commit per task, test first. 248 backend tests pass. The first real import of 1 to 14 Jul 2026 stored all 215 merged pull requests; a second run added no rows. The "Done when" evidence is at the end of this file. CI is green on pull request 2.
 
 ## Differences from the plan and the design, and why
 
@@ -100,4 +100,4 @@ select record_kind, external_id, version from raw_record where version > 1;
 
 **3. A changed PR is a new version, the old one kept** (design 10.3): `GitHubImportEndToEndTest.aChangedPullRequestIsANewVersionAndTheOldOneIsKept` and `PullRequestRecorderTest.anEditedBodyMakesANewVersionOfThePullRequestRowOnly`. The real re-run found no change, so there is no real pair to list.
 
-**4. CI:** pending the pull request.
+**4. CI:** pull request 2, run 44498139969: Backend pass (49 s), Web pass (35 s).
