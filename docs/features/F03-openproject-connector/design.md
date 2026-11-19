@@ -142,11 +142,11 @@ curl -s -X POST localhost:8080/api/jobs/openproject-import/runs \
 6. **Write the links** of each pull request: the body and title references (step 2, with step 3's result), plus an `openproject` link for every stored work package whose pull request list names this pull request. The pull request's earlier rows are replaced in the same transaction.
 7. **Completion.** For each stored Feature that changed into a done status within `quarter` (below), take the merged pull requests of `repository` in the pull request lists of the Feature and of every work package under it. Those not yet in `raw_record` are imported through F02's import code (the same fetch and store as `github-import`), then go through steps 2 to 6. Repeat until a round finds no new pull request.
 
-**Done in the quarter.** An activity of the Feature whose `createdAt` lies in the quarter and whose `details` holds a text "Status changed from … to {s}" or "Status set to {s}", where `{s}` is exactly a name in `openproject.done_statuses` for that quarter. The match is on the end of the text against the known names, so a status name that contains " to " is read correctly.
+**Done in the quarter.** An activity of the Feature whose `createdAt` lies in the quarter and whose `details` holds a status change "Status changed from … to {s}" or "Status set to {s}", where `{s}` is exactly a name in `openproject.done_statuses` for that quarter (case kept). The change is read from the detail's `html` form, `<strong>Status</strong> changed from <i>…</i> to <i>{s}</i>` or `<strong>Status</strong> set to <i>{s}</i>`, whose tags keep the names apart even when a name contains " to " (decision 70, which replaces the matching from the end of decision 64).
 
 **Counts** in `job_run.counts`, for example: `pull_requests_read`, `references_found`, `references_resolved`, `references_not_visible`, `work_package.created`, `work_package.unchanged`, `work_package_activity.created`, `work_package_pull_requests.unchanged`, `project.created`, `pull_requests_linked`, `features_done_in_quarter`, `pull_requests_completed`, and F02's counts for the completed pull requests.
 
-**Failures.** As in F02: a work package that fails after retries is counted `work_packages_failed`, the run goes on and fails at the end naming the first 20. A failed collection call that is not a `400` fails the run at once (an incomplete list would miss items silently). A failed GitHub import of a completion pull request is counted and named like a failed work package.
+**Failures.** As in F02: a work package that fails after retries is counted `work_packages_failed`, the run goes on and fails at the end naming the first 20. A failed collection call that is not a `400`, or a failed project call (decision 71), fails the run at once (an incomplete list would miss items silently). A failed GitHub import of a completion pull request is counted and named like a failed work package.
 
 ### Talking to OpenProject
 
@@ -249,5 +249,7 @@ Every point of this design is closed. Numbers are those of `docs/decisions.md`.
 | 67 | Done statuses: `tested`, `deployed`, `resolved`, `released`, `closed` (Q1, option "QA passed") | User |
 | 68 | Pull all pull requests of Features done in the quarter only, not the window (Q2) | User |
 | 69 | The OpenProject pull request list is stored as a reduced copy of stable fields (Q3) | User |
+| 70 | Status changes read from the `html` form of activity details, exact match on the done names (found while building) | Session |
+| 71 | A failing project call fails the run at once (found while building) | Session |
 
 The question brief was asked on 19 Nov 2026, one question at a time; the user took the recommended option of each.
