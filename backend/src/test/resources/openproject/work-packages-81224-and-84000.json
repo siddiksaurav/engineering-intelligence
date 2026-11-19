@@ -1,0 +1,1 @@
+{"_type":"Collection","total":2,"count":2,"pageSize":2,"offset":1,"_embedded":{"elements":[{"_type":"WorkPackage","id":81224,"displayId":"COMMS-1078","_links":{"self":{"href":"/api/v3/work_packages/81224"}}},{"_type":"WorkPackage","id":84000,"displayId":"COMMS-1100","_links":{"self":{"href":"/api/v3/work_packages/84000"}}}]},"_links":{"self":{"href":"/api/v3/work_packages"}}}

@@ -20,7 +20,12 @@ final class OpenProjectApiFixture {
     final OpenProjectApi api;
 
     OpenProjectApiFixture() {
-        properties = new OpenProjectProperties(URI.create(API_URL), 100, PAUSE, 3, RETRY_WAIT, Duration.ofSeconds(60));
+        this(100);
+    }
+
+    OpenProjectApiFixture(int pageSize) {
+        properties =
+                new OpenProjectProperties(URI.create(API_URL), pageSize, PAUSE, 3, RETRY_WAIT, Duration.ofSeconds(60));
         RestClient.Builder builder = OpenProjectConfiguration.configure(RestClient.builder(), properties);
         server = MockRestServiceServer.bindTo(builder).build();
         api = new OpenProjectApi(builder.build(), properties, waits::add);
