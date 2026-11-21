@@ -90,7 +90,6 @@ record JudgmentProperties(
         return new FeatureWorkLimits(maxDescriptionCharacters, maxFeatureWorkCharacters);
     }
 
-    // F07: used by the review comment input builder (a later task of F07).
     ReviewCommentLimits reviewCommentLimits() {
         return new ReviewCommentLimits(
                 maxDescriptionCharacters,

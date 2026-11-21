@@ -10,8 +10,7 @@ import tools.jackson.databind.JsonNode;
 /**
  * The Stage 2 answer for the review comments of one call, read and checked against the comments that
  * were sent. Whether a comment is substantive and its tier are not part of it: they are read from the
- * setting {@code evidence.review_comment_types} (decision 170). Used by the review comment judge, a
- * later task of F07.
+ * setting {@code evidence.review_comment_types} (decision 170).
  */
 record ReviewCommentAnswer(List<Comment> comments) {
 

@@ -2,6 +2,7 @@ package com.dsinnovators.ei.judgment;
 
 import com.dsinnovators.ei.source.github.GitHubRecordKind;
 import java.time.Clock;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,6 +40,16 @@ public class JudgmentStore {
                         .map(Judgment::getId)
                         .orElse(null);
         return judgments.save(new Judgment(judgment, supersedesId, clock.instant()));
+    }
+
+    /**
+     * Writes every judgment in one transaction, as {@link #write} does for one: all are stored or none.
+     *
+     * @throws IllegalStateException when a model already judged the input hash of one of them
+     */
+    @Transactional
+    public List<Judgment> writeAll(List<NewJudgment> newJudgments) {
+        return newJudgments.stream().map(this::write).toList();
     }
 
     /** True when a model judged this input for this kind: the input is not judged again. */

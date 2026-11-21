@@ -8,8 +8,7 @@ import tools.jackson.databind.JsonNode;
 
 /**
  * Reads from the setting {@code evidence.review_comment_types} whether a comment type is substantive
- * and which tier it gives (decision 170). The model gives only the type. Used by the review comment
- * judge, a later task of F07.
+ * and which tier it gives (decision 170). The model gives only the type.
  */
 @Component
 class ReviewCommentTypes {

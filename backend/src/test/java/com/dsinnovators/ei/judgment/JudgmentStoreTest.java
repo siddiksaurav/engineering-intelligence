@@ -220,4 +220,33 @@ class JudgmentStoreTest extends DatabaseTest {
         assertTrue(store.findCurrentOfPullRequest(JudgmentKind.PULL_REQUEST_DIGEST, "opf/openproject#2")
                 .isEmpty());
     }
+
+    @Test
+    void writesAllJudgmentsOfAChunkTogether() {
+        JudgmentSubject secondItem = JudgmentSubject.evidenceItem(JudgmentSubjectRows.insertEvidenceItem(jdbc));
+
+        List<Judgment> written = store.writeAll(List.of(
+                anItemTierOf(evidenceItem).inputHash("one").build(),
+                anItemTierOf(secondItem).inputHash("two").build()));
+
+        assertEquals(2, written.size());
+        assertEquals(2, storedJudgments());
+        assertTrue(store.hasModelJudgment(JudgmentKind.ITEM_TIER, "one"));
+        assertTrue(store.hasModelJudgment(JudgmentKind.ITEM_TIER, "two"));
+    }
+
+    @Test
+    void writesNoJudgmentOfAChunkWhenOneIsRefused() {
+        JudgmentSubject secondItem = JudgmentSubject.evidenceItem(JudgmentSubjectRows.insertEvidenceItem(jdbc));
+        store.write(anItemTierOf(secondItem).inputHash("two").build());
+
+        assertThrows(
+                IllegalStateException.class,
+                () -> store.writeAll(List.of(
+                        anItemTierOf(evidenceItem).inputHash("one").build(),
+                        anItemTierOf(secondItem).inputHash("two").build())));
+
+        assertEquals(1, storedJudgments());
+        assertFalse(store.hasModelJudgment(JudgmentKind.ITEM_TIER, "one"));
+    }
 }
