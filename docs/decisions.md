@@ -129,6 +129,7 @@ Every decision that shapes the PoC, newest at the bottom. A later entry override
 | 123 | 22 Nov 2026 | Each evidence item has a stable `item_key`. A changed item gets a new row that supersedes the current one; an item that no longer follows from the records gets a withdrawn row; an unchanged item gets no row | User's choice (Q12 A): append-only, full history, no double count | F05 question brief, user |
 | 124 | 22 Nov 2026 | `evidence_item_link` is created by V8 and left empty in F05; a Bug fix item records its Feature in `fields.underFeature`. A later feature that reads related items fills the table | User's choice (Q13 B): no PoC feature reads the links; the Feature is already on the item | F05 question brief, user |
 
+| 125 | 22 Nov 2026 | Replaces decision 107: `openproject.done_statuses` is read once per `evidence-build` run, for the quarter of the run's day, and applied to every status change, whatever its date | Work item histories reach back to 2019 (557 activities before 2026-Q2, checked 22 Nov 2026) and the setting starts in 2026-Q2; a missing setting is an error (decision 24), so reading by the change's quarter fails real items. Same rule as the bot list (decision 84) | F05 build, session |
 ## Not decided yet
 
 - The LLM client library (OpenAI-compatible) and the Groq model. Fixed in F06.
