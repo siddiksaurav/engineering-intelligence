@@ -147,11 +147,25 @@ Every decision that shapes the PoC, newest at the bottom. A later entry override
 | 141 | 22 Nov 2026 | A PR that links a Bug keeps its F05 Bug fix; its non-Bug links follow the F06 rules; a Bug link alone gives no Refactor, Security or Infra item (a Test change still applies) | The tracker type decides for Bugs (decision 10); one PR is not counted twice for one work item | F06 design, session |
 | 142 | 22 Nov 2026 | Tests never call the model: a fake `JudgmentModel` and a mock HTTP server | Tests never read `.env` and never reach a paid service (decision 22, F02 rule) | F06 design, session |
 | 143 | 22 Nov 2026 | The digest reader `PullRequestDigests` lives in `judgment`; `evidence` reads digests through it and never sees `JudgmentModel` | The model is reached only through `JudgmentModel`, inside `judgment` (architecture test) | F06 design, session |
+| 144 | 22 Nov 2026 | Only free LLM tiers. Several providers are used one after the other, each within its own limits; never several keys or accounts of one provider | User wants free keys and a PoC that proves the judgment, not volume. Groq's AI policy forbids registering several accounts to exceed its limits (checked 22 Nov 2026), so the user's idea of several free keys is met with several providers | F06 question brief, user |
+| 145 | 22 Nov 2026 | F06's real run digests all 172 human PRs of the two weeks already stored (1 to 14 Jul 2026), as far as the free limits allow. The July run of F09 is open | User: "target all the prs ingested for two weeks and let's see how far we can go" | F06 question brief, user |
+| 146 | 22 Nov 2026 | The model is reached through an ordered provider chain (Groq, then the Gemini API free tier): a 429 whose wait exceeds `ei.judgment.max-rate-limit-wait` puts that provider at its limit for the run and the next takes over | User's choice (follow-up F2 A) | F06 question brief, user |
+| 147 | 22 Nov 2026 | A Test change's tier comes from its test kind through the setting `evidence.test_kind_tiers` (unit T1, integration and regression T2, CI gate T3); the model gives the kind only | User's choice (Q2 A): same pattern as Feature work | F06 question brief, user |
+| 148 | 22 Nov 2026 | A PR is a Test change when a changed file matches the setting `evidence.test_paths` | User's choice (Q3 A): exact and checkable; gates G1 and G2 count on it | F06 question brief, user |
+| 149 | 22 Nov 2026 | A PR that links only non-Bug work items with no Feature above follows the rules of a PR with no work item, except that work type feature or enhancement gives Feature work of that work item once it is done, dated by its first done day. Settles decision 115's "Feature work of the item itself" | User's choice (Q4 A): Documentation tasks are docs, not features | F06 question brief, user |
+| 150 | 22 Nov 2026 | Items built from one PR are dated by the PR's merge day | User's choice (Q5 A): as review comments (decision 121) | F06 question brief, user |
+| 151 | 22 Nov 2026 | The developer page shows the new item types, each with a count and a section, with the tier | User's choice (Q6 A) | F06 question brief, user |
+| 152 | 22 Nov 2026 | When every provider is at its limit, `pull-request-digest` stops, counts the PRs left and succeeds; the next run continues | User's choice (Q7 A) | F06 question brief, user |
+| 153 | 22 Nov 2026 | Stage 1 model: `openai/gpt-oss-120b` on Groq; the Gemini model is set in `.env` | User's choice (Q8 A) | F06 question brief, user |
+| 154 | 22 Nov 2026 | The tier of a Test change, Refactor and performance, Security or Infra and release item is an `item_tier` judgment on the item row, read from its PR's digest without a call | User's choice (Q9 A): scoring reads every tier one way | F06 question brief, user |
+| 155 | 22 Nov 2026 | A call carries at most 12,000 characters of diff (`ei.judgment.max-diff-characters`) | User's choice (Q10 A, free tiers): fits 8,000 tokens per minute | F06 question brief, user |
+| 156 | 22 Nov 2026 | The model is called through Spring's `RestClient`; no LLM client library is added. Settles the open client library of decision 79 | User's choice (Q11 A) | F06 question brief, user |
+| 157 | 22 Nov 2026 | Replaces decision 128: the input hash covers the kind, the prompt version, the input text and the source record ids, not the model. Judging again with another model needs a new prompt version | With a provider chain (decision 146), a hash with the model would judge a PR again whenever another provider answered | F06 question brief follow-up, session |
+| 158 | 22 Nov 2026 | Replaces the `.env` names of decision 134: `LLM_PROVIDER_<n>_NAME`, `_BASE_URL`, `_API_KEY`, `_MODEL`, `_REASONING_EFFORT` for providers 1 and 2; a provider without a key is left out | Two providers (decision 146) | F06 question brief follow-up, session |
 
 ## Not decided yet
 
-- The LLM client library (OpenAI-compatible) and the Groq model. Fixed in F06.
 - Where the production database runs: PostgreSQL on a VM or a managed service. The user leans to a VM. Decided when a DSi pilot is planned.
-- The LLM models for Stage 1 and Stage 2 on the free tier. Fixed in F06 and F07.
+- The LLM model for Stage 2 on the free tier. Fixed in F07 (Stage 1: decision 153).
 - Each feature's "Open questions" in `docs/master-plan.md`.
 - The 14 proposed spec changes in `poc-plan.md` section 5 are proposals to the spec owner. The PoC already follows them.

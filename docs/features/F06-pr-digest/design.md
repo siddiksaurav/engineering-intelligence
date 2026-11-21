@@ -1,6 +1,6 @@
 # F06 JudgmentModel, Stage 1 PR digest, and the builders that need the PR work type: design
 
-State: draft
+State: approved on 2026-11-22, through the question brief
 
 ## Goal
 
@@ -10,16 +10,18 @@ The first AI step. Every pull request of a human author gets a short, factual di
 
 **In.**
 - Flyway migration V9: table `judgment` with the append-only trigger (decision 52); the new evidence types in the `evidence_item.evidence_type` check; new `setting` rows.
-- Package `judgment`: the `JudgmentModel` interface, one implementation for an OpenAI-compatible chat completions API (Groq first, decision 79), the prompt files and their versions, the diff file filter, the judgment store with the skip-on-same-input-hash rule, the job `pull-request-digest`.
+- Package `judgment`: the `JudgmentModel` interface, one implementation for OpenAI-compatible chat completions APIs that tries an ordered list of free providers, each within its own limits (Groq, then Gemini; decisions 144, 146), the prompt files and their versions, the diff file filter, the judgment store with the skip-on-same-input-hash rule, the job `pull-request-digest`.
 - Package `evidence`: the new builders, run inside the existing job `evidence-build`, and the tier judgments of the items they build.
 - Readers of stored diffs in `source.github` (decisions 62, 89: built by their first user).
 - Enabling the six architecture tests disabled "for F06" (`JudgmentModelBoundaryTest` x2, `AppendOnlyTablesTest`, `AppendOnlyCodeTest` x2, `SpecNumbersTest` for `judgment`).
 - A measurement of time, tokens and rate limits on 50 real PRs, with an estimate for the one-month window, in `notes.md`.
-- The developer page shows the new item types: see Q6.
+- The real run digests the 172 human PRs of the two weeks already stored (1 to 14 Jul 2026), as far as the free limits allow (decision 145).
+- The developer page shows the new item types with their tier (decision 151).
 
 **Out.**
 - Stage 2: complexity of Feature work and the judgment of review comments: F07. F06 builds Feature work items of single PRs but gives them no complexity and no tier.
-- The item page, the blind check, prompt tuning: F08. The full-window run: F09.
+- The item page, the blind check, prompt tuning: F08. The full-window run: F09 (its scope is open after decision 145).
+- Several keys of one provider to get past its limits (decision 144).
 - Tiers of Bug fix and Documentation items (master plan section 4): captured and counted only.
 - Analytics, scoring, gates, the profile page: F10 to F12.
 - A screen to correct a judgment (master plan section 4). The table supports corrections through `supersedes_id`.
@@ -95,9 +97,10 @@ The database holds F02's 215 PRs of 1 to 14 Jul 2026 (decision 91).
 - JSON schema output with `strict: true` (constrained decoding, always matches the schema): `openai/gpt-oss-20b`, `openai/gpt-oss-120b`, `qwen/qwen3.8-27b`, `meta-models/muse-spark-open`. Strict needs every field required and `additionalProperties: false`. No streaming or tools with structured output.
 - `reasoning_effort` `low`, `medium`, `high` for the gpt-oss models; reasoning is "part of the token output".
 - Rate limits: the rate-limits page shows one table, for `openai/gpt-oss-120b`, `openai/gpt-oss-20b` and `qwen/qwen3.8-27b` each 30 requests per minute, 1,000 per day, 8,000 tokens per minute, 200,000 tokens per day. The page labels it the Developer plan, but the models page gives the same models 250,000 tokens and 1,000 requests per minute on the Developer plan. Read with decision 79 (third-party reports of the free tier: 6,000 to 12,000 tokens per minute, 100,000 to 500,000 per day), the table is most likely the free tier. The account's own limits are at console.groq.com/settings/limits (needs the user's login). Prices could not be read (groq.com/pricing showed no price table on 22 Nov 2026).
+- Decision 144: free tiers only, several providers one after the other, each within its own limits; never several keys of one provider (Groq's AI policy forbids registering several accounts to exceed its limits, checked 22 Nov 2026). Second provider: the Gemini API free tier, OpenAI-compatible at `https://generativelanguage.googleapis.com/v1beta/openai/`, JSON schema output; its free limits are shown only in AI Studio.
 - What this means: one request (prompt plus answer) cannot exceed 8,000 tokens on the free tier, and about 200,000 tokens a day is about 40 to 50 PRs a day (estimate below).
 
-### Estimate for the July window
+### Estimate for the July window (kept for F09)
 
 Per PR call, in tokens (about 3.5 characters per token for code): instructions and schema about 1,500; title, body (cut at 4,000 characters) and file list about 600; the diff up to the budget; the answer with low reasoning about 800. With a diff budget of 12,000 characters (about 3,500 tokens) a call is at most about 6,500 tokens and about 4,000 on average. July has about 450 PRs, about 360 by humans (decision 78, and 172 of 215 human in two weeks): about 1.5 million tokens. On the free tier that is 7 to 8 days of the daily limit, and about 6 hours at 8,000 tokens per minute. The 50-PR measurement replaces this estimate with measured numbers.
 
@@ -120,7 +123,7 @@ Never updated, never deleted (trigger as on `evidence_item`). A correction or a 
 | `judged_by` | text, check `model`, `person` | |
 | `model` | text null | The model id the API answered with; required when `judged_by = 'model'` |
 | `prompt_version` | text null | Such as `pull-request-digest/v1`; required when `judged_by = 'model'` |
-| `input_hash` | text not null | SHA-256 of the canonical JSON of the input (decision 128) |
+| `input_hash` | text not null | SHA-256 of the canonical JSON of the input (decision 157) |
 | `based_on_judgment_id` | bigint FK `judgment`, null | For an `item_tier`: the digest it was read from |
 | `supersedes_id` | bigint unique FK `judgment`, null | |
 | `judged_at` | timestamptz not null | |
@@ -137,9 +140,8 @@ modulesTouched         list of text (OpenProject module or top-level area, such 
 schemaOrDataMigration  yes/no
 newIntegration         yes/no
 natureOfChange         text, one or two sentences
-testsIncluded          yes/no (the model's view; see Q3 for what decides a Test change item)
+testsIncluded          yes/no (the model's view; the path rule decides a Test change item, decision 148)
 testKind               none | unit | integration | regression | ci_gate
-testTier               see Q2: absent when the tier is read from the test kind
 workTypeTier           for work type refactor, performance, security, infra: { tier T1 to T3, reason }; else "not applicable"
 securityKind           vulnerability_fix | dependency_upgrade | access_control | not_applicable
 infraKind              pipeline | container | infrastructure_code | monitoring | release_tag | release_branch | hotfix | not_applicable
@@ -156,8 +158,8 @@ The schema is strict: every field required, no other field. The answer is checke
 ### New `setting` rows (V9, valid from 2026-Q2)
 
 - `judgment.diff_excluded_paths`: list of path patterns whose patch is not sent (the file is still named in the file list). Seeded: lock files (`Gemfile.lock`, `package-lock.json`, `yarn.lock`, `*.lock`), machine translations (`config/locales/crowdin/`, `modules/*/config/locales/crowdin/`), vendored code (`vendor/`, `frontend/vendor/`), minified and generated files (`*.min.js`, `*.min.css`, `*.map`, `db/structure.sql`). Checked against the real file names on 22 Nov 2026.
-- `evidence.test_paths`: path patterns that make a file a test file (`spec/`, `test/`, `tests/`, `*_spec.rb`, `*.spec.ts`, `*.test.ts`, `modules/*/spec/`), if Q3 is A.
-- `evidence.test_kind_tiers`: `{"unit":"T1","integration":"T2","regression":"T2","ci_gate":"T3"}`, if Q2 is A.
+- `evidence.test_paths`: path patterns that make a file a test file (`spec/`, `test/`, `tests/`, `*_spec.rb`, `*.spec.ts`, `*.test.ts`, `modules/*/spec/`). Decision 148.
+- `evidence.test_kind_tiers`: `{"unit":"T1","integration":"T2","regression":"T2","ci_gate":"T3"}`. Decision 147.
 
 ### New evidence types (`evidence_item.evidence_type`)
 
@@ -165,7 +167,7 @@ The schema is strict: every field required, no other field. The answer is checke
 - `test_change:<prExternalId>`, `refactor_performance:<prExternalId>`, `security:<prExternalId>`, `infra_release:<prExternalId>`, `documentation:<prExternalId>`
 - Feature work of a PR with no work item: `feature_work:pull_request:<prExternalId>`
 - Bug fix of a PR with no work item: `bug_fix:pull_request:<prExternalId>`
-- Feature work of a work item with no Feature above it (Q4): `feature_work:<itemNumber>:<personId>`, the F05 key format with the item standing in for the Feature.
+- Feature work of a work item with no Feature above it (decision 149): `feature_work:<itemNumber>:<personId>`, the F05 key format with the item standing in for the Feature.
 
 `<prExternalId>` is `opf/openproject#24204`. Project: none for a PR-based item; the item's project for Feature work of a work item (decision 139). Source link: the PR on GitHub, or the work item on OpenProject.
 
@@ -187,14 +189,15 @@ Every item lists its sources in `evidence_item_source`: the PR record (role `pul
 
 Started with `POST /api/jobs/pull-request-digest/runs`, body `{}` or `{"pullRequestNumbers":"24204,24201"}` (repository `opf/openproject` is implied by the stored external ids; the numbers select stored PRs). Run after `github-import`; it needs no OpenProject data.
 
-1. Read every stored PR, the latest version of each (`StoredPullRequests.all()`), or the listed ones. Leave out a PR whose author is a bot (`BotAccounts.isBot`, quarter of the run day, decision 84) or that has no author (decision 126); count them.
+1. Read every stored PR (decision 145: the stored two weeks), the latest version of each (`StoredPullRequests.all()`), or the listed ones. Leave out a PR whose author is a bot (`BotAccounts.isBot`, quarter of the run day, decision 84) or that has no author (decision 126); count them.
 2. For each PR, oldest merge first, in its own transaction:
    1. Read its latest `pull_request_diff` record. A PR with no diff record fails (counted, named at the end).
    2. Build the input: title, body (cut at `ei.judgment.max-body-characters`), the file list (path and status, no line counts, D132), and the patches: files matching `judgment.diff_excluded_paths` or without a patch are listed by name only; the rest are added whole in the order source files, test files, docs files, each group in GitHub's order, until `ei.judgment.max-diff-characters` (decision 133). A patch that does not fit is left out and named; when any patch is left out, `judgedOnPartialCode` is yes.
-   3. Compute the input hash (decision 128). If a `pull_request_digest` with this hash exists, skip (count `skipped_same_input`). No call.
-   4. Call `JudgmentModel.judge` with the prompt `pull-request-digest/v1`, the input and the JSON schema.
+   3. Compute the input hash (decision 157). If a `pull_request_digest` with this hash exists, skip (count `skipped_same_input`). No call.
+   4. Call `JudgmentModel.judge` (the provider chain, decision 146) with the prompt `pull-request-digest/v1`, the input and the JSON schema.
    5. Check the answer (decision 135). Build the facts with links (decision 136). Store one `judgment` row: kind `pull_request_digest`, subject the PR record version, `tier` null, `supersedes_id` the current digest of the same PR if there is one.
-3. Counts on the run: `pull_requests_read`, `bot_pull_requests_skipped`, `records_without_author`, `skipped_same_input`, `digests_written`, `judged_on_partial_code`, `model_calls`, `input_tokens`, `output_tokens`, `rate_limit_wait_seconds`, `pull_requests_failed`, and `pull_requests_left_for_later` (Q7).
+3. Counts on the run: `pull_requests_read`, `bot_pull_requests_skipped`, `records_without_author`, `skipped_same_input`, `digests_written`, `judged_on_partial_code`, `model_calls`, `input_tokens`, `output_tokens`, `rate_limit_wait_seconds`, `pull_requests_failed`, and `pull_requests_left_for_later`, and per provider `calls_<name>` (decision 146).
+5. When every provider has reached its limit (`ModelLimitReachedException`), the run stops: the PRs not yet judged are counted as `pull_requests_left_for_later` and the run succeeds; the next run goes on, skipping the PRs already judged (decision 152).
 4. Failures: one PR's failure (bad answer after the retries, missing diff) is counted and the run goes on; the run fails at the end naming the first 20 PRs (decision 90 rule).
 
 ### 2. `JudgmentModel` and the OpenAI-compatible client
@@ -208,8 +211,9 @@ record ModelRequest(String promptVersion, String instructions, String input, Str
 record ModelAnswer(JsonNode answer, String model, long inputTokens, long outputTokens)
 ```
 
-- The implementation `OpenAiCompatibleJudgmentModel` sends `POST {base-url}/chat/completions` with the model, a system message (the prompt), a user message (the input), `response_format: {type: json_schema, json_schema: {name, strict: true, schema}}`, `reasoning_effort` and `temperature` from configuration, through Spring's `RestClient` (Q11).
-- Configuration (`ei.judgment.*`, from `.env`): `LLM_BASE_URL` (default `https://api.groq.com/openai/v1`), `LLM_API_KEY` (required to run; never logged), `LLM_PULL_REQUEST_DIGEST_MODEL`. Operating numbers are configuration properties (decision 45): timeout, retries, retry wait, reasoning effort, `max-diff-characters`, `max-body-characters`.
+- `ProviderChain` implements `JudgmentModel`: it holds the configured providers in order and sends each request to the first one that has not reached its limit in this run. A 429 whose wait (`retry-after` or `x-ratelimit-reset-*`) is longer than `ei.judgment.max-rate-limit-wait` marks that provider as at its limit for the rest of the run; a shorter wait is waited out. When no provider is left it throws `ModelLimitReachedException` (decision 146).
+- `OpenAiCompatibleClient`, one per provider, sends `POST {base-url}/chat/completions` with the model, a system message (the prompt), a user message (the input), `response_format: {type: json_schema, json_schema: {name, strict: true, schema}}`, `reasoning_effort` and `temperature` from configuration, through Spring's `RestClient` (decision 156).
+- Configuration (`ei.judgment.providers`, from `.env`, decision 158): provider 1 `LLM_PROVIDER_1_NAME` (default `groq`), `LLM_PROVIDER_1_BASE_URL` (default `https://api.groq.com/openai/v1`), `LLM_PROVIDER_1_API_KEY`, `LLM_PROVIDER_1_MODEL` (default `openai/gpt-oss-120b`, decision 153), `LLM_PROVIDER_1_REASONING_EFFORT` (default `low`); provider 2 the same names with `_2_` (default name `gemini`, base URL `https://generativelanguage.googleapis.com/v1beta/openai`, no default model, no reasoning effort). A provider with no key is left out; no provider with a key fails the run at its start. A key is never logged. Operating numbers are configuration properties (decision 45): timeout, retries, retry wait, `max-rate-limit-wait`, `max-diff-characters` (12,000, decision 155), `max-body-characters` (4,000).
 - Rate limits: the client reads Groq's `retry-after` on a 429 and the `x-ratelimit-remaining-tokens` and `x-ratelimit-reset-tokens` headers, and waits before the next call when the next request would not fit. Calls are made one at a time (decision 134).
 - A 413 (request too large), a 400 schema mismatch, or a 5xx after the retries is an exception naming the PR and the status, never the key.
 
@@ -225,7 +229,7 @@ After F05's three builders, the run reads the current digest of every human PR (
 
 | PR | Item built |
 | --- | --- |
-| Any human PR that changes tests (Q3) | Test change |
+| Any human PR with a changed file matching `evidence.test_paths` (decision 148) | Test change |
 | No resolved work item link; work type feature or enhancement | Feature work, no work item |
 | No resolved link; fix | Bug fix, no work item |
 | No resolved link; refactor or performance | Refactor and performance item |
@@ -234,13 +238,14 @@ After F05's three builders, the run reads the current digest of every human PR (
 | No resolved link; docs | Documentation |
 | No resolved link; maintenance, technical task, research, operational support, test | None (the Test change row may still apply) |
 | Links only non-Bug items with no Feature above them; refactor, performance, security, infra | That item, as above |
-| Links only non-Bug items with no Feature above them; any other work type | See Q4 |
+| Links only non-Bug items with no Feature above them; feature or enhancement | Feature work of that work item, `feature_work:<itemNumber>:<personId>`, once the item has reached a done status, dated by its first done day (decision 149, as decisions 112 and 113) |
+| Links only non-Bug items with no Feature above them; fix, docs, maintenance, technical task, research, operational support, test | As a PR with no work item: Bug fix, Documentation, or none (decision 149) |
 | Links a work item under a Feature | Nothing new: F05's Feature work group (a refactor PR there is not a Refactor item) |
 | Links a Bug | F05's Bug fix; its other, non-Bug links follow the rows above (decision 141) |
 
-The date of every PR-based item is set by Q5. A human author with no person fails the item (decision 102).
+Every item built from one PR is dated by the PR's merge day (decision 150). A human author with no person fails the item (decision 102).
 
-For each Test change, Refactor and performance, Security and Infra and release item written (new or superseding row), `evidence-build` writes an `item_tier` judgment on that item row (Q9): tier from Q2 for a Test change, from the digest's `workTypeTier` for the others; reason, facts, model and prompt version copied from the digest; `based_on_judgment_id` the digest; input hash over the digest id and the item's content hash. An unchanged item gets no new judgment.
+For each Test change, Refactor and performance, Security and Infra and release item written (new or superseding row), `evidence-build` writes an `item_tier` judgment on that item row (decision 154): for a Test change the tier of its test kind in `evidence.test_kind_tiers` (decision 147; a test kind `none` from the model gives T1 with the reason that the model saw no test kind), from the digest's `workTypeTier` for the others; reason, facts, model and prompt version copied from the digest; `based_on_judgment_id` the digest; input hash over the digest id and the item's content hash. An unchanged item gets no new judgment.
 
 ### Uses (from earlier features)
 
@@ -271,7 +276,8 @@ For each Test change, Refactor and performance, Security and Infra and release i
 - A PR whose digest says work type fix but links a Feature task: stays in the Feature work group (the tracker decides; F06 reads work type only for PRs with no usable link).
 - A bot PR: no digest and no item.
 - A PR with no GitHub author: no digest, no item, counted (decision 126).
-- A daily limit reached mid-run: Q7.
+- Every provider at its limit mid-run: the run stops and counts what is left (decision 152).
+- One provider at its limit: the next provider judges the rest; each judgment stores its model.
 - A digest that names a file path not in the PR: the fact keeps the PR link only.
 
 ## How it will be tested
@@ -281,117 +287,54 @@ Tests never call the real model: they use a fake `JudgmentModel` that returns fi
 Master plan "Done when":
 1. "Every judgment row has a reason, at least one source link, a model and a prompt version." Store tests refuse a row without them; architecture tests (enabled) check the trigger and the entity; after the real run, a SQL count of rows missing any of them is 0.
 2. "A second run with the same input makes no call." Job test: second run with the fake model makes 0 calls and writes 0 rows; on real data, the second run's `model_calls` is 0.
-3. "The time, tokens and rate limits met for 50 PRs are written into `notes.md`, with an estimate for the one-month window." A real run with `pullRequestNumbers` of 50 PRs (chosen by the session to cover small, median and large diffs), its counts and duration in `notes.md`. Needs `LLM_API_KEY` in `.env`.
+3. "The time, tokens and rate limits met for 50 PRs are written into `notes.md`, with an estimate for the one-month window." A real run with `pullRequestNumbers` of 50 PRs (chosen by the session to cover small, median and large diffs), its counts and duration in `notes.md`. Then a run without arguments over all 172 human PRs, as far as the limits go (decision 145). Needs `LLM_PROVIDER_1_API_KEY` (and 2) in `.env`.
 4. "A diff too large for one call is judged on what fits and marked 'judged on partial code'." Unit test of the diff input on a diff over the budget; on real data, the count of digests with `judgedOnPartialCode` equals the job's count.
 5. Goal line: "Every PR has a digest; test, refactor, security and infra items exist with a tier." SQL after the runs: human PRs without a current digest = 0; every current Test change, Refactor, Security and Infra item has one current `item_tier` judgment with a tier.
 
 Other tests:
 - The file filter: each seeded pattern on a real file name; excluded files still in the file list; no line counts in the input.
 - The input hash changes with the prompt version, the model, the PR record and the diff record; not with the run day.
+- The provider chain: a long 429 moves to the next provider; no provider left throws `ModelLimitReachedException`; a provider without a key is left out.
 - The client: request body (model, schema, strict, reasoning effort), 429 with `retry-after` waits, rate-limit headers pace the next call, 413 and 400 fail with the status and without the key.
 - Each building rule row of "Main flows" 4, with a fixture PR, including the Bug and Feature rows that must build nothing new.
 - Tier of a Test change per test kind; tier of a Refactor item from the digest.
 - The prompt file hash test.
 - The six architecture tests enabled.
-- Web (if Q6 is A): the developer page shows each new type with its tier.
+- Web (decision 151): the developer page shows each new type with its tier.
 
-## Open points
+## Decisions
 
-The question brief, as shown to the user on 22 Nov 2026. Decisions 127 to 143 were made by the session (part 3).
+The user's answers (22 Nov 2026): Q1 own answer (several free keys, free alternatives, minimal processing: "the idea is to prove AI can judge"); after a follow-up, F1 "all the PRs ingested for two weeks, see how far we can go", F2 and Q2 to Q11 as recommended. The brief and the follow-up are in the git history of this file (commits `add7375`, `d1aeba7`).
 
-### 1. Business questions
-
-**Q1. The free tier's daily token limit.** It fits about 40 to 50 PRs a day; July needs about 1.5 million tokens (7 to 8 days).
-- A. Groq's paid Developer plan: pay per token, much higher limits; July in hours. Price not readable on 22 Nov 2026; expected a few dollars.
-- B. Stay free: run the digest over 7 to 8 days.
-- C. Add a second free provider: more set-up, and two models judge differently.
-- D. Send far less code (title, body, file list only): fits sooner, weaker digests.
-- Recommended: A. The deadline is today and the cost is small.
-
-**Q2. Tier of a Test change.**
-- A. Read from the test kind: unit T1, integration or regression T2, a CI gate T3 (a setting).
-- B. The model gives the tier.
-- Recommended: A. Same pattern as Feature work: the model judges facts, a table gives the tier.
-
-**Q3. What makes a PR a Test change.**
-- A. A path rule: a changed file under `spec/`, `test/`, or named `*_spec.rb`, `*.spec.ts`, `*.test.ts` (a setting).
-- B. The model's "tests included" answer.
-- Recommended: A. Exact and checkable; gates G1 and G2 count on it. The model still gives the test kind.
-
-**Q4. A PR that links only work items with no Feature above them** (25 of 133 linked PRs in two weeks: 13 Documentation, 9 Code maintenance), when its work type is not refactor, performance, security or infra.
-- A. By work type, as for a PR with no work item: docs gives Documentation, fix gives Bug fix, maintenance and the like give nothing; feature or enhancement gives Feature work of that work item, once it is done.
-- B. Feature work of that work item, whatever the work type (decision 115 read literally): release notes become Feature work.
-- C. No item.
-- Recommended: A. The 13 Documentation tasks are docs, not features.
-
-**Q5. Date of the items built from one PR** (Test change, Refactor, Security, Infra, Documentation, and Feature work or Bug fix with no work item).
-- A. The PR's merge day.
-- B. The done day of its work item where it has one, else the merge day.
-- Recommended: A. The window is chosen by merge day; same rule as review comments (decision 121).
-
-**Q6. The developer page.**
-- A. Show the new types now: a count badge and a section each, with the tier.
-- B. Backend only; the page shows them in F08.
-- Recommended: A. The page would otherwise hide most of F06's work.
-
-### 2. Technical decisions I need your direction on
-
-**Q7. When the daily limit is reached during a run.**
-- A. Stop the run, count the PRs left; the next run continues (same-input PRs are skipped).
-- B. Wait inside the run until the limit resets (a run can last days).
-- Recommended: A. A run that ends is visible and can be restarted.
-
-**Q8. Model for Stage 1.**
-- A. `openai/gpt-oss-120b`: strongest with strict JSON output.
-- B. `openai/gpt-oss-20b`: faster and cheaper on the paid plan, weaker.
-- C. `qwen/qwen3.8-27b`: preview, not for production.
-- Recommended: A. Same free limits as 20B; the model is a `.env` value, so it can change.
-
-**Q9. Where the tier of a Test change, Refactor, Security or Infra item lives.**
-- A. A tier judgment on each item, copied from its PR's digest (no extra call).
-- B. Only in the PR's digest; readers find it through the PR.
-- Recommended: A. Scoring reads every item's tier one way, as for Feature work in F07.
-
-**Q10. How much diff one call carries.**
-- A. 12,000 characters: fits the free tier's 8,000 tokens per minute; about a quarter of PRs judged on partial code.
-- B. 40,000 characters: needs the paid plan; about 1 in 10 partial.
-- Recommended: B with Q1 A, else A. It is a configuration value.
-
-**Q11. The HTTP client for the model.**
-- A. Spring's `RestClient`, already used for GitHub: no new dependency.
-- B. The official OpenAI Java SDK: a new dependency, more features than needed.
-- Recommended: A.
-
-### 3. Decisions I made myself (overrule any by number)
-
-- 127. Table `judgment` as in "Data and tables": a PR version or an evidence item row as subject, append-only, one model judgment per kind and input hash.
-- 128. Input hash: SHA-256 of kind, prompt version, model, the input text and the source record ids.
-- 129. Prompts are versioned files; a test pins each file's hash, so a changed prompt needs a new version.
-- 130. Every human PR gets a digest (Stage 2 needs the ones in Feature work groups); bot PRs and PRs without an author get none.
-- 131. The file filter (lock files, machine translations, vendored, minified, generated) is a setting; filtered files are still named.
-- 132. The file list carries no line counts.
-- 133. Over the budget: source files first, then tests, then docs, whole patches; the rest named; "judged on partial code" set by the system.
-- 134. Calls one at a time, paced by Groq's rate-limit headers; key, URL and model in `.env` as `LLM_API_KEY`, `LLM_BASE_URL`, `LLM_PULL_REQUEST_DIGEST_MODEL`; low reasoning effort.
-- 135. Strict JSON schema, checked again on arrival; one retry; then that PR fails and the run goes on.
-- 136. Fact links are made by the system (the PR or its files page), never taken from the model.
-- 137. Job `pull-request-digest`, with no arguments or `pullRequestNumbers`; tokens, calls and waits are counted on the run.
-- 138. New evidence types and keys as in "Data and tables".
-- 139. PR-based items have no project; Feature work of a work item has the item's project.
-- 140. An item's hash includes its digest, so a new digest gives a new item row; the diff record is a source.
-- 141. A PR that links a Bug keeps its Bug fix; its other links follow the rules; no Refactor, Security or Infra item from a Bug link alone.
-- 142. Tests use a fake model and a mock server; no test calls Groq.
-- 143. The digest reader (`PullRequestDigests`) lives in `judgment`; only `judgment` sees `JudgmentModel`.
-
-### Follow-up after the user's first answer (22 Nov 2026)
-
-The user answered Q1: several free keys, switching to the next when one is limited; look for free alternatives; process as few PRs as the PoC needs ("the idea is to prove AI can judge, not to process huge data"). Q2 to Q11 not yet answered.
-
-Found on 22 Nov 2026:
-- Groq's AI policy forbids exceeding the published limits by registering several accounts, and its Terms of Use forbid circumventing the free-tier limits (console.groq.com/docs/legal/ai-policy, groq.com/terms-of-use). Limits are per organization. Several Groq keys to get around the limit are therefore not used.
-- Free alternatives, each reachable through an OpenAI-compatible API: Google Gemini API free tier (base URL `https://generativelanguage.googleapis.com/v1beta/openai/`, JSON schema output; the free limits are shown only in AI Studio after login; free-tier prompts may be used by Google, acceptable for public data); OpenRouter `:free` models (20 requests per minute, 50 per day, 1,000 per day after buying 10 credits); Cerebras has no permanent free tier (5 dollars of trial credit for 30 days, needs a card; `gpt-oss-120b` 1 million tokens per day on the trial). Mistral's tier page was not readable; GitHub Models not verified.
-- Using different providers one after the other, each within its own limits, is allowed. Each judgment stores the model that gave it.
-
-Follow-up questions:
-- F1. Which PRs to digest. A: only what the demo needs: the PRs of the Feature work items (35 items, about 50 PRs in the stored two weeks) plus every PR of one or two developers chosen for the profile, about 60 to 80 PRs. B: all 172 human PRs of the two weeks already stored; no July run. C: July as planned (about 360 PRs). Recommended A.
-- F2. When a free limit is hit. A: fall back to the next provider in a list (Groq, then Gemini), each within its own limits. B: one provider, the run stops and continues the next day. Recommended A.
-- F3. Q2 to Q11: as recommended?
+- 127. Table `judgment` (V9), subject a PR record version or an evidence item row, append-only, unique per kind and input hash for model judgments.
+- 128. Replaced by 157.
+- 129. Versioned prompt files, hash pinned by a test.
+- 130. Every human PR gets a digest; bot PRs and PRs without an author get none.
+- 131. File filter as the setting `judgment.diff_excluded_paths`; filtered files still named.
+- 132. No line counts sent to the model.
+- 133. Over the budget: source, then test, then docs files, whole patches; `judgedOnPartialCode` set by the system.
+- 134. One call at a time, paced by rate-limit headers; operating numbers as configuration. Its `.env` names are replaced by 158.
+- 135. Strict JSON schema, checked on arrival; one retry, then the PR fails and the run goes on.
+- 136. Fact links made by the system, never by the model.
+- 137. Job `pull-request-digest`, no arguments or `pullRequestNumbers`; tokens, calls and waits counted.
+- 138. New evidence types and keys.
+- 139. Items of one PR have no project; Feature work of a work item has its project.
+- 140. An item's hash includes its digest; the diff record is a source (`pull_request_diff`).
+- 141. A Bug link keeps its Bug fix and gives no Refactor, Security or Infra item.
+- 142. Tests use a fake model and a mock server.
+- 143. `PullRequestDigests` lives in `judgment`; only `judgment` sees `JudgmentModel`.
+- 144. Q1: free tiers only; several providers one after the other, each within its own limits; never several keys of one provider.
+- 145. F1: digest all 172 human PRs of the stored two weeks, as far as the free limits go.
+- 146. F2: an ordered provider chain (Groq, then Gemini); a long 429 moves to the next provider.
+- 147. Q2 A: a Test change's tier comes from its test kind (`evidence.test_kind_tiers`).
+- 148. Q3 A: a path rule (`evidence.test_paths`) makes a PR a Test change.
+- 149. Q4 A: a PR linking only non-Bug items with no Feature above follows the no-work-item rules, except feature or enhancement, which gives Feature work of that item once done.
+- 150. Q5 A: items of one PR are dated by the merge day.
+- 151. Q6 A: the developer page shows the new types with their tier.
+- 152. Q7 A: when every provider is at its limit, the run stops and counts what is left.
+- 153. Q8 A: `openai/gpt-oss-120b` on Groq; Gemini's model is set in `.env`.
+- 154. Q9 A: an `item_tier` judgment on each Test change, Refactor, Security and Infra item.
+- 155. Q10 A: 12,000 characters of diff per call (free tiers), a configuration value.
+- 156. Q11 A: Spring `RestClient`, no new dependency.
+- 157. Replaces 128: the input hash covers the kind, the prompt version, the input text and the source record ids, not the model. Judging again with another model needs a new prompt version.
+- 158. Replaces the names of 134: `LLM_PROVIDER_<n>_NAME`, `_BASE_URL`, `_API_KEY`, `_MODEL`, `_REASONING_EFFORT` for n = 1, 2.
