@@ -28,16 +28,19 @@ class ReviewCommentJudge {
     private final JudgmentModel model;
     private final JudgmentStore judgmentStore;
     private final ReviewCommentTypes commentTypes;
+    private final int maxQuoteCharacters;
 
     ReviewCommentJudge(
             PromptLibrary promptLibrary,
             JudgmentModel model,
             JudgmentStore judgmentStore,
-            ReviewCommentTypes commentTypes) {
+            ReviewCommentTypes commentTypes,
+            JudgmentProperties properties) {
         this.promptLibrary = promptLibrary;
         this.model = model;
         this.judgmentStore = judgmentStore;
         this.commentTypes = commentTypes;
+        this.maxQuoteCharacters = properties.maxQuoteCharacters();
     }
 
     /**
@@ -106,9 +109,8 @@ class ReviewCommentJudge {
     }
 
     // A quote the reader can take in at a glance; the whole comment is one click away at the link.
-    private static String factOf(ReviewCommentAnswer.CommentType type, String body) {
-        int quoteCharacters = 200;
-        int end = body.offsetByCodePoints(0, Math.min(quoteCharacters, body.codePointCount(0, body.length())));
+    private String factOf(ReviewCommentAnswer.CommentType type, String body) {
+        int end = body.offsetByCodePoints(0, Math.min(maxQuoteCharacters, body.codePointCount(0, body.length())));
         return "Comment type " + type.wireName() + ": \"" + body.substring(0, end) + "\"";
     }
 }

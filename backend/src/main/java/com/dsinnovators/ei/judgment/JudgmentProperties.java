@@ -29,6 +29,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @param maxCommentCharacters where a review comment is cut
  * @param maxRepliedCommentCharacters where the comment that a reply answers is cut
  * @param maxReviewCharacters the budget of one review call; one comment with its parts must fit it
+ * @param maxQuoteCharacters where the quote of a comment in a judgment fact is cut, counted in code points
  */
 @ConfigurationProperties("ei.judgment")
 record JudgmentProperties(
@@ -46,7 +47,8 @@ record JudgmentProperties(
         int maxHunkCharacters,
         int maxCommentCharacters,
         int maxRepliedCommentCharacters,
-        int maxReviewCharacters) {
+        int maxReviewCharacters,
+        int maxQuoteCharacters) {
 
     JudgmentProperties {
         providers = providersWithAKey(providers);
@@ -72,14 +74,7 @@ record JudgmentProperties(
         requireMoreThanZero("ei.judgment.max-comment-characters", maxCommentCharacters);
         requireMoreThanZero("ei.judgment.max-replied-comment-characters", maxRepliedCommentCharacters);
         requireMoreThanZero("ei.judgment.max-review-characters", maxReviewCharacters);
-        // Built only to fail the start-up when one comment with its parts cannot fit a call; the fields
-        // are not assigned yet here, so the accessor method cannot be used.
-        new ReviewCommentLimits(
-                maxDescriptionCharacters,
-                maxHunkCharacters,
-                maxCommentCharacters,
-                maxRepliedCommentCharacters,
-                maxReviewCharacters);
+        requireMoreThanZero("ei.judgment.max-quote-characters", maxQuoteCharacters);
     }
 
     DigestLimits digestLimits() {
@@ -90,6 +85,12 @@ record JudgmentProperties(
         return new FeatureWorkLimits(maxDescriptionCharacters, maxFeatureWorkCharacters);
     }
 
+    /**
+     * The limits of one review call.
+     *
+     * @throws IllegalArgumentException when one comment with its pull request part cannot fit a call;
+     *     the job that reads them fails the start of the application on it
+     */
     ReviewCommentLimits reviewCommentLimits() {
         return new ReviewCommentLimits(
                 maxDescriptionCharacters,

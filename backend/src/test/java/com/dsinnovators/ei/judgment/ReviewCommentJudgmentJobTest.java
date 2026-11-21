@@ -74,7 +74,7 @@ class ReviewCommentJudgmentJobTest extends DatabaseTest {
     }
 
     private ReviewCommentJudgmentJob jobOn(ProviderChain chain, JudgmentProperties limits) {
-        ReviewCommentJudge judge = new ReviewCommentJudge(promptLibrary, chain, judgmentStore, commentTypes);
+        ReviewCommentJudge judge = new ReviewCommentJudge(promptLibrary, chain, judgmentStore, commentTypes, limits);
         return new ReviewCommentJudgmentJob(
                 reviewCommentItems, storedReviewComments, storedPullRequests, judge, chain, guard, clock, limits);
     }
@@ -177,22 +177,13 @@ class ReviewCommentJudgmentJobTest extends DatabaseTest {
 
     @Test
     void splitsAPullRequestWithMoreCommentsThanOneCallHolds() throws Exception {
-        JudgmentProperties tight = new JudgmentProperties(
-                List.of(),
-                Duration.ofSeconds(120),
-                3,
-                Duration.ofSeconds(2),
-                Duration.ofSeconds(60),
-                6_000,
-                12_000,
-                4_000,
-                300,
-                100,
-                14_000,
-                100,
-                100,
-                50,
-                600);
+        JudgmentProperties tight = JudgmentPropertiesBuilder.properties()
+                .maxDescriptionCharacters(100)
+                .maxHunkCharacters(100)
+                .maxCommentCharacters(100)
+                .maxRepliedCommentCharacters(50)
+                .maxReviewCharacters(600)
+                .build();
         ReviewCommentJudgmentJob tightJob =
                 jobOn(new ProviderChain(List.of(new ProviderChain.Provider("fake", model)), waitMeter), tight);
         stored.comment(6, 7, "2026-07-03T09:10:00Z", "x".repeat(100));

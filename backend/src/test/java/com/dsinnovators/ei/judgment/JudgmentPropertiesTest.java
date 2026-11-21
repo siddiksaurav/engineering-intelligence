@@ -24,22 +24,7 @@ class JudgmentPropertiesTest {
             "");
 
     private static JudgmentProperties propertiesOf(List<JudgmentProvider> providers) {
-        return new JudgmentProperties(
-                providers,
-                Duration.ofSeconds(120),
-                3,
-                Duration.ofSeconds(2),
-                Duration.ofSeconds(60),
-                6_000,
-                12_000,
-                4_000,
-                300,
-                1_500,
-                14_000,
-                2_000,
-                2_000,
-                500,
-                12_000);
+        return JudgmentPropertiesBuilder.properties().providers(providers).build();
     }
 
     @Test
@@ -82,152 +67,54 @@ class JudgmentPropertiesTest {
     void theOperatingNumbersAreChecked() {
         assertThrows(
                 IllegalArgumentException.class,
-                () -> new JudgmentProperties(
-                        List.of(),
-                        Duration.ZERO,
-                        3,
-                        Duration.ofSeconds(2),
-                        Duration.ofSeconds(60),
-                        6_000,
-                        12_000,
-                        4_000,
-                        300,
-                        1_500,
-                        14_000,
-                        2_000,
-                        2_000,
-                        500,
-                        12_000));
+                () -> JudgmentPropertiesBuilder.properties()
+                        .timeout(Duration.ZERO)
+                        .build());
         assertThrows(
                 IllegalArgumentException.class,
-                () -> new JudgmentProperties(
-                        List.of(),
-                        Duration.ofSeconds(1),
-                        -1,
-                        Duration.ofSeconds(2),
-                        Duration.ofSeconds(60),
-                        6_000,
-                        12_000,
-                        4_000,
-                        300,
-                        1_500,
-                        14_000,
-                        2_000,
-                        2_000,
-                        500,
-                        12_000));
+                () -> JudgmentPropertiesBuilder.properties()
+                        .timeout(Duration.ofSeconds(1))
+                        .retries(-1)
+                        .build());
         assertThrows(
                 IllegalArgumentException.class,
-                () -> new JudgmentProperties(
-                        List.of(),
-                        Duration.ofSeconds(1),
-                        3,
-                        Duration.ofSeconds(-2),
-                        Duration.ofSeconds(60),
-                        6_000,
-                        12_000,
-                        4_000,
-                        300,
-                        1_500,
-                        14_000,
-                        2_000,
-                        2_000,
-                        500,
-                        12_000));
+                () -> JudgmentPropertiesBuilder.properties()
+                        .timeout(Duration.ofSeconds(1))
+                        .retryWait(Duration.ofSeconds(-2))
+                        .build());
         assertThrows(
                 IllegalArgumentException.class,
-                () -> new JudgmentProperties(
-                        List.of(),
-                        Duration.ofSeconds(1),
-                        3,
-                        Duration.ofSeconds(2),
-                        Duration.ofSeconds(-1),
-                        6_000,
-                        12_000,
-                        4_000,
-                        300,
-                        1_500,
-                        14_000,
-                        2_000,
-                        2_000,
-                        500,
-                        12_000));
+                () -> JudgmentPropertiesBuilder.properties()
+                        .timeout(Duration.ofSeconds(1))
+                        .maxRateLimitWait(Duration.ofSeconds(-1))
+                        .build());
         assertThrows(
                 IllegalArgumentException.class,
-                () -> new JudgmentProperties(
-                        List.of(),
-                        Duration.ofSeconds(1),
-                        3,
-                        Duration.ofSeconds(2),
-                        Duration.ofSeconds(60),
-                        6_000,
-                        0,
-                        4_000,
-                        300,
-                        1_500,
-                        14_000,
-                        2_000,
-                        2_000,
-                        500,
-                        12_000));
+                () -> JudgmentPropertiesBuilder.properties()
+                        .timeout(Duration.ofSeconds(1))
+                        .maxDiffCharacters(0)
+                        .build());
         assertThrows(
                 IllegalArgumentException.class,
-                () -> new JudgmentProperties(
-                        List.of(),
-                        Duration.ofSeconds(1),
-                        3,
-                        Duration.ofSeconds(2),
-                        Duration.ofSeconds(60),
-                        6_000,
-                        12_000,
-                        0,
-                        300,
-                        1_500,
-                        14_000,
-                        2_000,
-                        2_000,
-                        500,
-                        12_000));
+                () -> JudgmentPropertiesBuilder.properties()
+                        .timeout(Duration.ofSeconds(1))
+                        .maxBodyCharacters(0)
+                        .build());
         assertThrows(
                 IllegalArgumentException.class,
-                () -> new JudgmentProperties(
-                        List.of(),
-                        Duration.ofSeconds(1),
-                        3,
-                        Duration.ofSeconds(2),
-                        Duration.ofSeconds(60),
-                        6_000,
-                        12_000,
-                        4_000,
-                        0,
-                        1_500,
-                        14_000,
-                        2_000,
-                        2_000,
-                        500,
-                        12_000));
+                () -> JudgmentPropertiesBuilder.properties()
+                        .maxErrorCharacters(0)
+                        .build());
     }
 
     @Test
     void minRemainingTokensMayNotBeNegative() {
         assertThrows(
                 IllegalArgumentException.class,
-                () -> new JudgmentProperties(
-                        List.of(),
-                        Duration.ofSeconds(1),
-                        3,
-                        Duration.ofSeconds(2),
-                        Duration.ofSeconds(60),
-                        -1,
-                        12_000,
-                        4_000,
-                        300,
-                        1_500,
-                        14_000,
-                        2_000,
-                        2_000,
-                        500,
-                        12_000));
+                () -> JudgmentPropertiesBuilder.properties()
+                        .timeout(Duration.ofSeconds(1))
+                        .minRemainingTokens(-1)
+                        .build());
     }
 
     @Test
@@ -269,7 +156,8 @@ class JudgmentPropertiesTest {
                 Map.entry("ei.judgment.max-hunk-characters", "2000"),
                 Map.entry("ei.judgment.max-comment-characters", "2000"),
                 Map.entry("ei.judgment.max-replied-comment-characters", "500"),
-                Map.entry("ei.judgment.max-review-characters", "12000"));
+                Map.entry("ei.judgment.max-review-characters", "12000"),
+                Map.entry("ei.judgment.max-quote-characters", "200"));
 
         JudgmentProperties properties = new Binder(new MapConfigurationPropertySource(source))
                 .bind("ei.judgment", JudgmentProperties.class)
@@ -281,36 +169,31 @@ class JudgmentPropertiesTest {
         assertEquals(4_000, properties.maxBodyCharacters());
         assertEquals(new FeatureWorkLimits(1_500, 14_000), properties.featureWorkLimits());
         assertEquals(new ReviewCommentLimits(1_500, 2_000, 2_000, 500, 12_000), properties.reviewCommentLimits());
+        assertEquals(200, properties.maxQuoteCharacters());
     }
 
     private static JudgmentProperties withStage2Limits(
             int description, int feature, int hunk, int comment, int replied, int review) {
-        return new JudgmentProperties(
-                List.of(),
-                Duration.ofSeconds(1),
-                3,
-                Duration.ofSeconds(2),
-                Duration.ofSeconds(60),
-                6_000,
-                12_000,
-                4_000,
-                300,
-                description,
-                feature,
-                hunk,
-                comment,
-                replied,
-                review);
+        return JudgmentPropertiesBuilder.properties()
+                .timeout(Duration.ofSeconds(1))
+                .maxDescriptionCharacters(description)
+                .maxFeatureWorkCharacters(feature)
+                .maxHunkCharacters(hunk)
+                .maxCommentCharacters(comment)
+                .maxRepliedCommentCharacters(replied)
+                .maxReviewCharacters(review)
+                .build();
     }
 
     @Test
     void refusesReviewLimitsWhereOneCommentCannotFitACall() {
         IllegalArgumentException refused = assertThrows(
-                IllegalArgumentException.class, () -> withStage2Limits(1_500, 14_000, 2_000, 2_000, 500, 5_999));
+                IllegalArgumentException.class,
+                () -> withStage2Limits(1_500, 14_000, 2_000, 2_000, 500, 5_999).reviewCommentLimits());
 
         assertTrue(refused.getMessage().contains("6000"));
         assertTrue(refused.getMessage().contains("5999"));
-        withStage2Limits(1_500, 14_000, 2_000, 2_000, 500, 6_000);
+        withStage2Limits(1_500, 14_000, 2_000, 2_000, 500, 6_000).reviewCommentLimits();
     }
 
     @Test
@@ -321,5 +204,14 @@ class JudgmentPropertiesTest {
         assertThrows(IllegalArgumentException.class, () -> withStage2Limits(1_500, 14_000, 2_000, 0, 500, 12_000));
         assertThrows(IllegalArgumentException.class, () -> withStage2Limits(1_500, 14_000, 2_000, 2_000, 0, 12_000));
         assertThrows(IllegalArgumentException.class, () -> withStage2Limits(1_500, 14_000, 2_000, 2_000, 500, 0));
+    }
+
+    @Test
+    void theQuoteLimitMustBeMoreThanZero() {
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> JudgmentPropertiesBuilder.properties()
+                        .maxQuoteCharacters(0)
+                        .build());
     }
 }

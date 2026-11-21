@@ -14,7 +14,6 @@ import com.dsinnovators.ei.setting.SettingService;
 import com.dsinnovators.ei.source.RawRecordStore;
 import com.dsinnovators.ei.source.github.StoredPullRequests;
 import com.dsinnovators.ei.source.openproject.StoredWorkPackages;
-import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -201,22 +200,9 @@ class FeatureWorkJudgeTest extends DatabaseTest {
         stored.digest(2);
         FeatureWorkToJudge item = stored.item(100, List.of(), 1, 2);
         model.answeringByDefault(FakeJudgmentModel.aFeatureWork("low"));
-        JudgmentProperties small = new JudgmentProperties(
-                List.of(),
-                Duration.ofSeconds(120),
-                3,
-                Duration.ofSeconds(2),
-                Duration.ofSeconds(60),
-                6_000,
-                12_000,
-                4_000,
-                300,
-                1_500,
-                10,
-                2_000,
-                2_000,
-                500,
-                12_000);
+        JudgmentProperties small = JudgmentPropertiesBuilder.properties()
+                .maxFeatureWorkCharacters(10)
+                .build();
 
         judgeWith(small).judge(item, QUARTER, jobCounts);
 

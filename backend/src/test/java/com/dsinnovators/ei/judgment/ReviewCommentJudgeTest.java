@@ -43,7 +43,11 @@ class ReviewCommentJudgeTest extends DatabaseTest {
     private final FakeJudgmentModel model = new FakeJudgmentModel();
 
     private ReviewCommentJudge judge() {
-        return new ReviewCommentJudge(promptLibrary, model, judgmentStore, commentTypes);
+        return judgeWith(properties);
+    }
+
+    private ReviewCommentJudge judgeWith(JudgmentProperties limits) {
+        return new ReviewCommentJudge(promptLibrary, model, judgmentStore, commentTypes, limits);
     }
 
     private ReviewCommentChunks.CommentPart comment(long databaseId, String body) {
@@ -132,6 +136,22 @@ class ReviewCommentJudgeTest extends DatabaseTest {
         assertEquals(
                 chunk.comments().get(1).hash(),
                 currentJudgmentOf(chunk.comments().get(1)).getInputHash());
+    }
+
+    @Test
+    void quotesAsManyCharactersAsTheQuoteLimitSays() {
+        ReviewCommentChunks.Chunk chunk = chunkOf(comment(1, "x".repeat(300)));
+        model.answeringByDefault(FakeJudgmentModel.aReviewComments("C-1", "design"));
+
+        judgeWith(JudgmentPropertiesBuilder.properties().maxQuoteCharacters(50).build())
+                .judge(chunk, QUARTER, jobCounts);
+
+        assertEquals(
+                "Comment type design: \"" + "x".repeat(50) + "\"",
+                currentJudgmentOf(chunk.comments().getFirst())
+                        .getFacts()
+                        .getFirst()
+                        .fact());
     }
 
     @Test

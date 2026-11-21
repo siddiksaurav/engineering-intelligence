@@ -72,6 +72,8 @@ ei:
     max-comment-characters: 2000
     max-replied-comment-characters: 500
     max-review-characters: 12000
+    # A comment quoted in a judgment fact; the whole comment is one click away at its link.
+    max-quote-characters: 200
 
 ---
 # The one .env at the repository root. Found when started from the root or from backend/.
