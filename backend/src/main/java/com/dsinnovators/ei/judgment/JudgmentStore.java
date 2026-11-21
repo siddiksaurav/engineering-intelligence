@@ -1,13 +1,14 @@
 package com.dsinnovators.ei.judgment;
 
+import com.dsinnovators.ei.source.github.GitHubRecordKind;
 import java.time.Clock;
 import java.util.Optional;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * The only way to write a judgment. A new judgment of a subject and kind supersedes the current one;
- * the old row stays. A model never judges the same input twice (decision 127): the store refuses it,
+ * The only way to write a judgment. A new judgment supersedes the one it names, else the current
+ * judgment of its subject and kind; the old row stays. A model never judges the same input twice (decision 127): the store refuses it,
  * and so does a unique index. One transaction per call.
  */
 @Service
@@ -32,9 +33,11 @@ public class JudgmentStore {
             throw new IllegalStateException(
                     "A model already judged the input " + judgment.inputHash() + " for " + judgment.kind());
         }
-        Long supersedesId = findCurrent(judgment.kind(), judgment.subject())
-                .map(Judgment::getId)
-                .orElse(null);
+        Long supersedesId = judgment.supersedesId() != null
+                ? judgment.supersedesId()
+                : findCurrent(judgment.kind(), judgment.subject())
+                        .map(Judgment::getId)
+                        .orElse(null);
         return judgments.save(new Judgment(judgment, supersedesId, clock.instant()));
     }
 
@@ -42,6 +45,16 @@ public class JudgmentStore {
     @Transactional(readOnly = true)
     public boolean hasModelJudgment(JudgmentKind kind, String inputHash) {
         return judgments.existsByKindAndInputHashAndJudgedBy(kind, inputHash, JudgedBy.MODEL);
+    }
+
+    /**
+     * The judgment of the pull request with this external id, such as {@code opf/openproject#24204},
+     * that no other judgment supersedes, whichever record version it was made on.
+     */
+    @Transactional(readOnly = true)
+    public Optional<Judgment> findCurrentOfPullRequest(JudgmentKind kind, String pullRequestExternalId) {
+        return judgments.findCurrentOfPullRequest(
+                kind, GitHubRecordKind.PULL_REQUEST.recordKind(), pullRequestExternalId);
     }
 
     /** The judgment of the subject and kind that no other judgment supersedes. */

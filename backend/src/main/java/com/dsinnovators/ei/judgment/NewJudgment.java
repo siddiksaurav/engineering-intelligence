@@ -15,6 +15,8 @@ import tools.jackson.databind.JsonNode;
  * @param promptVersion such as {@code pull-request-digest/v1}; required for a judgment by a model
  * @param inputHash SHA-256 of the input; the same input is never judged twice by a model
  * @param basedOnJudgmentId for an item tier, the digest it was read from; else null
+ * @param supersedesId the judgment this one replaces, when it is not the current one of the same
+ *     subject, such as the digest of an older version of the same pull request; else null
  */
 public record NewJudgment(
         JudgmentKind kind,
@@ -27,7 +29,8 @@ public record NewJudgment(
         String model,
         String promptVersion,
         String inputHash,
-        Long basedOnJudgmentId) {
+        Long basedOnJudgmentId,
+        Long supersedesId) {
 
     private static final Pattern TIER = Pattern.compile("T[1-4]");
 

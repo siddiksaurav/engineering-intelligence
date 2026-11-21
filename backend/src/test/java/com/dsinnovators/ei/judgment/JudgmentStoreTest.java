@@ -169,4 +169,45 @@ class JudgmentStoreTest extends DatabaseTest {
 
         assertEquals(digest.getId(), tier.getBasedOnJudgmentId());
     }
+
+    @Test
+    void aJudgmentSupersedesTheOneItNamesEvenOnAnotherSubject() {
+        Judgment olderVersion =
+                store.write(aDigestOf(pullRequest).inputHash("one").build());
+        JudgmentSubject newerVersion =
+                JudgmentSubject.pullRequestRecord(JudgmentSubjectRows.insertPullRequestRecord(jdbc, 2));
+
+        Judgment newer = store.write(aDigestOf(newerVersion)
+                .inputHash("two")
+                .supersedes(olderVersion.getId())
+                .build());
+
+        assertEquals(olderVersion.getId(), newer.getSupersedesId());
+    }
+
+    @Test
+    void findsTheCurrentJudgmentOfAPullRequestWhicheverVersionItWasMadeOn() {
+        Judgment olderVersion =
+                store.write(aDigestOf(pullRequest).inputHash("one").build());
+        assertEquals(
+                olderVersion.getId(),
+                store.findCurrentOfPullRequest(JudgmentKind.PULL_REQUEST_DIGEST, "opf/openproject#1")
+                        .orElseThrow()
+                        .getId());
+        JudgmentSubject newerVersion =
+                JudgmentSubject.pullRequestRecord(JudgmentSubjectRows.insertPullRequestRecord(jdbc, 2));
+
+        Judgment newer = store.write(aDigestOf(newerVersion)
+                .inputHash("two")
+                .supersedes(olderVersion.getId())
+                .build());
+
+        assertEquals(
+                newer.getId(),
+                store.findCurrentOfPullRequest(JudgmentKind.PULL_REQUEST_DIGEST, "opf/openproject#1")
+                        .orElseThrow()
+                        .getId());
+        assertTrue(store.findCurrentOfPullRequest(JudgmentKind.PULL_REQUEST_DIGEST, "opf/openproject#2")
+                .isEmpty());
+    }
 }

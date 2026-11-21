@@ -19,6 +19,7 @@ final class NewJudgmentBuilder {
     private String promptVersion = "pull-request-digest/v1";
     private String inputHash = "hash";
     private Long basedOnJudgmentId;
+    private Long supersedesId;
 
     private NewJudgmentBuilder(JudgmentSubject subject) {
         this.subject = subject;
@@ -72,6 +73,11 @@ final class NewJudgmentBuilder {
         return this;
     }
 
+    NewJudgmentBuilder supersedes(long judgmentId) {
+        this.supersedesId = judgmentId;
+        return this;
+    }
+
     NewJudgment build() {
         return new NewJudgment(
                 kind,
@@ -84,6 +90,7 @@ final class NewJudgmentBuilder {
                 model,
                 promptVersion,
                 inputHash,
-                basedOnJudgmentId);
+                basedOnJudgmentId,
+                supersedesId);
     }
 }

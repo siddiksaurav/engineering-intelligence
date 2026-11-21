@@ -30,4 +30,16 @@ interface JudgmentRepository extends Repository<Judgment, Long> {
             """)
     Optional<Judgment> findCurrentOfEvidenceItem(
             @Param("kind") JudgmentKind kind, @Param("evidenceItemId") long evidenceItemId);
+
+    @Query("""
+            select j from Judgment j
+            where j.kind = :kind
+              and j.rawRecordId in (select r.id from RawRecord r
+                                    where r.recordKind = :recordKind and r.externalId = :externalId)
+              and not exists (select 1 from Judgment s where s.supersedesId = j.id)
+            """)
+    Optional<Judgment> findCurrentOfPullRequest(
+            @Param("kind") JudgmentKind kind,
+            @Param("recordKind") String recordKind,
+            @Param("externalId") String externalId);
 }

@@ -1,5 +1,6 @@
 package com.dsinnovators.ei.judgment;
 
+import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,11 +24,14 @@ final class ProviderChain implements JudgmentModel {
     record Provider(String name, JudgmentModel model) {}
 
     private final List<Provider> providers;
+    private final WaitMeter waitMeter;
     private final Set<String> atTheirLimit = ConcurrentHashMap.newKeySet();
     private final Map<String, Long> answeredCalls = new ConcurrentHashMap<>();
 
-    ProviderChain(List<Provider> providers) {
+    /** @param waitMeter the meter of the sleeper the providers' clients wait with */
+    ProviderChain(List<Provider> providers, WaitMeter waitMeter) {
         this.providers = List.copyOf(providers);
+        this.waitMeter = waitMeter;
     }
 
     @Override
@@ -51,10 +55,16 @@ final class ProviderChain implements JudgmentModel {
                         : "Every model provider has reached its limit: " + providerNames());
     }
 
-    /** Forgets the limits and the counts of the last run. */
+    /** Forgets the limits, the counts and the waits of the last run. */
     void startRun() {
         atTheirLimit.clear();
         answeredCalls.clear();
+        waitMeter.reset();
+    }
+
+    /** The time the providers' clients waited since {@link #startRun()}, for a rate limit or before a retry. */
+    Duration waited() {
+        return waitMeter.waited();
     }
 
     /** The providers in the order they are tried. The job that needs the model fails at its start when this is empty. */

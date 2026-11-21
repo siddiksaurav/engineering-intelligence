@@ -33,7 +33,7 @@ class ProviderChainTest {
     }
 
     private static ProviderChain chainOf(ProviderChain.Provider... providers) {
-        return new ProviderChain(List.of(providers));
+        return new ProviderChain(List.of(providers), new WaitMeter(duration -> {}));
     }
 
     @Test
@@ -98,7 +98,7 @@ class ProviderChainTest {
 
     @Test
     void failsWithTheLimitReachedWhenThereAreNoProviders() {
-        ProviderChain chain = new ProviderChain(List.of());
+        ProviderChain chain = new ProviderChain(List.of(), new WaitMeter(duration -> {}));
 
         assertThrows(ModelLimitReachedException.class, () -> chain.judge(REQUEST));
     }

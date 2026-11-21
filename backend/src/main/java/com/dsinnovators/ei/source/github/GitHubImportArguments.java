@@ -72,7 +72,7 @@ public record GitHubImportArguments(
         }
         if (numbers) {
             return new GitHubImportArguments(
-                    repository, Optional.empty(), numbers(arguments.require(PULL_REQUEST_NUMBERS)));
+                    repository, Optional.empty(), pullRequestNumbers(arguments.require(PULL_REQUEST_NUMBERS)));
         }
         throw new IllegalArgumentException("Give mergedFrom and mergedTo, or pullRequestNumbers");
     }
@@ -100,7 +100,13 @@ public record GitHubImportArguments(
         }
     }
 
-    private static List<Integer> numbers(String value) {
+    /**
+     * Reads the value of the argument {@code pullRequestNumbers}, for every job that takes it.
+     *
+     * @return the numbers in the given order, each once
+     * @throws IllegalArgumentException that names the argument and its value
+     */
+    public static List<Integer> pullRequestNumbers(String value) {
         if (!NUMBER_LIST.matcher(value).matches()) {
             throw numbersRefused(value);
         }
