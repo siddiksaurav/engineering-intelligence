@@ -120,6 +120,9 @@ curl -s localhost:8080/api/jobs/runs/1                       see a run: status, 
 curl -s -X POST localhost:8080/api/jobs/identity-build/runs \
   -H 'Content-Type: application/json' -d '{}'
                                                              make persons of the stored GitHub accounts and propose their OpenProject users (after openproject-import)
+curl -s -X POST localhost:8080/api/jobs/evidence-build/runs \
+  -H 'Content-Type: application/json' -d '{}'
+                                                             build the evidence items from the stored records (after identity-build)
 docker compose exec postgres psql -U ei -d ei -c "select confirm_identity_proposal(7);"
                                                              confirm proposal 7 (list them in identity_proposal)
 docker compose exec postgres psql -U ei -d ei -c "select reject_identity_proposal(7);"

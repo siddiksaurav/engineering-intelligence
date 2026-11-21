@@ -53,3 +53,19 @@ Real data, Compose database (F02's 215 PRs of 1 to 14 Jul 2026, `openproject-imp
 20. ihordubas99, F76013 Preview for tiny work package links in documents, 2026-07-22, PR 24255, items 76013
 
 Notes on the list: PR 24255 (a dependency bump) joins two Features (decision 116); group 13 is dated in Q4 (first done 23 Oct 2026), so it does not count in 2026-Q3.
+
+## Follow-ups (from the review, not fixed in F05)
+
+Paths under `backend/src/main/java/com/dsinnovators/ei/` unless named.
+- `evidence/EvidenceBuildJob.java`: the catch branches of `write` and `withdrawGone` (a failed write or withdrawal) have no test.
+- No test of the empty database (design "Edge cases": the run succeeds with zero counts).
+- `evidence/EvidenceItemStore.write`: an item built again after its withdrawal is counted `SUPERSEDED` (it supersedes the withdrawn row), not `CREATED` as design step 6 reads. Kept: superseding the withdrawn row keeps the chain; the count name is the only difference.
+- `evidence/CurrentEvidenceItems`: only `ofPerson` and `countsPerPerson`; readers "of a type" and "by key" named in the design are left to their first user (F06, F07).
+- `source/openproject/PullRequestWorkItemLink.java`: `getPullRequestExternalId`, `getReference`, `getLinkedAt` say "Read by F05" but nothing calls them; remove or relabel.
+- Performance: `EvidenceItem.sources` is an EAGER `@ElementCollection` and `findAllCurrent` feeds `currentKeys()` and `countsPerPerson()`, so `GET /api/developers` and each job run load every current item with one source query each. A grouped count query and a key-only query would avoid it. Fine at 476 items.
+- `source/github/StoredPullRequests.all()` parses each PR in the sort comparator; `LinkedPullRequests` parses again.
+- `source/openproject/StoredWorkPackages.facts` repeats the lookup of `find(number)`; constructor assignment order differs from the parameters.
+- `evidence/FeatureWorkBuilder` and `BugFixBuilder` repeat the same build loop (done-day check, failure text, key format).
+- `web/lib/evidence.ts` repeats the URL, timeout and "BACKEND_URL not set" handling of `web/lib/health.ts`, and casts the JSON without checking its shape.
+- `web/app/developers/[personId]/ReviewCommentSection.tsx` groups review comments by PR number only; `pullRequest.externalId` would not collide across repositories.
+- `source/github/GitHubAuthor.of` turns a missing `databaseId` (a Mannequin or Organization actor) into 0; two such authors would look like the same account in `ReviewCommentBuilder.isByPullRequestAuthor`.
