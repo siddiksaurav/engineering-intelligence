@@ -2,6 +2,25 @@
 
 One entry per working session, newest at the top. Each entry says what was done, what is next and what is blocked. Read the top entry first.
 
+## 22 Nov 2026: F05 Evidence builders and the evidence list page shipped
+
+**Done**
+- `/ship F05`: question brief answered (Q1 to Q11 as recommended, Q12 A, Q13 B after an explanation): decisions 112 to 124; decisions 100 to 111 and 125 by the session, 126 from the review. 12 tasks in 4 batches, a fix for decision 125 and 2 review fixes on `feature/f05`.
+- Migration V8 (`evidence_item`, `evidence_item_source`, `evidence_item_link`, append-only trigger), package `evidence` (three builders, the store, job `evidence-build`), package `api` (`GET /api/developers`, `GET /api/developers/{personId}/evidence-items`), web pages `/developers` and `/developers/[personId]`.
+- Real data (runs 7 to 9): 476 items (35 Feature work, 62 Bug fix, 379 Review comment written), 0 failed; a second run writes nothing; no Bug in a Feature work group. Backend 494 tests, web 48 tests, all green.
+- Pull request: see the F05 row of the status table and `notes.md`.
+
+**Checks still open (waiting for the user)**
+- Check the 20 Feature work groups listed in `docs/features/F05-evidence-builders/notes.md`, "Verification", against GitHub and OpenProject.
+- From F04: the 19 identity proposals.
+
+**Next**
+- `/clear`, then `/ship F06`.
+
+**Blocked or needed from the user**
+- A Groq Cloud API key in `.env` before F06 (and `cp .env.example .env` on this machine).
+- A `GITHUB_TOKEN` to finish the 109 completion PRs of `openproject-import`.
+
 ## 21 Nov 2026: F04 Identity shipped
 
 **Done**

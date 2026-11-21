@@ -29,6 +29,8 @@ Real data, Compose database (F02's 215 PRs of 1 to 14 Jul 2026, `openproject-imp
 - **Building twice gives the same items and no duplicates: passed.** Run 8: `items_unchanged` 476, nothing written; `evidence_item` 476 rows, 476 keys. Job test `EvidenceBuildJobTest.aSecondRunWritesNoRow`.
 - **No Bug in a Feature work group: passed.** SQL: Feature work sources of role `work_package` whose type is Bug: 0; tasks of type Bug in `fields.tasks`: 0. Tests in `FeatureWorkBuilderTest`.
 - **Pages:** `/developers` and `/developers/17` (mrmir) render the real items; at 375px no element is wider than the screen; three sections present.
+- **After the review fixes (decision 126):** backend `./mvnw verify` 494 tests, 0 failures, 8 skipped. `evidence-build` run 9 on the fixed code: `items_unchanged` 476, `records_without_author` 0, `items_failed` 0.
+- Review fixes (commits `f47897e`, `65b0771`): a PR or comment with no author gives no item and is counted; a builder failure carries its key (`BuilderFailure`), and a failed key is never withdrawn. Checked by the session against both findings.
 
 **Waiting for the user: check these 20 Feature work groups** (person, Feature, first done day, PRs on github.com/opf/openproject/pull/N, work items on community.openproject.org/wp/N):
 1. shiroginne, F76145 Add "as parent" badge to referencing wiki pages, 2026-07-24, PR 23849, items 76145
@@ -69,3 +71,12 @@ Paths under `backend/src/main/java/com/dsinnovators/ei/` unless named.
 - `web/lib/evidence.ts` repeats the URL, timeout and "BACKEND_URL not set" handling of `web/lib/health.ts`, and casts the JSON without checking its shape.
 - `web/app/developers/[personId]/ReviewCommentSection.tsx` groups review comments by PR number only; `pullRequest.externalId` would not collide across repositories.
 - `source/github/GitHubAuthor.of` turns a missing `databaseId` (a Mannequin or Organization actor) into 0; two such authors would look like the same account in `ReviewCommentBuilder.isByPullRequestAuthor`.
+
+## What a later feature should know
+
+- Run `evidence-build` after `identity-build`: `curl -s -X POST localhost:8080/api/jobs/evidence-build/runs -H 'Content-Type: application/json' -d '{}'`. It builds from every stored record and writes a row only when an item changed.
+- The current item of a key is the row no other row supersedes, unless it is withdrawn (`EvidenceItemRepository.findCurrentByKey`, `CurrentEvidenceItems`). A judgment (F06, F07) belongs to one row; a new row of the same key is a changed item and needs a new judgment.
+- Keys: `feature_work:<featureNumber>:<personId>`, `bug_fix:<bugNumber>:<personId>`, `review_comment_written:<commentDatabaseId>`.
+- F06: a PR in a Feature work group is never a Refactor, Security or Infra item. F05 builds nothing for a PR whose work items are all non-Bug with no Feature ancestor (decision 115), nor for a PR with no resolved link; those are F06's. Done statuses for a run come from the quarter of the run day (decision 125).
+- `fields` shapes are built in `evidence/ItemFields.java`; titles and links for the API are read from them in `api`.
+- Web: `/developers` and `/developers/[personId]`; `web/lib/evidence.ts` is the client; colours are in `web/app/globals.css` (blue Feature work, orange Bug fix, green Review comment written). `.claude/launch.json` starts the web dev server for the browser pane with `BACKEND_URL=http://localhost:8080`.

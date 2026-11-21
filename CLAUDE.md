@@ -134,6 +134,7 @@ docker compose exec postgres psql -U ei -d ei -c "select reject_identity_proposa
 - `github-import` needs a read-only `GITHUB_TOKEN` in `.env` (a fine-grained token with public repository access). Two weeks take about six minutes.
 - Tests run with the profile `test` and never read `.env`. They never call GitHub; `GitHubApiFixture` gives a client on a mock server.
 - Health: `curl -s localhost:8080/actuator/health`. The web page at `localhost:3000` shows "backend up" or "backend down".
+- Evidence list: `localhost:3000/developers` (after `evidence-build`).
 - A test that needs the database extends `com.dsinnovators.ei.DatabaseTest`.
 - Do not put quotes around values in `.env`: the backend would read them as part of the value.
 - The backend build fails on any compiler warning, any Error Prone finding and any unformatted file. Run `./mvnw spotless:apply` before `./mvnw verify`.
