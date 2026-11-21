@@ -65,6 +65,13 @@ ei:
     max-diff-characters: 12000
     max-body-characters: 4000
     max-error-characters: 300
+    # Stage 2 inputs (F07). Free tier: a call stays under about 8,000 tokens, so about 14,000 characters.
+    max-description-characters: 1500
+    max-feature-work-characters: 14000
+    max-hunk-characters: 2000
+    max-comment-characters: 2000
+    max-replied-comment-characters: 500
+    max-review-characters: 12000
 
 ---
 # The one .env at the repository root. Found when started from the root or from backend/.

@@ -22,6 +22,13 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @param maxDiffCharacters the budget of patch text sent per pull request (decision 155)
  * @param maxBodyCharacters where the body of a pull request is cut
  * @param maxErrorCharacters how much of a provider's error text goes into an exception message
+ * @param maxDescriptionCharacters where a work item description or a pull request body is cut in a
+ *     Stage 2 input
+ * @param maxFeatureWorkCharacters the budget of the whole Feature work input
+ * @param maxHunkCharacters how much of the tail of a diff hunk goes into a review call
+ * @param maxCommentCharacters where a review comment is cut
+ * @param maxRepliedCommentCharacters where the comment that a reply answers is cut
+ * @param maxReviewCharacters the budget of one review call; one comment with its parts must fit it
  */
 @ConfigurationProperties("ei.judgment")
 record JudgmentProperties(
@@ -33,7 +40,13 @@ record JudgmentProperties(
         long minRemainingTokens,
         int maxDiffCharacters,
         int maxBodyCharacters,
-        int maxErrorCharacters) {
+        int maxErrorCharacters,
+        int maxDescriptionCharacters,
+        int maxFeatureWorkCharacters,
+        int maxHunkCharacters,
+        int maxCommentCharacters,
+        int maxRepliedCommentCharacters,
+        int maxReviewCharacters) {
 
     JudgmentProperties {
         providers = providersWithAKey(providers);
@@ -53,10 +66,39 @@ record JudgmentProperties(
         requireMoreThanZero("ei.judgment.max-diff-characters", maxDiffCharacters);
         requireMoreThanZero("ei.judgment.max-body-characters", maxBodyCharacters);
         requireMoreThanZero("ei.judgment.max-error-characters", maxErrorCharacters);
+        requireMoreThanZero("ei.judgment.max-description-characters", maxDescriptionCharacters);
+        requireMoreThanZero("ei.judgment.max-feature-work-characters", maxFeatureWorkCharacters);
+        requireMoreThanZero("ei.judgment.max-hunk-characters", maxHunkCharacters);
+        requireMoreThanZero("ei.judgment.max-comment-characters", maxCommentCharacters);
+        requireMoreThanZero("ei.judgment.max-replied-comment-characters", maxRepliedCommentCharacters);
+        requireMoreThanZero("ei.judgment.max-review-characters", maxReviewCharacters);
+        // Built only to fail the start-up when one comment with its parts cannot fit a call; the fields
+        // are not assigned yet here, so the accessor method cannot be used.
+        new ReviewCommentLimits(
+                maxDescriptionCharacters,
+                maxHunkCharacters,
+                maxCommentCharacters,
+                maxRepliedCommentCharacters,
+                maxReviewCharacters);
     }
 
     DigestLimits digestLimits() {
         return new DigestLimits(maxBodyCharacters, maxDiffCharacters);
+    }
+
+    // F07: used by the Feature work input builder (a later task of F07).
+    FeatureWorkLimits featureWorkLimits() {
+        return new FeatureWorkLimits(maxDescriptionCharacters, maxFeatureWorkCharacters);
+    }
+
+    // F07: used by the review comment input builder (a later task of F07).
+    ReviewCommentLimits reviewCommentLimits() {
+        return new ReviewCommentLimits(
+                maxDescriptionCharacters,
+                maxHunkCharacters,
+                maxCommentCharacters,
+                maxRepliedCommentCharacters,
+                maxReviewCharacters);
     }
 
     CallPolicy callPolicy() {
