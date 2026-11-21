@@ -135,6 +135,35 @@ class EvidenceBuildJobTest extends DatabaseTest {
     }
 
     @Test
+    void recordsWithoutAnAuthorGiveNoItemAndDoNotFailTheRun() throws Exception {
+        records.pullRequestWithoutAuthor(6, "2026-07-06T08:00:00Z");
+        records.link(6, 101);
+        records.reviewCommentWithoutAuthor(901, 1);
+
+        JsonNode run = runJob();
+
+        assertEquals("succeeded", run.get("status").stringValue());
+        assertEquals(2, run.get("counts").get("records_without_author").longValue());
+        assertEquals(3, run.get("counts").get("items_created").longValue());
+        assertEquals(3, rowCount());
+    }
+
+    @Test
+    void anItemWhoseRebuildFailsStaysCurrentAndTheRunFailsNamingIt() throws Exception {
+        runJob();
+        jdbc.update("delete from person_identity where external_id = '2'");
+
+        JsonNode run = runJob();
+
+        assertEquals("failed", run.get("status").stringValue());
+        assertTrue(run.get("errorMessage").stringValue().contains("review_comment_written:900"), run.toString());
+        assertTrue(
+                currentKeys().contains("review_comment_written:900"),
+                currentKeys().toString());
+        assertEquals(0, run.get("counts").path("items_withdrawn").asLong(0L));
+    }
+
+    @Test
     void anArgumentIsRefused() throws Exception {
         HttpResponse<String> response = jobs.start("evidence-build", "{\"quarter\":\"2026-Q3\"}");
 

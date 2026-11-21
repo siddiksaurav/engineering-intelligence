@@ -7,17 +7,19 @@ import java.util.List;
  * yet, is named in {@code failures} and the other items are still returned, so the job can write
  * them and fail at its end naming the failed ones.
  *
- * @param failures one text per failed item: its key, then the reason
+ * @param failures one per failed item
  * @param botRecordsSkipped how many records of bots the builder left out
+ * @param recordsWithoutAuthor how many records GitHub gives no author, which give no item (decision 126)
  */
-record BuildResult(List<BuiltItem> items, List<String> failures, int botRecordsSkipped) {
+record BuildResult(
+        List<BuiltItem> items, List<BuilderFailure> failures, int botRecordsSkipped, int recordsWithoutAuthor) {
 
     BuildResult {
         items = List.copyOf(items);
         failures = List.copyOf(failures);
     }
 
-    BuildResult(List<BuiltItem> items, List<String> failures) {
-        this(items, failures, 0);
+    BuildResult(List<BuiltItem> items, List<BuilderFailure> failures) {
+        this(items, failures, 0, 0);
     }
 }

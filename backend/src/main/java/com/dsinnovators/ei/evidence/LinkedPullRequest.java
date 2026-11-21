@@ -7,8 +7,8 @@ import java.util.Optional;
 /**
  * A stored pull request of a human author that links at least one work item.
  *
- * @param authorLogin the author's login, for naming a failure; a fixed text when GitHub names no author
- * @param personId the author's person; empty when the author has none yet or GitHub names none
+ * @param authorLogin the author's login, for naming a failure
+ * @param personId the author's person; empty when the author has none yet
  * @param workItems the numbers of the work items it links, each once
  */
 record LinkedPullRequest(

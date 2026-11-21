@@ -64,7 +64,8 @@ class EvidenceBuildJob implements Job {
 
     /**
      * An item that fails on its own is counted and the run goes on; the run then fails at the end,
-     * naming the items. An item that failed is never withdrawn: it is not gone, it failed.
+     * naming the items. An item that failed is never withdrawn, whatever the builder: the key a
+     * failure carries is kept, so a current item whose rebuild failed stays current.
      */
     @Override
     public void run(JobArguments arguments, JobCounts counts) {
@@ -72,6 +73,7 @@ class EvidenceBuildJob implements Job {
         LinkedPullRequests.Read read = linkedPullRequests.read(quarter);
         counts.add("pull_requests_read", read.pullRequestsRead());
         counts.add("bot_records_skipped", read.botPullRequestsSkipped());
+        counts.add("records_without_author", read.pullRequestsWithoutAuthor());
         List<BuildResult> results = List.of(
                 featureWorkBuilder.build(read.pullRequests(), quarter),
                 bugFixBuilder.build(read.pullRequests(), quarter),
@@ -80,7 +82,11 @@ class EvidenceBuildJob implements Job {
         Set<String> keptKeys = new HashSet<>();
         for (BuildResult result : results) {
             counts.add("bot_records_skipped", result.botRecordsSkipped());
-            failedNames.addAll(result.failures());
+            counts.add("records_without_author", result.recordsWithoutAuthor());
+            for (BuilderFailure failure : result.failures()) {
+                failedNames.add(failure.text());
+                keptKeys.add(failure.itemKey());
+            }
             for (BuiltItem item : result.items()) {
                 keptKeys.add(item.key());
                 write(item, failedNames, counts);
@@ -105,8 +111,7 @@ class EvidenceBuildJob implements Job {
         }
     }
 
-    // keptKeys holds every key a builder made, a key whose write failed included. A builder failure
-    // names a key with the login, which no stored item can have, so nothing failed is withdrawn.
+    // keptKeys holds every key a builder made or failed to make, a key whose write failed included.
     private void withdrawGone(Set<String> keptKeys, List<String> failedNames, JobCounts counts) {
         Set<String> goneKeys = new TreeSet<>(store.currentKeys());
         goneKeys.removeAll(keptKeys);

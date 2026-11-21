@@ -37,15 +37,16 @@ class FeatureWorkBuilder {
     BuildResult build(List<LinkedPullRequest> linkedPullRequests, Quarter doneStatusesQuarter) {
         WorkItemLookup workItems = new WorkItemLookup(storedWorkPackages, doneStatusesQuarter);
         List<BuiltItem> items = new ArrayList<>();
-        List<String> failures = new ArrayList<>();
+        List<BuilderFailure> failures = new ArrayList<>();
         groups(linkedPullRequests, workItems).forEach((group, members) -> {
             Optional<Instant> doneAt = workItems.firstDoneAt(group.feature());
             if (doneAt.isEmpty()) {
                 return;
             }
             if (members.personId().isEmpty()) {
-                failures.add(key(group.feature(), members.authorLogin()) + ": no person for GitHub account "
-                        + members.authorLogin());
+                failures.add(new BuilderFailure(
+                        key(group.feature(), members.authorLogin()),
+                        "no person for GitHub account " + members.authorLogin()));
                 return;
             }
             items.add(

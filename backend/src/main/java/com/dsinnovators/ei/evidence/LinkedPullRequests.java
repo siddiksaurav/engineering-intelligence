@@ -20,8 +20,6 @@ import org.springframework.stereotype.Component;
 @Component
 class LinkedPullRequests {
 
-    static final String UNKNOWN_AUTHOR = "unknown author";
-
     private final StoredPullRequests storedPullRequests;
     private final StoredWorkPackages storedWorkPackages;
     private final BotAccounts botAccounts;
@@ -40,27 +38,30 @@ class LinkedPullRequests {
 
     /**
      * The pull requests that link a work item and are not by a bot, oldest merge first, and how
-     * many pull requests of bots were left out; the bot list of {@code quarter} applies.
+     * many pull requests of bots and how many without a GitHub author were left out (decision 126);
+     * the bot list of {@code quarter} applies.
      */
     Read read(Quarter quarter) {
         List<PullRequestFacts> all =
                 storedPullRequests.all().stream().map(PullRequestFacts::of).toList();
-        List<PullRequestFacts> byHumans = all.stream()
-                .filter(pullRequest -> !isByBot(pullRequest, quarter))
+        List<AuthoredPullRequest> authored = all.stream()
+                .flatMap(pullRequest ->
+                        pullRequest.author().map(author -> new AuthoredPullRequest(pullRequest, author)).stream())
+                .toList();
+        List<AuthoredPullRequest> byHumans = authored.stream()
+                .filter(pullRequest -> !isBot(pullRequest.author(), quarter))
                 .toList();
         List<LinkedPullRequest> linked =
                 byHumans.stream().map(this::linked).flatMap(Optional::stream).toList();
-        return new Read(linked, all.size(), all.size() - byHumans.size());
+        return new Read(linked, all.size(), authored.size() - byHumans.size(), all.size() - authored.size());
     }
 
-    private boolean isByBot(PullRequestFacts pullRequest, Quarter quarter) {
-        return pullRequest
-                .author()
-                .filter(account -> botAccounts.isBot(account.login(), account.typename(), quarter))
-                .isPresent();
+    private boolean isBot(GitHubAuthor author, Quarter quarter) {
+        return botAccounts.isBot(author.login(), author.typename(), quarter);
     }
 
-    private Optional<LinkedPullRequest> linked(PullRequestFacts pullRequest) {
+    private Optional<LinkedPullRequest> linked(AuthoredPullRequest authored) {
+        PullRequestFacts pullRequest = authored.pullRequest();
         List<Long> workItems = storedWorkPackages.linksOf(pullRequest.externalId()).stream()
                 .filter(PullRequestWorkItemLink::isVisible)
                 .map(PullRequestWorkItemLink::getWorkPackageId)
@@ -69,14 +70,19 @@ class LinkedPullRequests {
         if (workItems.isEmpty()) {
             return Optional.empty();
         }
-        Optional<GitHubAuthor> author = pullRequest.author();
         return Optional.of(new LinkedPullRequest(
                 pullRequest,
-                author.map(GitHubAuthor::login).orElse(UNKNOWN_AUTHOR),
-                author.flatMap(account -> personDirectory.personOfGitHubAccount(account.databaseId())),
+                authored.author().login(),
+                personDirectory.personOfGitHubAccount(authored.author().databaseId()),
                 workItems));
     }
 
+    private record AuthoredPullRequest(PullRequestFacts pullRequest, GitHubAuthor author) {}
+
     /** What one read found. */
-    record Read(List<LinkedPullRequest> pullRequests, int pullRequestsRead, int botPullRequestsSkipped) {}
+    record Read(
+            List<LinkedPullRequest> pullRequests,
+            int pullRequestsRead,
+            int botPullRequestsSkipped,
+            int pullRequestsWithoutAuthor) {}
 }

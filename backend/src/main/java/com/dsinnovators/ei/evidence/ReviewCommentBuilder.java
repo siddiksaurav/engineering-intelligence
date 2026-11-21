@@ -49,13 +49,18 @@ class ReviewCommentBuilder {
     BuildResult build(Quarter botListQuarter) {
         Map<String, Optional<RawRecord>> pullRequests = new HashMap<>();
         List<BuiltItem> items = new ArrayList<>();
-        List<String> failures = new ArrayList<>();
+        List<BuilderFailure> failures = new ArrayList<>();
         int botRecordsSkipped = 0;
+        int recordsWithoutAuthor = 0;
         for (RawRecord record : storedReviewComments.all()) {
             ReviewCommentFacts comment = ReviewCommentFacts.of(record);
-            Optional<GitHubAuthor> author = comment.author();
-            if (author.filter(account -> botAccounts.isBot(account.login(), account.typename(), botListQuarter))
-                    .isPresent()) {
+            Optional<GitHubAuthor> maybeAuthor = comment.author();
+            if (maybeAuthor.isEmpty()) {
+                recordsWithoutAuthor++;
+                continue;
+            }
+            GitHubAuthor author = maybeAuthor.get();
+            if (botAccounts.isBot(author.login(), author.typename(), botListQuarter)) {
                 botRecordsSkipped++;
                 continue;
             }
@@ -63,32 +68,29 @@ class ReviewCommentBuilder {
                     comment.pullRequestExternalId(),
                     externalId -> storedPullRequests.find(comment.repository(), comment.pullRequestNumber()));
             if (pullRequestRecord.isEmpty()) {
-                failures.add(key(comment) + ": pull request " + comment.pullRequestExternalId() + " is not stored");
+                failures.add(new BuilderFailure(
+                        key(comment), "pull request " + comment.pullRequestExternalId() + " is not stored"));
                 continue;
             }
             PullRequestFacts pullRequest = PullRequestFacts.of(pullRequestRecord.get());
             if (isByPullRequestAuthor(author, pullRequest)) {
                 continue;
             }
-            Optional<Long> personId =
-                    author.flatMap(account -> personDirectory.personOfGitHubAccount(account.databaseId()));
+            Optional<Long> personId = personDirectory.personOfGitHubAccount(author.databaseId());
             if (personId.isEmpty()) {
-                failures.add(key(comment) + ": no person for GitHub account "
-                        + author.map(GitHubAuthor::login).orElse(LinkedPullRequests.UNKNOWN_AUTHOR));
+                failures.add(new BuilderFailure(key(comment), "no person for GitHub account " + author.login()));
                 continue;
             }
             items.add(item(comment, pullRequest, personId.get()));
         }
-        return new BuildResult(items, failures, botRecordsSkipped);
+        return new BuildResult(items, failures, botRecordsSkipped, recordsWithoutAuthor);
     }
 
-    private static boolean isByPullRequestAuthor(Optional<GitHubAuthor> commentAuthor, PullRequestFacts pullRequest) {
-        return commentAuthor.isPresent()
-                && pullRequest
-                        .author()
-                        .filter(author ->
-                                author.databaseId() == commentAuthor.get().databaseId())
-                        .isPresent();
+    private static boolean isByPullRequestAuthor(GitHubAuthor commentAuthor, PullRequestFacts pullRequest) {
+        return pullRequest
+                .author()
+                .filter(author -> author.databaseId() == commentAuthor.databaseId())
+                .isPresent();
     }
 
     private BuiltItem item(ReviewCommentFacts comment, PullRequestFacts pullRequest, long personId) {

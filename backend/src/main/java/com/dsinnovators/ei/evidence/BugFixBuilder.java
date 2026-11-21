@@ -35,15 +35,15 @@ class BugFixBuilder {
     BuildResult build(List<LinkedPullRequest> linkedPullRequests, Quarter doneStatusesQuarter) {
         WorkItemLookup workItems = new WorkItemLookup(storedWorkPackages, doneStatusesQuarter);
         List<BuiltItem> items = new ArrayList<>();
-        List<String> failures = new ArrayList<>();
+        List<BuilderFailure> failures = new ArrayList<>();
         fixes(linkedPullRequests, workItems).forEach((group, fix) -> {
             Optional<Instant> doneAt = workItems.firstDoneAt(group.bug());
             if (doneAt.isEmpty()) {
                 return;
             }
             if (fix.personId().isEmpty()) {
-                failures.add(
-                        key(group.bug(), fix.authorLogin()) + ": no person for GitHub account " + fix.authorLogin());
+                failures.add(new BuilderFailure(
+                        key(group.bug(), fix.authorLogin()), "no person for GitHub account " + fix.authorLogin()));
                 return;
             }
             items.add(item(workItems, group.bug(), fix, fix.personId().get(), doneAt.get()));

@@ -58,6 +58,15 @@ final class StoredRecordsFixture {
             boolean reply) {
         String author = "{\"login\":\"" + login + "\",\"__typename\":\"" + typename + "\",\"databaseId\":"
                 + authorDatabaseId + "}";
+        storeReviewComment(databaseId, pullRequestNumber, author, reply);
+    }
+
+    /** An inline review comment whose author GitHub no longer names, as a deleted account leaves it. */
+    void reviewCommentWithoutAuthor(long databaseId, int pullRequestNumber) {
+        storeReviewComment(databaseId, pullRequestNumber, "null", false);
+    }
+
+    private void storeReviewComment(long databaseId, int pullRequestNumber, String author, boolean reply) {
         String url = "https://github.com/" + REPOSITORY + "/pull/" + pullRequestNumber + "#discussion_r" + databaseId;
         rawRecords.store(
                 "github",

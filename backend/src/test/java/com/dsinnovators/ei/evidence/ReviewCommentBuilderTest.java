@@ -97,6 +97,18 @@ class ReviewCommentBuilderTest extends DatabaseTest {
     }
 
     @Test
+    void aCommentWithoutAnAuthorGivesNothingIsNotAFailureAndIsCounted() {
+        records.pullRequest(7, "ada", "User", 1, "2026-07-02T08:00:00Z");
+        records.reviewCommentWithoutAuthor(900, 7);
+
+        BuildResult result = builder.build(BOT_LIST_QUARTER);
+
+        assertEquals(List.of(), result.items());
+        assertEquals(List.of(), result.failures());
+        assertEquals(1, result.recordsWithoutAuthor());
+    }
+
+    @Test
     void aReviewersReplyIsAnItemMarkedAsReply() {
         records.pullRequest(7, "ada", "User", 1, "2026-07-02T08:00:00Z");
         records.reviewComment(900, 7, "grace", "User", 2, true);
@@ -130,8 +142,8 @@ class ReviewCommentBuilderTest extends DatabaseTest {
                 result.items().stream().map(BuiltItem::key).toList());
         assertEquals(1, result.failures().size());
         assertTrue(
-                result.failures().get(0).startsWith("review_comment_written:900"),
-                result.failures().get(0));
+                result.failures().get(0).text().startsWith("review_comment_written:900"),
+                result.failures().get(0).text());
     }
 
     @Test
@@ -143,7 +155,7 @@ class ReviewCommentBuilderTest extends DatabaseTest {
         assertEquals(List.of(), result.items());
         assertEquals(1, result.failures().size());
         assertTrue(
-                result.failures().get(0).startsWith("review_comment_written:900"),
-                result.failures().get(0));
+                result.failures().get(0).text().startsWith("review_comment_written:900"),
+                result.failures().get(0).text());
     }
 }

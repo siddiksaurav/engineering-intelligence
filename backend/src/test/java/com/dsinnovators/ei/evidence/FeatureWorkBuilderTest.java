@@ -235,6 +235,19 @@ class FeatureWorkBuilderTest extends DatabaseTest {
     }
 
     @Test
+    void aPullRequestWithoutAnAuthorGivesNothingAndIsNotAFailure() {
+        records.workPackage(100, "Feature", null, 5, DONE_STATUS, FEATURE_DONE_AT);
+        records.workPackage(101, "Implementation", 100L, 5);
+        records.pullRequestWithoutAuthor(1, "2026-07-02T08:00:00Z");
+        records.link(1, 101);
+
+        BuildResult result = builder.build(linkedPullRequests(), DONE_STATUSES_QUARTER);
+
+        assertEquals(List.of(), result.items());
+        assertEquals(List.of(), result.failures());
+    }
+
+    @Test
     void aHumanAuthorWithNoPersonFailsThatItemOnly() {
         records.workPackage(100, "Feature", null, 5, DONE_STATUS, FEATURE_DONE_AT);
         records.workPackage(101, "Implementation", 100L, 5);
@@ -248,8 +261,8 @@ class FeatureWorkBuilderTest extends DatabaseTest {
         assertEquals(List.of("feature_work:100:" + ada), keys(result.items()));
         assertEquals(1, result.failures().size());
         assertTrue(
-                result.failures().get(0).startsWith("feature_work:100:stranger"),
-                result.failures().get(0));
+                result.failures().get(0).text().startsWith("feature_work:100:stranger"),
+                result.failures().get(0).text());
     }
 
     private static List<String> keys(List<BuiltItem> items) {

@@ -200,6 +200,18 @@ class BugFixBuilderTest extends DatabaseTest {
     }
 
     @Test
+    void aPullRequestWithoutAnAuthorGivesNothingAndIsNotAFailure() {
+        records.workPackage(102, "Bug", null, 5, DONE_STATUS, BUG_DONE_AT);
+        records.pullRequestWithoutAuthor(1, "2026-07-02T08:00:00Z");
+        records.link(1, 102);
+
+        BuildResult result = bugFixBuilder.build(linkedPullRequests(), DONE_STATUSES_QUARTER);
+
+        assertEquals(List.of(), result.items());
+        assertEquals(List.of(), result.failures());
+    }
+
+    @Test
     void aBotAuthorGivesNothingAndAHumanWithNoPersonFailsThatItem() {
         records.workPackage(102, "Bug", null, 5, DONE_STATUS, BUG_DONE_AT);
         records.pullRequest(1, "dependabot", "Bot", 99, "2026-07-02T08:00:00Z");
@@ -212,7 +224,7 @@ class BugFixBuilderTest extends DatabaseTest {
         assertEquals(List.of(), result.items());
         assertEquals(1, result.failures().size());
         assertTrue(
-                result.failures().get(0).startsWith("bug_fix:102:stranger"),
-                result.failures().get(0));
+                result.failures().get(0).text().startsWith("bug_fix:102:stranger"),
+                result.failures().get(0).text());
     }
 }
