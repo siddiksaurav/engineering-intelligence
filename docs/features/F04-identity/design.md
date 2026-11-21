@@ -1,6 +1,6 @@
 # F04 Identity: design
 
-State: draft
+State: approved on 2026-11-21, through the question brief
 
 ## Goal
 
@@ -11,7 +11,7 @@ After F04 every human GitHub account in the stored records is exactly one `perso
 **In.**
 - The job `identity-build`: reads the stored GitHub records, creates the missing persons and GitHub identities, and writes OpenProject proposals with their evidence.
 - The table `identity_proposal` and the decisions on it (confirm, reject).
-- The way the user confirms or rejects a proposal (open point Q5).
+- Two database functions with which the user confirms or rejects a proposal from `psql` (decision 98).
 - The lookups later features use: GitHub account to person, OpenProject user id to person.
 - The readers of stored GitHub records by author (decision 62: built by their first user).
 
@@ -64,8 +64,8 @@ Setting `github.bot_logins` (V5, valid from 2026-Q2): `["dependabot", "openproje
 ### How F04 fills them
 
 - **GitHub identity:** `person_identity` row with `data_source = github`, `external_id` = the account's GitHub `databaseId` as text (stable when a login is renamed), `username` = the login (decision 82).
-- **OpenProject identity:** `person_identity` row with `data_source = openproject`, `external_id` = the OpenProject user id (`/api/v3/users/80250` gives `80250`), `username` = the user's name as OpenProject shows it ("Kabiru Mwenja"). Written when a proposal is confirmed (open point Q4).
-- **`person.display_name`:** open point Q6.
+- **OpenProject identity:** `person_identity` row with `data_source = openproject`, `external_id` = the OpenProject user id (`/api/v3/users/80250` gives `80250`), `username` = the user's name as OpenProject shows it ("Kabiru Mwenja"). Written by the job for the current proposal of a person (state `proposed` or `confirmed`) and removed when that proposal is rejected: a proposal counts until it is rejected (decision 95).
+- **`person.display_name`:** the GitHub login, kept equal to it when the login changes (decision 96).
 - **`person.level`:** stays null.
 
 ### New table `identity_proposal` (migration V7)
@@ -78,7 +78,8 @@ One row per (person, OpenProject user) proposed. Derived data, rewritten by the 
 | `person_id` | bigint, FK `person` | |
 | `openproject_user_id` | bigint | The proposed OpenProject user |
 | `openproject_user_name` | text | Their name, from the `title` of the user link |
-| `supporting_items` | int | Work items whose signals name this user |
+| `supporting_items` | int | Linked work items whose "Developers" names this user |
+| `status_change_items` | int | Linked work items whose status this user changed |
 | `person_items` | int | Work items linked from the person's pull requests |
 | `evidence` | jsonb | List of `{ "workPackage": 81224, "url": "https://community.openproject.org/wp/81224", "signal": "developers", "at": null }`; `signal` is `developers` or `status_change`; `at` is the activity time for a status change |
 | `state` | text | `proposed`, `confirmed`, `rejected` |
@@ -86,7 +87,18 @@ One row per (person, OpenProject user) proposed. Derived data, rewritten by the 
 | `decided_at` | timestamptz, null | When confirmed or rejected |
 | unique | `(person_id, openproject_user_id)` | |
 
-The job replaces the evidence and counts of a `proposed` row; it never changes a `confirmed` or `rejected` row (decision 85).
+The job replaces a person's `proposed` row (evidence, counts, or the whole row when another user now wins); it never changes a `confirmed` or `rejected` row (decision 85). At most one row per person is `proposed` or `confirmed`.
+
+### Database functions (migration V7, decision 98)
+
+- `confirm_identity_proposal(proposal_id bigint)`: a `proposed` row becomes `confirmed`, `decided_at = now()`. Any other state raises an error naming the id and its state.
+- `reject_identity_proposal(proposal_id bigint)`: a `proposed` or `confirmed` row becomes `rejected`, `decided_at = now()`, and the person's OpenProject `person_identity` row for that user is deleted in the same statement. A `rejected` row or an unknown id raises an error naming the id. The next `identity-build` run proposes the person's next candidate.
+
+Used from the machine:
+
+```
+docker compose exec postgres psql -U ei -d ei -c "select reject_identity_proposal(7);"
+```
 
 ### Facts about the real data
 
@@ -122,17 +134,23 @@ curl -s -X POST localhost:8080/api/jobs/identity-build/runs -H 'Content-Type: ap
 
 No arguments (decision 83): identity is not tied to a window; the job reads every stored record. Run after `github-import` and `openproject-import`; running it again is safe.
 
-1. **Read the GitHub accounts** from the latest versions of the stored `pull_request`, `review`, `review_comment` and `pull_request_comment` records (open point Q1 decides which kinds), each as (`databaseId`, `login`, `__typename`).
+1. **Read the GitHub accounts** from the latest versions of the stored `pull_request`, `review`, `review_comment` and `pull_request_comment` records, each as (`databaseId`, `login`, `__typename`). Every human account found there becomes a person, whether it wrote a PR or only reviews and comments (decision 92). When one `databaseId` appears with two logins (a rename between fetches), the login of the most recently fetched record wins.
 2. **Drop bots:** an account whose `__typename` is `Bot` or whose login is in `github.bot_logins` (decision 84). Counted `bots_skipped` (distinct accounts).
 3. **Persons:** for each remaining account with no GitHub identity, create a `person` and its `person_identity`. An account whose identity exists but whose login changed gets its `username` updated. Counted `persons_created`, `logins_updated`.
-4. **Proposals:** for each person, gather the signals (open point Q2) from the work items linked to their pull requests (`pull_request_work_item`, state `resolved`). Pick the proposal by the rule and the threshold (open points Q2, Q3). Write or refresh the `identity_proposal` row. Counted `proposals_written`, `persons_without_proposal`.
-5. **Conflicts:** when two persons would get the same OpenProject user, open point Q7 decides.
+4. **Candidates:** for each person, the work items linked to their pull requests (`pull_request_work_item`, state `resolved`, decision 88). A candidate is every OpenProject *user* (href `/api/v3/users/{id}`, groups ignored, decision 86) named in "Developers" (`_links.customField270`) on at least one of those items. Per candidate: `supporting_items` = items whose "Developers" names them; `status_change_items` = items whose status they changed (`StoredWorkPackages.statusChanges`, `userId`). A user only seen in status changes is not a candidate (decision 93). Pairs the person rejected earlier are dropped.
+5. **Assignment** (decisions 93, 94, 97), over all persons together:
+   - An OpenProject user in a `confirmed` proposal is taken by that person; that person keeps it and gets nothing else.
+   - The remaining (person, candidate) pairs are ranked by `supporting_items`, then `status_change_items`, both high first. They are taken in that order: a pair is assigned when its person has nothing yet and its user is not taken.
+   - A person's best untaken candidate must be unique: if their next two untaken candidates are equal on both counts, the person gets no proposal (a tie, decision 93).
+   - Two persons equal on both counts for the same user: neither gets it from that pair; each goes on to their next candidate.
+   - One supporting item is enough (decision 94).
+6. **Write:** per person, in one transaction: replace the person's `proposed` row with the assigned one (or delete it when nothing is assigned), and keep exactly one OpenProject `person_identity` row for the person's current proposal. Counted `proposals_written`, `proposals_unchanged`, `persons_without_proposal`.
 
-The job runs in one transaction per person, so a failure leaves earlier persons in place; the run fails at the end naming the first 20 failed accounts (as F02 and F03 do).
+Steps 1 to 3 and 6 run one person per transaction, so a failure leaves earlier persons in place; the run fails at the end naming the first 20 failed accounts (decision 90).
 
 ### Confirming or rejecting a proposal
 
-Open point Q5.
+The session lists the proposals with their evidence for the user (a SQL query on `identity_proposal`). The user confirms or rejects with the database functions above (decision 98). A run of `identity-build` after a reject proposes the next candidate.
 
 ### Uses (from earlier features)
 
@@ -169,7 +187,7 @@ The bot list is a setting read for a quarter; the job reads it for the quarter o
 
 In package `identity` (exact class names in `plan.md`):
 - `PersonDirectory.personOfGitHubAccount(long databaseId)` → `Optional<Long>` person id.
-- `PersonDirectory.personOfOpenProjectUser(long userId)` → `Optional<Long>` person id (which proposal states count: open point Q4).
+- `PersonDirectory.personOfOpenProjectUser(long userId)` → `Optional<Long>` person id, read from `person_identity` (a proposed or confirmed match, decision 95).
 - `GitHubAccounts.isBot(String login, String typename, Quarter quarter)`: the one bot rule, for F05.
 - Tables `person`, `person_identity`, `identity_proposal`.
 - In `source.github`: a reader of stored GitHub records by author: the accounts of the stored records, and the pull requests of one account.
@@ -182,9 +200,11 @@ In package `identity` (exact class names in `plan.md`):
 | A login renamed on GitHub (same `databaseId`) | Same person; `username` updated |
 | A bot typed `User` (`openprojectci`) | Skipped through the bot list |
 | A Copilot coding-agent PR (author typed `Bot`) | Skipped like any bot. None in the two weeks |
-| One human with two GitHub accounts | Two persons. Not merged in the PoC (open point Q7 covers the shared OpenProject user) |
-| A person with no linked work item | No proposal; counted `persons_without_proposal` |
-| A proposal rejected | Never proposed again for that person; the next candidate that passes the rule is proposed |
+| One human with two GitHub accounts | Two persons. Not merged in the PoC; the stronger claim gets the shared OpenProject user (decision 97) |
+| A person with no linked work item, or none with "Developers" filled | No proposal; counted `persons_without_proposal` |
+| A candidate that was confirmed for another person | Never proposed to this person |
+| A proposed user that another person now claims more strongly | Moves to the stronger person on the next run; this person gets their next candidate |
+| A proposal rejected | Its OpenProject identity is removed at once; never proposed again for that person; the next run proposes the next candidate |
 | A proposal confirmed | Kept as is; a later run does not change it |
 | A new GitHub account in a later import | Becomes a person on the next run |
 | The bot list changes after a bot became a person | Not possible today (the list is checked before a person is made); a person is never deleted |
@@ -197,55 +217,12 @@ Master plan "Done when":
 - **"Every human PR author in the test range is exactly one person."** Database test: two runs over authors including a renamed login give one person per `databaseId`. Real data: after the job on the dump, `select count(*) from person` equals the distinct human accounts counted by separate SQL, and no `databaseId` has two persons.
 - **"No bot is a person."** Test with `dependabot` (type Bot), `openprojectci` (type User, on the list) and `copilot-pull-request-reviewer`: no person. Real data: SQL join of `person_identity.username` with the bot list gives 0.
 - **"Each proposed OpenProject match shows the evidence it rests on."** Test: a proposal holds one evidence entry per supporting work item with its URL and signal. Real data: every `identity_proposal` row has a non-empty `evidence`; the session lists the proposals with their links and the user checks them by hand ("waiting for the user").
-- **"A match can be confirmed or rejected by hand."** Test of the confirm and reject path (Q5), and that a rejected pair is not proposed again on a second run.
+- **"A match can be confirmed or rejected by hand."** Database tests of `confirm_identity_proposal` and `reject_identity_proposal` (states, `decided_at`, the OpenProject identity removed, errors on a wrong state), and that a rejected pair is not proposed again on a second run while the next candidate is.
+- **The rule.** Unit tests of the assignment: most "Developers" items wins; a tie broken by status changes; a full tie gives no proposal; a user seen only in status changes is never proposed; groups ignored; the stronger of two persons gets a shared user and the other their next candidate; a confirmed user stays with its person.
+- **Real data.** After the job on this machine's database, the session lists every proposal with its top evidence links for the user to check ("waiting for the user"), and compares them with the figures in "Matching evidence".
 
-## Open points
+## Decisions
 
-Brief shown to the user on 21 Nov 2026.
+Made in this design (session): 82 GitHub identity keyed by `databaseId`; 83 job `identity-build` with no arguments; 84 one bot rule; 85 table `identity_proposal`, decisions kept; 86 groups ignored; 87 names from the stored link titles; 88 only the linked work items; 89 readers by author in `source.github`; 90 one transaction per person; 91 the restored dump.
 
-### 1. Business questions
-
-**Q1. Who becomes a person?**
-- A. Only PR authors, as the master plan says. The 7 people who only review or comment (`dombesz` has 23 review comments) belong to nobody.
-- B. Every human GitHub account that wrote a PR, a review, a review comment or a comment. F05 can credit their review comments.
-- Recommended: B. F05 builds "Review comment written" per reviewer; without a person those comments are lost.
-
-**Q2. Which rule proposes the OpenProject user?**
-- A. The user named most often in "Developers" on the person's linked work items. Ties give no proposal.
-- B. As A, and a tie is broken by who changed the status of those items most often.
-- C. Both signals counted together. QA and leads, who move many items, sometimes win.
-- D. As B, plus name likeness between login and OpenProject name (one OpenProject call per candidate). More matches for the 4 people with no "Developers" value; more work.
-- Recommended: B. On the data so far it gives the right-looking user for every author with "Developers" filled and settles the ties of `dfriquet` and `toy`.
-
-**Q3. How sure must a proposal be?**
-- A. Propose the single best candidate even if it rests on one work item; you check every proposal anyway.
-- B. At least 2 work items and at least half of the person's items; fewer proposals, more people left unmatched.
-- Recommended: A. Every proposal is checked by hand, so a weak one costs one "reject".
-
-**Q4. Does a proposal count before you confirm it?**
-- A. No. The OpenProject identity exists only after you confirm.
-- B. Yes, until you reject it.
-- Recommended: A. Nothing in the PoC scores on the OpenProject identity (credit follows the PR author), so waiting costs nothing.
-
-**Q6. Which name is shown for a person?**
-- A. The GitHub login.
-- B. The OpenProject name once confirmed, else the GitHub login.
-- C. The GitHub profile name: one more GitHub call per person, and a token.
-- Recommended: B. Real names (decision 6) without a new call.
-
-**Q7. The same OpenProject user is the best match for two people.**
-- A. The person with more supporting work items gets it; the other gets their next candidate.
-- B. Neither gets it; both are left for you.
-- Recommended: A. `HDinger` ties Behrokh Satarnejad with Henriette Darge; Behrokh is clearly `bsatarnejad` (5 of 5), so `HDinger` gets Henriette.
-
-### 2. Technical decisions I need your direction on
-
-**Q5. How do you confirm or reject a proposal?**
-- A. Two small endpoints on the machine (list with evidence; confirm or reject by id). You answer in chat, the session calls them.
-- B. A SQL script you run.
-- C. A CSV file exported, edited and imported.
-- Recommended: A. Works from a phone through the session; testable like the job endpoint.
-
-### 3. Decisions I made myself
-
-D82 to D91 in `docs/decisions.md`, also listed under "Decisions" once approved.
+From the question brief (user, 21 Nov 2026): 92 every human account becomes a person; 93 "Developers" first, ties broken by status changes; 94 propose the best candidate even from one item; 95 a proposal counts until rejected; 96 the display name is the GitHub login; 97 the stronger claim wins a shared user; 98 confirm and reject through SQL (two database functions).

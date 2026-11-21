@@ -399,7 +399,7 @@ Update this table when a feature changes state. States: not started, in design, 
 | F01 | Repository skeleton | done | `docs/features/F01-repository-skeleton/design.md` | `docs/features/F01-repository-skeleton/plan.md` |
 | F02 | GitHub connector | done | `docs/features/F02-github-connector/design.md` | `docs/features/F02-github-connector/plan.md` |
 | F03 | OpenProject connector | done | `docs/features/F03-openproject-connector/design.md` | `docs/features/F03-openproject-connector/plan.md` |
-| F04 | Identity | in design | | |
+| F04 | Identity | in progress | `docs/features/F04-identity/design.md` | `docs/features/F04-identity/plan.md` |
 | F05 | Evidence builders without AI, list page | not started | | |
 | F06 | `JudgmentModel`, PR digest, AI-dependent builders | not started | | |
 | F07 | Feature work and review comment judgment | not started | | |
