@@ -21,6 +21,7 @@ class PromptLibraryTest {
 
     private static final String VERSION = "pull-request-digest/v1";
     private static final String FEATURE_WORK_VERSION = "feature-work-complexity/v1";
+    private static final String REVIEW_COMMENTS_VERSION = "review-comments/v1";
 
     /**
      * The SHA-256 of each released prompt file (decision 129). A released prompt is never edited: a
@@ -30,14 +31,18 @@ class PromptLibraryTest {
             "judgment/prompts/pull-request-digest-v1.md",
             "f2da6360862df4f97e641ac7a8f3acf236ee8c8de0281881b55e520041d9875f",
             "judgment/prompts/feature-work-complexity-v1.md",
-            "2e72717d21a26afef37c41df019abe8e5ddcb33eca2a21d1d96e75cef1879451");
+            "2e72717d21a26afef37c41df019abe8e5ddcb33eca2a21d1d96e75cef1879451",
+            "judgment/prompts/review-comments-v1.md",
+            "33592fd3f9cc675719f2a1f542879e5aad110f5b12537bb0f35b9956ec13cc1b");
 
     /** The same for the schema of each released prompt. */
     private static final Map<String, String> RELEASED_SCHEMA_HASHES = Map.of(
             "judgment/schemas/pull-request-digest-v1.json",
             "27fedee68a274de8dc7b5ea2a9cd7563d31a47af1fa4b6944bee286f78dd0010",
             "judgment/schemas/feature-work-complexity-v1.json",
-            "625d61212e88fcfd792e94fce9fa776f7432cee962c6ccf0e033821da8d10626");
+            "625d61212e88fcfd792e94fce9fa776f7432cee962c6ccf0e033821da8d10626",
+            "judgment/schemas/review-comments-v1.json",
+            "c630d670df462085e34d6d73cb64e065f3f5602ac9e5a7aa3f3e02b2d04d879b");
 
     private final PromptLibrary library = new PromptLibrary();
 
@@ -138,6 +143,32 @@ class PromptLibraryTest {
         assertEquals(
                 wireNames(FeatureWorkAnswer.Integration.values()),
                 enumValues(properties.path("rubric").path("properties").path("integration")));
+    }
+
+    @Test
+    void theReviewCommentPromptNamesTheTenTypesAndJudgesEachCommentOnItsOwn() {
+        String instructions = library.instructions(REVIEW_COMMENTS_VERSION);
+
+        for (ReviewCommentAnswer.CommentType type : ReviewCommentAnswer.CommentType.values()) {
+            assertTrue(instructions.contains("`" + type.wireName() + "`"), type.wireName());
+        }
+        assertTrue(instructions.contains("Judge each comment on its own"));
+        assertTrue(instructions.contains("Cite each comment id exactly once"));
+    }
+
+    @Test
+    void theReviewCommentSchemaIsStrictAndAsksForNeitherTierNorSubstantive() {
+        JsonNode schema = library.schema(REVIEW_COMMENTS_VERSION);
+        JsonNode comment = schema.path("properties").path("comments").path("items");
+
+        assertStrict(schema);
+        assertEquals(1, schema.path("properties").size());
+        assertEquals(
+                List.of("commentId", "commentType", "reason"),
+                comment.path("properties").propertyNames().stream().sorted().toList());
+        assertEquals(
+                wireNames(ReviewCommentAnswer.CommentType.values()),
+                enumValues(comment.path("properties").path("commentType")));
     }
 
     private static List<String> wireNames(PullRequestDigest.WireNamed[] values) {
