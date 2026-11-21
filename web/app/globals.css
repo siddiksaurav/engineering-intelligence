@@ -1,0 +1,37 @@
+:root {
+  --sky-900: #0c3a5b;
+  --sky-700: #0369a1;
+  --sky-500: #0ea5e9;
+  --sky-200: #bae6fd;
+  --sky-100: #e0f2fe;
+  --sky-50: #f0f9ff;
+  --ink: #0b2a42;
+  --muted: #476b86;
+  --feature-work: #0284c7;
+  --bug-fix: #ea580c;
+  --review-comment-written: #059669;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--sky-50);
+  color: var(--ink);
+  font-family:
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+a {
+  color: var(--sky-700);
+}

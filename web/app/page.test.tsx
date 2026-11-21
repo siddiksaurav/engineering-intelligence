@@ -21,6 +21,11 @@ describe("Home", () => {
     expect(renderToStaticMarkup(await Home())).toContain("backend down");
   });
 
+  it("links to the developer list", async () => {
+    vi.mocked(checkBackend).mockResolvedValue("up");
+    expect(renderToStaticMarkup(await Home())).toContain('href="/developers"');
+  });
+
   it("asks the backend named by BACKEND_URL", async () => {
     vi.stubEnv("BACKEND_URL", "http://backend.test:9000");
     vi.mocked(checkBackend).mockResolvedValue("up");
