@@ -88,7 +88,7 @@ record DigestInput(String text, String hash, boolean judgedOnPartialCode) {
 
     private static String hashOf(String input, String promptVersion, long... sourceRecordIds) {
         ObjectNode hashed = JsonNodeFactory.instance.objectNode();
-        hashed.put("kind", JudgmentKind.PULL_REQUEST_DIGEST.name());
+        hashed.put("kind", JudgmentKind.PULL_REQUEST_DIGEST.databaseName());
         hashed.put("promptVersion", promptVersion);
         hashed.put("input", input);
         ArrayNode records = hashed.putArray("sourceRecordIds");

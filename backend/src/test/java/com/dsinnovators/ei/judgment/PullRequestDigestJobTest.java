@@ -16,6 +16,8 @@ import com.dsinnovators.ei.source.github.StoredPullRequestDiffs;
 import com.dsinnovators.ei.source.github.StoredPullRequests;
 import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -220,6 +222,38 @@ class PullRequestDigestJobTest extends DatabaseTest {
         assertEquals(1L, counts.get("digests_written"));
         assertEquals(2L, counts.get("model_calls"));
         assertNull(counts.get("pull_requests_failed"));
+    }
+
+    @Test
+    void theInputHashDoesNotChangeWithTheRunDay() throws Exception {
+        storePullRequestWithDiff(1, "2026-07-02T08:00:00Z");
+        PullRequestDigestJob firstDay = jobOnDay("2026-07-10");
+        PullRequestDigestJob otherDay = jobOnDay("2026-07-20");
+
+        firstDay.run(JobArguments.of(Map.of()), jobCounts);
+        counts.clear();
+        otherDay.run(JobArguments.of(Map.of()), jobCounts);
+
+        assertEquals(1, model.calls());
+        assertEquals(1L, counts.get("skipped_same_input"));
+        assertEquals(1, judgmentRows());
+    }
+
+    private PullRequestDigestJob jobOnDay(String day) {
+        Clock dayClock = Clock.fixed(Instant.parse(day + "T09:00:00Z"), ZoneOffset.UTC);
+        PullRequestDigester digester = new PullRequestDigester(
+                storedDiffs,
+                diffFileFilter,
+                promptLibrary,
+                new ProviderChain(List.of(new ProviderChain.Provider("fake", model)), waitMeter),
+                judgmentStore,
+                properties);
+        return new PullRequestDigestJob(
+                storedPullRequests,
+                botAccounts,
+                digester,
+                new ProviderChain(List.of(new ProviderChain.Provider("fake", model)), waitMeter),
+                dayClock);
     }
 
     @Test

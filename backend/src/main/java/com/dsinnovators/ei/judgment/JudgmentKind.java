@@ -22,12 +22,17 @@ public enum JudgmentKind {
         return subjectType;
     }
 
+    /** The name stored in the database and put into input hashes. */
+    public String databaseName() {
+        return name().toLowerCase(Locale.ROOT);
+    }
+
     @Converter
     static class DatabaseConverter implements AttributeConverter<JudgmentKind, String> {
 
         @Override
         public String convertToDatabaseColumn(JudgmentKind kind) {
-            return kind.name().toLowerCase(Locale.ROOT);
+            return kind.databaseName();
         }
 
         @Override

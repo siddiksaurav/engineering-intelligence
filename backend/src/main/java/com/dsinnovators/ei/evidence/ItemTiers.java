@@ -11,7 +11,6 @@ import com.dsinnovators.ei.judgment.NewJudgment;
 import com.dsinnovators.ei.judgment.PullRequestDigest;
 import com.dsinnovators.ei.judgment.PullRequestDigests.CurrentDigest;
 import com.dsinnovators.ei.setting.SettingService;
-import java.util.Locale;
 import java.util.Set;
 import org.springframework.stereotype.Component;
 import tools.jackson.databind.JsonNode;
@@ -140,7 +139,7 @@ class ItemTiers {
 
     private static String inputHash(long digestId, long itemRowId, BuiltItem item) {
         ObjectNode input = JsonNodeFactory.instance.objectNode();
-        input.put("kind", JudgmentKind.ITEM_TIER.name().toLowerCase(Locale.ROOT));
+        input.put("kind", JudgmentKind.ITEM_TIER.databaseName());
         input.put("digestJudgmentId", digestId);
         input.put("evidenceItemId", itemRowId);
         input.put("contentHash", item.contentHash());
