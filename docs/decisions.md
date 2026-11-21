@@ -115,6 +115,19 @@ Every decision that shapes the PoC, newest at the bottom. A later entry override
 | 109 | 21 Nov 2026 | The web reads `GET /api/developers` and `GET /api/developers/{personId}/evidence-items` (package `api`): current items only, 404 for an unknown person | The `api` package of master plan section 3 | F05 design, session |
 | 110 | 21 Nov 2026 | The web pages use CSS Modules, no new dependency, and fetch the backend on the server as the home page does; bold sky-blue colours | Built into Next.js; the user wants bold colour, not purple | F05 design, session |
 | 111 | 21 Nov 2026 | A human's review comment on a bot's PR counts for the reviewer | The bot rule is about who wrote the record; none in the data on 21 Nov 2026 | F05 design, session |
+| 112 | 22 Nov 2026 | A Feature work item is dated by the first day its Feature changed into a done status; it counts in that quarter only | User's choice (Q1 A): the spec counts a feature when it closes; 59 work items reach a done status twice | F05 question brief, user |
+| 113 | 22 Nov 2026 | A Feature work item is not built until its Feature has reached a done status | User's choice (Q2 A): the spec judges a feature when it closes | F05 question brief, user |
+| 114 | 22 Nov 2026 | A Bug fix item is dated by the first day its Bug changed into a done status, and is not built before | User's choice (Q3 A): one rule for both tracker types | F05 question brief, user |
+| 115 | 22 Nov 2026 | F05 builds nothing for a PR whose work item is not a Bug and has no Feature ancestor; F06 decides from the PR's work type (Refactor, Security, Infra item, or Feature work of the item itself) | User's choice (Q4 A): no item is built only to be withdrawn. Settles the F05/F06 overlap of the master plan | F05 question brief, user |
+| 116 | 22 Nov 2026 | A PR that links several Features joins the Feature work group of each | User's choice (Q5 A) | F05 question brief, user |
+| 117 | 22 Nov 2026 | A PR that links a Bug and a non-Bug work item counts in both the Bug fix item and the Feature work group; the Bug itself stays out of the group | User's choice (Q6 A) | F05 question brief, user |
+| 118 | 22 Nov 2026 | The tasks of a Feature work group are only the work items the person's PRs link to; the "Developers" field adds none | User's choice (Q7 A) | F05 question brief, user |
+| 119 | 22 Nov 2026 | Only inline review comments become Review comment written items; review summaries and conversation comments do not | User's choice (Q8 A): F07 judges each comment with its diff hunk | F05 question brief, user |
+| 120 | 22 Nov 2026 | A human reviewer's reply inside a thread is an item of its own; only the PR author's own comments are left out | User's choice (Q9 A) | F05 question brief, user |
+| 121 | 22 Nov 2026 | A Review comment written item is dated by the merge day of its PR | User's choice (Q10 B): the window is chosen by merge day, so every comment of a window PR counts in it | F05 question brief, user |
+| 122 | 22 Nov 2026 | The web has a developer list (name, count per type) and one page per developer with three sections; review comments are grouped per PR; each item shows date and quarter; no quarter filter in F05 | User's choice (Q11 A) | F05 question brief, user |
+| 123 | 22 Nov 2026 | Each evidence item has a stable `item_key`. A changed item gets a new row that supersedes the current one; an item that no longer follows from the records gets a withdrawn row; an unchanged item gets no row | User's choice (Q12 A): append-only, full history, no double count | F05 question brief, user |
+| 124 | 22 Nov 2026 | `evidence_item_link` is created by V8 and left empty in F05; a Bug fix item records its Feature in `fields.underFeature`. A later feature that reads related items fills the table | User's choice (Q13 B): no PoC feature reads the links; the Feature is already on the item | F05 question brief, user |
 
 ## Not decided yet
 

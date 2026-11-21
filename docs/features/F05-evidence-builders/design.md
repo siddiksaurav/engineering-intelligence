@@ -1,6 +1,6 @@
 # F05 Evidence builders without AI, and the evidence list page: design
 
-State: draft
+State: approved on 2026-11-22, through the question brief
 
 ## Goal
 
@@ -89,7 +89,7 @@ The current item of a key is its row that no other row supersedes, unless that r
 
 `evidence_item_source`: `evidence_item_id` → `evidence_item`, `raw_record_id` → `raw_record` (the exact version used), `role` check (`pull_request`, `work_package`, `review_comment`). Primary key on the three. Written once with its item.
 
-`evidence_item_link`: `evidence_item_id` → `evidence_item`, `related_item_key` text, `relation` text check. The target is named by key, so a link stays right when the target gets a new row. Content per question Q13.
+`evidence_item_link`: `evidence_item_id` → `evidence_item`, `related_item_key` text, `relation` text not null. The target is named by key, so a link stays right when the target gets a new row. Created and left empty in F05 (decision 124); a Bug fix item records its Feature in `fields.underFeature`.
 
 `fields` JSONB per type (camelCase, as the API returns them):
 - Feature work: `feature` {`number`, `title`, `type`, `url`}, `tasks` [{`number`, `title`, `type`, `url`}] (the work items of the group, the Feature itself included when a PR links it), `pullRequests` [{`externalId`, `number`, `title`, `url`, `mergedAt`}], `doneAt`.
@@ -104,10 +104,10 @@ Started by `POST /api/jobs/evidence-build/runs` with `{}`, after `identity-build
 
 1. **Bots and persons.** A PR author or comment author is a bot by `BotAccounts.isBot(login, typename, Quarter.of(today))`; bots give no item. A human is mapped by `PersonDirectory.personOfGitHubAccount(databaseId)`; a human with no person fails that item (run `identity-build` first).
 2. **Links.** For each stored merged PR (`StoredPullRequests`), its work items are the distinct `work_package_id` of `StoredWorkPackages.linksOf(prExternalId)` with state `resolved`, any `found_in`. A `not_visible` link counts as no link.
-3. **Feature work.** For each linked work item that is not a Bug: `StoredWorkPackages.nearestFeature(number)`. When a Feature is found, the PR and the work item join the group (Feature, PR author). Groups with no Feature ancestor: question Q4. PRs linking several Features: Q5. Extra child items: Q7. The group is built only when the Feature has reached a done status (Q2); its date is set by Q1.
-4. **Bug fix.** For each linked work item of type Bug: one item per (Bug, PR author) with that author's PRs linking the Bug. `underFeature` from `nearestFeature`. A PR that links both a Bug and a non-Bug item: Q6. Date: Q3.
-5. **Review comment written.** For each stored `review_comment` whose author is human and not the PR's author: one item. Replies: Q9. Review summaries: Q8. Date: Q10.
-6. **Store.** For each item built: compute its hash. No current row for the key: insert. Current row with the same hash: nothing. Different hash: insert a new row with `supersedes_id`. A current key not built in this run: insert a withdrawn row superseding it (Q12). Sources and links are written with their row.
+3. **Feature work.** For each linked work item that is not a Bug: `StoredWorkPackages.nearestFeature(number)`. When a Feature is found, the PR and the work item join the group (Feature, PR author). A work item with no Feature ancestor gives nothing in F05; F06 decides it from the PR's work type (decision 115). A PR that links several Features joins each Feature's group (decision 116). The tasks of a group are only the work items the person's PRs link to (decision 118). The group is built only when the Feature has reached a done status (decision 113); `occurred_on` is the first day the Feature changed into a done status (decision 112), `fields.doneAt` that instant.
+4. **Bug fix.** For each linked work item of type Bug: one item per (Bug, PR author) with that author's PRs linking the Bug. `underFeature` from `nearestFeature`. A PR that links both a Bug and a non-Bug item counts in both the Bug fix item and the Feature work group (decision 117). Built only once the Bug reached a done status; `occurred_on` is the first such day (decision 114).
+5. **Review comment written.** For each stored `review_comment` (inline comments only; review summaries and conversation comments are not items, decision 119) whose author is human and not the PR's author: one item, replies inside a thread included (decision 120). `occurred_on` is the PR's merge day, UTC (decision 121).
+6. **Store.** For each item built: compute its hash. No current row for the key: insert. Current row with the same hash: nothing. Different hash: insert a new row with `supersedes_id`. A current key not built in this run: insert a withdrawn row superseding it (decision 123). Sources and links are written with their row.
 7. **Counts.** `items_created`, `items_superseded`, `items_withdrawn`, `items_unchanged`, each also per type (`feature_work_created` ...), `pull_requests_read`, `bot_records_skipped`. One item per transaction; a failed item is counted (`items_failed`), the run goes on and fails at the end naming the first 20 keys (`FailedItems`, decision 90).
 
 **Done status.** A work item's done changes are its `StoredWorkPackages.statusChanges(number)` whose status is in `openproject.done_statuses` read for the quarter of that change (UTC day).
@@ -117,16 +117,16 @@ Started by `POST /api/jobs/evidence-build/runs` with `{}`, after `identity-build
 **Gives.**
 - Tables `evidence_item`, `evidence_item_source`, `evidence_item_link`; job `evidence-build`.
 - `evidence.CurrentEvidenceItems` (name to be fixed in the plan): the current items of a person, of a type, by key.
-- The rule for an item's date and quarter (Q1, Q3, Q10).
+- The rule for an item's date and quarter (decisions 112, 114, 121).
 - `GET /api/developers` → `[{personId, displayName, counts: {featureWork, bugFix, reviewCommentWritten}}]`; `GET /api/developers/{personId}/evidence-items` → `{person, items: [{id, type, date, quarter, title, sourceUrl, links: [{label, url}], fields}]}`. 404 for an unknown person.
-- Web: `/developers` and `/developers/[personId]`, which F08 extends.
+- Web (decision 122): `/developers` lists each developer with a count per type; `/developers/[personId]` shows three sections (Feature work, Bug fix, Review comment written), review comments grouped per PR, each item with its date, quarter and links. F08 extends it.
 - For F06: a PR in a Feature work group is never a Refactor, Security or Infra item; the link and Feature rules above (`nearestFeature` empty means "not under a Feature").
 
 ## Edge cases
 
 - PR with only `not_visible` links: no work item; F05 builds nothing for it (F06 and hygiene see it).
 - Work item whose parent chain hits an unstored item: `nearestFeature` is empty, so "no Feature ancestor".
-- A Feature reopened after done: date stays the chosen done day (Q1); new PRs supersede the item with a larger group.
+- A Feature reopened after done: date stays the first done day (decision 112); new PRs supersede the item with a larger group.
 - Bug fixed by PRs of two authors: two Bug fix items, one each (decision 103).
 - A PR author's login changed: the person is found by `databaseId`, so the item is unchanged.
 - A source record gets a new version: the hash includes the raw record ids, so the item gets a new row pointing at the new version.
@@ -151,94 +151,34 @@ Further tests:
 - Web tests (Vitest): the API client and the two pages render items and links; "backend down".
 - Manual: open `/developers` and one developer page on real data; screenshot in `notes.md`.
 
-## Open points
+## Decisions
 
-### Business questions
+Made by the session (F05 design): 100 to 111. Answers of the question brief (22 Nov 2026): 112 to 124. All in `docs/decisions.md`.
 
-Q1. Which day dates a Feature work item, and so its quarter?
-A. The first day the Feature changed into a done status (QA passed). Counts once.
-B. The last such day (for example "closed"). Later; moves if reopened.
-C. The merge day of the person's last PR in the group. Ignores the tracker.
-Recommended: A. Spec "counts when the feature closes"; one quarter only, though 59 items reach done twice.
+- 100 Job `evidence-build`, no arguments, after `identity-build`; failed items counted, run fails at the end.
+- 101 Table columns as in "Data and tables"; no `marker` column.
+- 102 Bots give no item; a human with no person fails that item.
+- 103 Bug fix: one item per Bug and PR author.
+- 104 A link counts when `resolved`, wherever found.
+- 105 Project: the Feature's or Bug's; none for review comments.
+- 106 Source link and exact source versions; a new source version gives a new row.
+- 107 Done statuses read with the setting of the quarter of each change.
+- 108 Readers of stored review comments in `source.github`.
+- 109 `GET /api/developers`, `GET /api/developers/{personId}/evidence-items`.
+- 110 CSS Modules, no new dependency, bold sky-blue colours.
+- 111 A human's comment on a bot's PR counts.
+- 112 (Q1 A) Feature work dated by the first done day of the Feature.
+- 113 (Q2 A) Feature work built only once the Feature is done.
+- 114 (Q3 A) Bug fix dated by the first done day of the Bug, built only then.
+- 115 (Q4 A) No Feature ancestor and not a Bug: nothing in F05, F06 decides.
+- 116 (Q5 A) A PR with several Features joins each group.
+- 117 (Q6 A) A PR with a Bug and a non-Bug item counts in both.
+- 118 (Q7 A) Tasks are only the work items the person's PRs link to.
+- 119 (Q8 A) Inline review comments only.
+- 120 (Q9 A) Replies in a thread are items.
+- 121 (Q10 B) Review comment dated by the PR merge day.
+- 122 (Q11 A) Developer list and per-developer page.
+- 123 (Q12 A) Stable key, supersede on change, withdrawn row when gone.
+- 124 (Q13 B) `evidence_item_link` created, left empty.
 
-Q2. A Feature that has not reached a done status yet (1 of 32 now):
-A. Not built until it is done.
-B. Built now, shown as "open" with no quarter.
-Recommended: A. The spec judges a feature when it closes; a later run picks it up.
-
-Q3. Which day dates a Bug fix item?
-A. Same rule as Q1: the first day the Bug reached done; not built before.
-B. The merge day of that person's last PR for the Bug; built at once.
-Recommended: A. One rule for both tracker types; 59 of 61 Bugs are done in Q3.
-
-Q4. A PR whose work item is not a Bug and has no Feature above it (Code maintenance 16, Documentation 13, Implementation 3, other 3):
-A. F05 builds nothing for it; F06 decides from the PR's work type (Refactor, Security, Infra item, or Feature work by itself).
-B. F05 builds Feature work now; F06 replaces some with another type.
-C. F05 builds Feature work marked "provisional" until F06.
-Recommended: A. No item is built only to be withdrawn a day later.
-
-Q5. A PR that links several Features (4 PRs, e.g. #24153 links three):
-A. It joins the group of each Feature.
-B. It joins only the Feature named first in the title, then the body.
-Recommended: A. Each Feature's group stays complete; few PRs affected.
-
-Q6. A PR that links a Bug and a non-Bug item (8 PRs, e.g. #23218):
-A. It counts in both: the Bug fix item and the Feature work group.
-B. Bug fix only.
-C. Feature work only.
-Recommended: A. Each work item keeps the PR that did it; the Bug itself stays out of the group.
-
-Q7. Which "child items" are in a person's Feature work group?
-A. Only the work items their PRs link to.
-B. Also items under the Feature whose "Developers" names their OpenProject user.
-Recommended: A. Rests on the PR author only; "Developers" is a proposed match (F04).
-
-Q8. Does a review's summary text count as a Review comment written?
-A. No: inline comments only (379).
-B. Yes: also summaries with text (139, many "Nice!").
-C. B plus the PR conversation comments.
-Recommended: A. F07 judges each comment with its diff hunk; a summary has none.
-
-Q9. A reviewer's reply inside a thread (73 of 379):
-A. Counts as its own item.
-B. Not counted; only comments that start a thread.
-Recommended: A. Replies often carry the finding; F07 marks a "thanks" as style.
-
-Q10. Which day dates a Review comment written item?
-A. The day the comment was written (120 of 379 fall in June, before Q3).
-B. The merge day of the PR.
-Recommended: B. The window is chosen by merge day, so all its comments count in it.
-
-Q11. The list page:
-A. A developer list (name, count per type), then one page per developer with three sections; review comments grouped per PR; each item shows date and quarter; no quarter filter yet.
-B. One page: a table of all items with a developer filter.
-Recommended: A. Reads well on a phone; F08 and F12 build on per-developer pages.
-
-### Technical decisions I need your direction on
-
-Q12. When a rebuild finds an item changed (a new PR in a group):
-A. A stable key per item; a changed item gets a new row that supersedes the old; an item that no longer follows gets a "withdrawn" row.
-B. A new row for every item on every run.
-C. Stable key, new row on change, but a vanished item stays current.
-Recommended: A. Append-only, no duplicates, judgments stay on the row they judged.
-
-Q13. The related-items table (spec 6.1):
-A. Fill one link now: a Bug fix whose Bug sits under a Feature links to that Feature's Feature work items.
-B. Create the table, leave it empty until a feature reads it.
-Recommended: A. Spec 6.1 names this link; cheap now; the item page (F08) can show it.
-
-### Decisions I made myself
-
-D100 to D111 in `docs/decisions.md`:
-- D100. Job `evidence-build`, no arguments, builds from all stored records, after `identity-build`; a failed item is counted and the run fails at the end.
-- D101. Tables and columns as in "Data and tables"; no `marker` column (validated additional work is out of scope).
-- D102. Bots give no item (`BotAccounts`, run day's quarter); a human author with no person fails that item.
-- D103. Bug fix: one item per Bug and PR author.
-- D104. A link counts when `resolved`, wherever found; `not_visible` is no link.
-- D105. Project: the Feature's or Bug's OpenProject project; none for review comments.
-- D106. Source link: Feature or Bug on OpenProject, comment on GitHub; sources keep the exact raw record versions, and a new version of a source gives a new row.
-- D107. Done statuses are read with the setting in force in the quarter of each status change.
-- D108. Readers of stored review comments live in `source.github`.
-- D109. API `GET /api/developers` and `GET /api/developers/{personId}/evidence-items` in `api`, current items only, 404 for an unknown person.
-- D110. Web: CSS Modules, no new dependency, server-side fetch like the home page, bold sky-blue colours.
-- D111. A human's comment on a bot's PR counts for the reviewer (none in the data now).
+The question brief as asked is in git history (commit `54e199e`).
