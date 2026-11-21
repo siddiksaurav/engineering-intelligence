@@ -36,7 +36,7 @@ record DigestInput(String text, String hash, boolean judgedOnPartialCode) {
             String promptVersion) {
         StringBuilder text = new StringBuilder();
         text.append("Title: ").append(title).append("\n\nDescription:\n");
-        text.append(cut(body, limits.maxBodyCharacters())).append("\n\nChanged files:\n");
+        text.append(TextCuts.cut(body, limits.maxBodyCharacters())).append("\n\nChanged files:\n");
         diff.files()
                 .forEach(file -> text.append("- ")
                         .append(file.path())
@@ -73,17 +73,6 @@ record DigestInput(String text, String hash, boolean judgedOnPartialCode) {
         }
         String input = text.toString();
         return new DigestInput(input, hashOf(input, promptVersion, pullRequestRecordId, diff.recordId()), partial);
-    }
-
-    private static String cut(String body, int maxCharacters) {
-        if (body.length() <= maxCharacters) {
-            return body;
-        }
-        int end = maxCharacters;
-        if (Character.isHighSurrogate(body.charAt(end - 1))) {
-            end--;
-        }
-        return body.substring(0, end) + "\n[description cut at " + maxCharacters + " characters]";
     }
 
     private static String hashOf(String input, String promptVersion, long... sourceRecordIds) {
