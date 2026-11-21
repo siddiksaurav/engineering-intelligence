@@ -24,20 +24,20 @@ record FeatureWorkAnswer(
         double confidence) {
 
     /** The four complexities of spec 6.2. */
-    enum Complexity implements PullRequestDigest.WireNamed {
+    enum Complexity implements WireNamed {
         LOW,
         MEDIUM,
         HIGH,
         VERY_HIGH
     }
 
-    enum DataChange implements PullRequestDigest.WireNamed {
+    enum DataChange implements WireNamed {
         NONE,
         SCHEMA_CHANGE,
         PRODUCTION_DATA_MIGRATION
     }
 
-    enum Integration implements PullRequestDigest.WireNamed {
+    enum Integration implements WireNamed {
         NONE,
         EXISTING_INTEGRATION,
         NEW_INTEGRATION

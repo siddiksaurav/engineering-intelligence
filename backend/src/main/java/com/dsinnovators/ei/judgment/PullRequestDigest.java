@@ -2,7 +2,6 @@ package com.dsinnovators.ei.judgment;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Optional;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.node.ArrayNode;
@@ -36,16 +35,6 @@ public record PullRequestDigest(
         String reason,
         List<Fact> facts,
         boolean judgedOnPartialCode) {
-
-    /** An enum whose JSON value is its lower-case name. */
-    interface WireNamed {
-
-        String name();
-
-        default String wireName() {
-            return name().toLowerCase(Locale.ROOT);
-        }
-    }
 
     /** The 13 work types of spec 6.2. */
     public enum WorkType implements WireNamed {

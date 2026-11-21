@@ -15,7 +15,7 @@ import tools.jackson.databind.JsonNode;
 record ReviewCommentAnswer(List<Comment> comments) {
 
     /** The ten comment types of the design, in the order the prompt lists them. */
-    enum CommentType implements PullRequestDigest.WireNamed {
+    enum CommentType implements WireNamed {
         QUESTION,
         SMALL_CATCH,
         CORRECTNESS,

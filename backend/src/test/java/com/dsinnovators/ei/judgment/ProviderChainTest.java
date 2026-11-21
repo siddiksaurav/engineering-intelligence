@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.dsinnovators.ei.common.CanonicalJson;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
@@ -169,7 +170,7 @@ class ProviderChainTest {
                 new ProviderChain.Provider("groq", atItsLimit("groq")),
                 new ProviderChain.Provider("gemini", answering("gemini", "flash")));
         chain.judge(REQUEST);
-        Map<String, Long> counts = new java.util.HashMap<>();
+        Map<String, Long> counts = new HashMap<>();
 
         chain.reportUseTo((name, amount) -> counts.merge(name, amount, Long::sum));
 

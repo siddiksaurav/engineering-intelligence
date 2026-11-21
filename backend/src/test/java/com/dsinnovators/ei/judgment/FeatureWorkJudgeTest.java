@@ -14,6 +14,7 @@ import com.dsinnovators.ei.setting.SettingService;
 import com.dsinnovators.ei.source.RawRecordStore;
 import com.dsinnovators.ei.source.github.StoredPullRequests;
 import com.dsinnovators.ei.source.openproject.StoredWorkPackages;
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -143,10 +144,10 @@ class FeatureWorkJudgeTest extends DatabaseTest {
         assertEquals(0.8, currentJudgmentOf(item).getConfidence());
         assertEquals(
                 0,
-                new java.math.BigDecimal("0.8")
+                new BigDecimal("0.8")
                         .compareTo(jdbc.queryForObject(
                                 "select confidence from judgment where kind = 'feature_work_complexity'",
-                                java.math.BigDecimal.class)));
+                                BigDecimal.class)));
     }
 
     @Test

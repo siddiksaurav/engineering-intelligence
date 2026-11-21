@@ -6,6 +6,7 @@ import com.dsinnovators.ei.job.Job;
 import com.dsinnovators.ei.job.JobArguments;
 import com.dsinnovators.ei.job.JobCounts;
 import com.dsinnovators.ei.source.RawRecord;
+import com.dsinnovators.ei.source.github.PullRequestFacts;
 import com.dsinnovators.ei.source.github.ReviewCommentText;
 import com.dsinnovators.ei.source.github.StoredPullRequests;
 import com.dsinnovators.ei.source.github.StoredReviewComments;
@@ -139,7 +140,7 @@ class ReviewCommentJudgmentJob implements Job {
         }
         return ReviewCommentChunks.of(
                 new ReviewCommentChunks.PullRequestPart(
-                        externalId, pullRequest.getPayload().path("title").asString(), PullRequestBody.of(pullRequest)),
+                        externalId, PullRequestFacts.of(pullRequest).title(), PullRequestBody.of(pullRequest)),
                 comments,
                 limits,
                 ReviewCommentJudge.PROMPT_VERSION);

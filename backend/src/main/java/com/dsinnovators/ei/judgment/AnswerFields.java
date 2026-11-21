@@ -10,14 +10,14 @@ final class AnswerFields {
 
     private AnswerFields() {}
 
-    static <E extends Enum<E> & PullRequestDigest.WireNamed> E enumOf(Class<E> type, JsonNode answer, String field) {
+    static <E extends Enum<E> & WireNamed> E enumOf(Class<E> type, JsonNode answer, String field) {
         JsonNode node = required(answer, field);
         return Arrays.stream(type.getEnumConstants())
                 .filter(constant -> node.isString() && constant.wireName().equals(node.asString()))
                 .findFirst()
                 .orElseThrow(() -> new InvalidAnswerException("The field " + field + " must be one of "
                         + Arrays.stream(type.getEnumConstants())
-                                .map(PullRequestDigest.WireNamed::wireName)
+                                .map(WireNamed::wireName)
                                 .toList() + ", was " + node));
     }
 

@@ -171,8 +171,8 @@ class PromptLibraryTest {
                 enumValues(comment.path("properties").path("commentType")));
     }
 
-    private static List<String> wireNames(PullRequestDigest.WireNamed[] values) {
-        return Arrays.stream(values).map(PullRequestDigest.WireNamed::wireName).toList();
+    private static List<String> wireNames(WireNamed[] values) {
+        return Arrays.stream(values).map(WireNamed::wireName).toList();
     }
 
     private static List<String> enumValues(JsonNode property) {
