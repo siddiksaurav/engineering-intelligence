@@ -3,6 +3,7 @@ package com.dsinnovators.ei.api;
 import com.dsinnovators.ei.common.Quarter;
 import com.dsinnovators.ei.evidence.EvidenceItem;
 import com.dsinnovators.ei.evidence.EvidenceType;
+import com.dsinnovators.ei.judgment.ItemTier;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -20,9 +21,11 @@ record EvidenceItemResponse(
         String title,
         String sourceUrl,
         List<ItemLink> links,
+        ItemTier tier,
         JsonNode fields) {
 
-    static EvidenceItemResponse of(EvidenceItem item) {
+    /** @param tier the current tier of the item; null when it has none */
+    static EvidenceItemResponse of(EvidenceItem item, ItemTier tier) {
         JsonNode fields = item.getFields();
         return new EvidenceItemResponse(
                 item.getId(),
@@ -32,6 +35,7 @@ record EvidenceItemResponse(
                 title(item.getEvidenceType(), fields),
                 item.getSourceUrl(),
                 links(item.getEvidenceType(), fields),
+                tier,
                 fields);
     }
 

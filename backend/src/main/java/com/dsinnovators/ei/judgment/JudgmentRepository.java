@@ -1,5 +1,7 @@
 package com.dsinnovators.ei.judgment;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.Repository;
@@ -30,6 +32,14 @@ interface JudgmentRepository extends Repository<Judgment, Long> {
             """)
     Optional<Judgment> findCurrentOfEvidenceItem(
             @Param("kind") JudgmentKind kind, @Param("evidenceItemId") long evidenceItemId);
+
+    @Query("""
+            select j from Judgment j
+            where j.kind = :kind and j.evidenceItemId in :evidenceItemIds
+              and not exists (select 1 from Judgment s where s.supersedesId = j.id)
+            """)
+    List<Judgment> findCurrentOfEvidenceItems(
+            @Param("kind") JudgmentKind kind, @Param("evidenceItemIds") Collection<Long> evidenceItemIds);
 
     @Query("""
             select j from Judgment j

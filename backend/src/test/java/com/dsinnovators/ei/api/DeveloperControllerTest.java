@@ -33,6 +33,11 @@ class DeveloperControllerTest extends DatabaseTest {
              "comment":{"databaseId":77,"url":"https://gh.test/pull/103#discussion_r77","path":"a.java","createdAt":"2026-10-01T10:00:00Z","isReply":false}}
             """;
 
+    private static final String TEST_CHANGE_FIELDS = """
+            {"pullRequest":{"externalId":"4","number":104,"title":"Add spec","url":"https://gh.test/pull/104","mergedAt":"2026-10-05T10:00:00Z"},
+             "testKind":"integration"}
+            """;
+
     @Value("${local.server.port}")
     private int port;
 
@@ -114,6 +119,55 @@ class DeveloperControllerTest extends DatabaseTest {
         assertEquals("2026-Q3", feature.get("quarter").stringValue());
         assertLink(feature.get("links").get(0), "Work item #10 on OpenProject", "https://op.test/wp/10");
         assertLink(feature.get("links").get(1), "Pull request #101 on GitHub", "https://gh.test/pull/101");
+    }
+
+    private long tier(long itemId, String tier, String reason, Long supersedes) {
+        return jdbc.queryForObject("""
+                insert into judgment (kind, evidence_item_id, value, tier, reason, facts, judged_by, model,
+                                      prompt_version, input_hash, supersedes_id, judged_at)
+                values ('item_tier', ?, '{}'::jsonb, ?, ?, '[{"fact":"f","link":"https://gh.test/pull/104/files"}]'::jsonb,
+                        'model', 'm', 'v1', 'hash' || gen_random_uuid(), ?, now())
+                returning id
+                """, Long.class, itemId, tier, reason, supersedes);
+    }
+
+    @Test
+    void listsATestChangeWithItsTier() throws Exception {
+        long testChange = item(ada, "test_change:104", "test_change", "2026-10-05", TEST_CHANGE_FIELDS, false, null);
+        long untiered = item(ada, "security:104", "security", "2026-10-04", TEST_CHANGE_FIELDS, false, null);
+        long first = tier(testChange, "T1", "Unit tests only", null);
+        tier(testChange, "T2", "Integration tests", first);
+
+        JsonNode body = JobEndpointClient.json(client.get("/api/developers/" + ada + "/evidence-items"));
+        JsonNode items = body.get("items");
+
+        JsonNode withTier = items.get(0);
+        assertEquals(testChange, withTier.get("id").longValue());
+        assertEquals("test_change", withTier.get("type").stringValue());
+        assertEquals("Add spec", withTier.get("title").stringValue());
+        assertLink(withTier.get("links").get(0), "Pull request #104 on GitHub", "https://gh.test/pull/104");
+        assertEquals("T2", withTier.get("tier").get("tier").stringValue());
+        assertEquals("Integration tests", withTier.get("tier").get("reason").stringValue());
+        assertEquals(untiered, items.get(1).get("id").longValue());
+        assertTrue(items.get(1).get("tier").isNull());
+    }
+
+    @Test
+    void theListCountsTheNewTypes() throws Exception {
+        item(ada, "test_change:104", "test_change", "2026-10-05", TEST_CHANGE_FIELDS, false, null);
+        item(ada, "refactor_performance:104", "refactor_performance", "2026-10-05", TEST_CHANGE_FIELDS, false, null);
+        item(ada, "security:104", "security", "2026-10-05", TEST_CHANGE_FIELDS, false, null);
+        item(ada, "infra_release:104", "infra_release", "2026-10-05", TEST_CHANGE_FIELDS, false, null);
+        item(ada, "documentation:104", "documentation", "2026-10-05", TEST_CHANGE_FIELDS, false, null);
+
+        JsonNode counts =
+                JobEndpointClient.json(client.get("/api/developers")).get(0).get("counts");
+
+        assertEquals(1, counts.get("testChange").longValue());
+        assertEquals(1, counts.get("refactorPerformance").longValue());
+        assertEquals(1, counts.get("security").longValue());
+        assertEquals(1, counts.get("infraRelease").longValue());
+        assertEquals(1, counts.get("documentation").longValue());
     }
 
     private static void assertLink(JsonNode link, String label, String url) {
