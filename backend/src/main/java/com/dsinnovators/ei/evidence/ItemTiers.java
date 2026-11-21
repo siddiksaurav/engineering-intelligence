@@ -119,13 +119,6 @@ class ItemTiers {
     private Tier testChangeTier(PullRequestDigest digest, Quarter quarter) {
         ObjectNode value = JsonNodeFactory.instance.objectNode();
         value.put("testKind", digest.testKind().wireName());
-        if (digest.testKind() == PullRequestDigest.TestKind.NONE) {
-            return new Tier(
-                    "T1",
-                    "The model saw no test kind in this pull request, so the Test change counts as T1: "
-                            + digest.reason(),
-                    value);
-        }
         String testKind = digest.testKind().wireName();
         JsonNode tier = settings.getJson(TEST_KIND_TIERS_SETTING, quarter).path(testKind);
         if (!tier.isString()) {
@@ -134,9 +127,15 @@ class ItemTiers {
         }
         return new Tier(
                 tier.asString(),
-                "The test kind " + testKind + " gives " + tier.asString() + " (" + TEST_KIND_TIERS_SETTING + "): "
+                testKindReason(digest.testKind(), tier.asString()) + " (" + TEST_KIND_TIERS_SETTING + "): "
                         + digest.reason(),
                 value);
+    }
+
+    private static String testKindReason(PullRequestDigest.TestKind testKind, String tier) {
+        return testKind == PullRequestDigest.TestKind.NONE
+                ? "The model saw no test kind in this pull request, so the Test change gives " + tier
+                : "The test kind " + testKind.wireName() + " gives " + tier;
     }
 
     private static String inputHash(long digestId, long itemRowId, BuiltItem item) {

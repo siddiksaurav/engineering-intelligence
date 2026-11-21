@@ -136,6 +136,17 @@ class ItemTiersTest extends DatabaseTest {
     }
 
     @Test
+    void theTierOfATestKindOfNoneComesFromTheSettingToo() {
+        jdbc.update(
+                "update setting set value = jsonb_set(value, '{none}', '\"T2\"') where key = 'evidence.test_kind_tiers'");
+        BuiltItem item = storedTestChange(StoredDigestsFixture.answer("fix", "none"));
+
+        itemTiers.write(item, QUARTER);
+
+        assertEquals("T2", currentTierOf(item).getTier());
+    }
+
+    @Test
     void aRefactorItemTakesTheTierAndTheReasonOfTheDigest() {
         BuiltItem item = storedWorkTypeItem(StoredDigestsFixture.withTier(
                 StoredDigestsFixture.answer("refactor", "none"), "T3", "A planned debt item"));
