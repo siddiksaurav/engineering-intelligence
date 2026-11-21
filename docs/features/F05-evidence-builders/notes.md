@@ -19,3 +19,37 @@
 - Task 10: `CurrentEvidenceItems.ofPerson(id)` and `countsPerPerson()`; `PersonDirectory.all()` and `find(id)` with public record `PersonSummary`; `api` holds `DeveloperController`, `DeveloperExceptionHandler`, `DeveloperNotFoundException` (404 naming the id). Titles and links come from `fields`; a malformed row fails loudly. Link labels "Work item #N on OpenProject", "Pull request #N on GitHub", "Comment on GitHub".
 - Task 11: `fetchDevelopers` and `fetchEvidenceItems` return `ok`, `down` or `not-found`; any non-404 error, failed connection, bad JSON, timeout or missing `BACKEND_URL` is `down` and logged.
 - Task 12: new `app/globals.css`; accents blue (Feature work), orange (Bug fix), green (Review comment written). A review comment group shows the PR title once; each comment shows path, date, quarter and link. Tests of tasks 10 to 12 were written first but not run against stubs.
+
+## Verification
+
+Full suites on 22 Nov 2026 (before the review): backend `./mvnw verify` 489 tests, 0 failures, 8 skipped (disabled architecture tests of F06, F10, F11), build green. Web: format, lint, type check, 48 tests, build all green.
+
+Real data, Compose database (F02's 215 PRs of 1 to 14 Jul 2026, `openproject-import` run 3, `identity-build` run 6):
+- `evidence-build` run 7: `items_created` 476 (`feature_work_created` 35, `bug_fix_created` 62, `review_comment_written_created` 379), `pull_requests_read` 215, `bot_records_skipped` 144, `items_failed` 0. 4 seconds.
+- **Building twice gives the same items and no duplicates: passed.** Run 8: `items_unchanged` 476, nothing written; `evidence_item` 476 rows, 476 keys. Job test `EvidenceBuildJobTest.aSecondRunWritesNoRow`.
+- **No Bug in a Feature work group: passed.** SQL: Feature work sources of role `work_package` whose type is Bug: 0; tasks of type Bug in `fields.tasks`: 0. Tests in `FeatureWorkBuilderTest`.
+- **Pages:** `/developers` and `/developers/17` (mrmir) render the real items; at 375px no element is wider than the screen; three sections present.
+
+**Waiting for the user: check these 20 Feature work groups** (person, Feature, first done day, PRs on github.com/opf/openproject/pull/N, work items on community.openproject.org/wp/N):
+1. shiroginne, F76145 Add "as parent" badge to referencing wiki pages, 2026-07-24, PR 23849, items 76145
+2. thykel, F74362 Adapt BCF Export and Import for semantic identifiers, 2026-08-04, PR 23694, items 74362
+3. brunopagno, F76166 Make target_versions the canonical data source, 2026-08-18, PRs 23946 24093 24142 24150, items 76170 76174 76177 76179 76180
+4. mrmir, F76296 Fetch agenda items by WorkPackage ID via the API, 2026-07-28, PR 24060, items 76296
+5. oliverguenther, F76862 Improve status filtering for user administration, 2026-07-16, PR 24120, items 76862
+6. mrmir, F71922 Caption to recurring meeting forms, 2026-07-07, PR 24096, items 71922
+7. ihordubas99, F68818 Work package link when pasting a URL into BlockNote, 2026-07-15, PR 24255, items 68818
+8. akabiru, F76166 Make target_versions the canonical data source, 2026-08-18, PRs 23965 24079 24146 24161 24209, items 76172 76176 77218
+9. toy, F76097 "Add new work package" in backlog context menu, 2026-07-15, PR 23403, items 76097
+10. klaustopher, F76619 Wizard-like creation flow for type variants, 2026-07-24, PR 24231, items 76619
+11. ulferts, F76741 Sprint sharing in EE basic, 2026-07-03, PR 24074, items 76741
+12. HDinger, F76748 Overview widget for project phases and gates, 2026-07-21, PR 24175, items 76748
+13. klaustopher, F76565 Switching the active type variant with a preview, 2026-10-23, PR 24192, items 77226
+14. mrmir, F76542 Administrators define and manage global type variants, 2026-08-04, PRs 24067 24102 24127, items 76577 76580 76582
+15. klaustopher, F74094 Build User Timeline View for Resource Management, 2026-07-02, PR 24026, items 74094
+16. toy, F76642 Additional calculation operators for calculated fields, 2026-07-27, PR 24246, items 76642
+17. HDinger, F77184 Replace outdated danger zone when creating a backup, 2026-07-17, PR 24200, items 77184
+18. dfriquet, F76545 Reuse a type's PDF and subject configuration, 2026-08-05, PRs 24153 24225, items 76545 76631 76632 76635
+19. klaustopher, F75536 Allocate real users to generic requests, 2026-07-01, PR 23912, items 75536
+20. ihordubas99, F76013 Preview for tiny work package links in documents, 2026-07-22, PR 24255, items 76013
+
+Notes on the list: PR 24255 (a dependency bump) joins two Features (decision 116); group 13 is dated in Q4 (first done 23 Oct 2026), so it does not count in 2026-Q3.
