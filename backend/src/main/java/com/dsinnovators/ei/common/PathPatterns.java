@@ -1,4 +1,4 @@
-package com.dsinnovators.ei.judgment;
+package com.dsinnovators.ei.common;
 
 import java.util.List;
 import java.util.regex.Pattern;
@@ -8,7 +8,7 @@ import java.util.regex.Pattern;
  * repository root; one with no {@code /} is a file name at any depth; any other is the whole path.
  * {@code *} stands for any characters inside one folder or file name.
  */
-final class PathPatterns {
+public final class PathPatterns {
 
     private static final String SEPARATOR = "/";
 
@@ -16,11 +16,11 @@ final class PathPatterns {
 
     private final List<Rule> rules;
 
-    PathPatterns(List<String> patterns) {
+    public PathPatterns(List<String> patterns) {
         this.rules = patterns.stream().map(PathPatterns::ruleOf).toList();
     }
 
-    boolean matches(String path) {
+    public boolean matches(String path) {
         String fileName = path.substring(path.lastIndexOf(SEPARATOR) + 1);
         return rules.stream()
                 .anyMatch(rule -> rule.regex()

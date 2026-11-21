@@ -1,5 +1,6 @@
 package com.dsinnovators.ei.judgment;
 
+import com.dsinnovators.ei.common.PathPatterns;
 import com.dsinnovators.ei.common.Quarter;
 import com.dsinnovators.ei.setting.SettingService;
 import com.dsinnovators.ei.source.github.PullRequestDiff;

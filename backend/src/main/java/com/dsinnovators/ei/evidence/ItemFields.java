@@ -29,6 +29,20 @@ final class ItemFields {
         return nodes;
     }
 
+    /** The fields every item of one pull request starts with: the pull request and the work items it links. */
+    static ObjectNode ofPullRequest(PullRequestFacts pullRequest, Collection<WorkPackageFacts> linkedWorkItems) {
+        ObjectNode node = JSON.objectNode();
+        node.set("pullRequest", pullRequest(pullRequest));
+        node.set("linkedWorkItems", workItems(linkedWorkItems));
+        return node;
+    }
+
+    static ArrayNode texts(Collection<String> texts) {
+        ArrayNode nodes = JSON.arrayNode();
+        texts.forEach(nodes::add);
+        return nodes;
+    }
+
     static ArrayNode pullRequests(Collection<PullRequestFacts> pullRequests) {
         ArrayNode nodes = JSON.arrayNode();
         pullRequests.forEach(pullRequest -> nodes.add(pullRequest(pullRequest)));

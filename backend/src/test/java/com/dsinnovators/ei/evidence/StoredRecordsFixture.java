@@ -4,6 +4,8 @@ import com.dsinnovators.ei.common.CanonicalJson;
 import com.dsinnovators.ei.identity.Persons;
 import com.dsinnovators.ei.source.RawRecordStore;
 import com.dsinnovators.ei.source.github.GitHubAccount;
+import java.util.Arrays;
+import java.util.stream.Collectors;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 /** Stores the GitHub and OpenProject records the evidence builders read, in the layouts F02 and F03 store. */
@@ -46,6 +48,19 @@ final class StoredRecordsFixture {
                         + "\",\"url\":\"https://github.com/"
                         + REPOSITORY + "/pull/" + number + "\",\"mergedAt\":\"" + mergedAt + "\",\"author\":" + author
                         + "}"));
+    }
+
+    /** The diff record of a stored pull request, as F02 stores it, one modified file per name. */
+    void diff(int pullRequestNumber, String... fileNames) {
+        String files = Arrays.stream(fileNames)
+                .map(name -> "{\"filename\":\"" + name + "\",\"status\":\"modified\",\"patch\":\"@@ -1 +1 @@\"}")
+                .collect(Collectors.joining(",", "[", "]"));
+        rawRecords.store(
+                "github",
+                "pull_request_diff",
+                REPOSITORY + "#" + pullRequestNumber,
+                "https://github.com/" + REPOSITORY + "/pull/" + pullRequestNumber + "/files",
+                CanonicalJson.parse("{\"files\":" + files + ",\"truncated\":false}"));
     }
 
     /** An inline review comment on a stored pull request, as F02 stores it. */

@@ -1,4 +1,4 @@
-package com.dsinnovators.ei.judgment;
+package com.dsinnovators.ei.common;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
