@@ -127,6 +127,55 @@ class OpenAiCompatibleClientTest {
         assertEquals(List.of(Duration.ofMillis(45_560)), fixture.waits);
     }
 
+    private static DefaultResponseCreator successWithTokenWindow(String remaining, String reset) {
+        return success().header("x-ratelimit-remaining-tokens", remaining).header("x-ratelimit-reset-tokens", reset);
+    }
+
+    @Test
+    void waitsForTheTokenWindowToResetWhenTheNextRequestWouldNotFit() {
+        fixture.server.expect(once(), requestTo(CHAT_COMPLETIONS)).andRespond(successWithTokenWindow("900", "7.66s"));
+        fixture.server.expect(once(), requestTo(CHAT_COMPLETIONS)).andRespond(success());
+
+        fixture.client.judge(request());
+        fixture.client.judge(request());
+
+        assertEquals(List.of(Duration.ofMillis(7_660)), fixture.waits);
+    }
+
+    @Test
+    void readsAResetWrittenInMinutesAndSeconds() {
+        fixture.server.expect(once(), requestTo(CHAT_COMPLETIONS)).andRespond(successWithTokenWindow("0", "2m59.56s"));
+        fixture.client.judge(request());
+
+        ProviderLimitReachedException thrown =
+                assertThrows(ProviderLimitReachedException.class, () -> fixture.client.judge(request()));
+
+        assertTrue(thrown.getMessage().contains("179 s"));
+    }
+
+    @Test
+    void doesNotWaitWhenTheNextRequestFits() {
+        fixture.server.expect(once(), requestTo(CHAT_COMPLETIONS)).andRespond(successWithTokenWindow("6000", "30s"));
+        fixture.server.expect(once(), requestTo(CHAT_COMPLETIONS)).andRespond(success());
+
+        fixture.client.judge(request());
+        fixture.client.judge(request());
+
+        assertEquals(List.of(), fixture.waits);
+    }
+
+    @Test
+    void reportsTheProviderLimitWhenTheWindowResetsLaterThanTheLongestWait() {
+        fixture.server.expect(once(), requestTo(CHAT_COMPLETIONS)).andRespond(successWithTokenWindow("0", "2h"));
+        fixture.client.judge(request());
+
+        ProviderLimitReachedException thrown =
+                assertThrows(ProviderLimitReachedException.class, () -> fixture.client.judge(request()));
+
+        assertEquals("groq", thrown.providerName());
+        assertEquals(List.of(), fixture.waits);
+    }
+
     @Test
     void waitsTheConfiguredRetryWaitWhenTheRateLimitSaysNothingAboutTime() {
         fixture.server.expect(once(), requestTo(CHAT_COMPLETIONS)).andRespond(withStatus(HttpStatus.TOO_MANY_REQUESTS));

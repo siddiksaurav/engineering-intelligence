@@ -4,7 +4,9 @@ import com.dsinnovators.ei.common.CanonicalJson;
 import com.dsinnovators.ei.common.Sleeper;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
+import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -26,7 +28,8 @@ import tools.jackson.databind.node.ObjectNode;
  * an answer that follows a strict JSON schema. A short rate limit is waited out; a long one means the
  * provider has reached its limit and is reported as {@link ProviderLimitReachedException}. A call
  * that failed for a passing reason is tried again. The key is sent in the header and appears in no
- * message and no log line.
+ * message and no log line. After each answer it reads the token window the provider reports and,
+ * when too few tokens are left for another request, waits for the reset before the next call.
  */
 final class OpenAiCompatibleClient implements JudgmentModel {
 
@@ -41,17 +44,24 @@ final class OpenAiCompatibleClient implements JudgmentModel {
     private final JudgmentProvider provider;
     private final CallPolicy policy;
     private final Sleeper sleeper;
+    private final Clock clock;
 
-    OpenAiCompatibleClient(RestClient client, JudgmentProvider provider, CallPolicy policy, Sleeper sleeper) {
+    // What the provider said about its token window in the last answer; calls are made one at a time.
+    private TokenWindow tokenWindow;
+
+    OpenAiCompatibleClient(
+            RestClient client, JudgmentProvider provider, CallPolicy policy, Sleeper sleeper, Clock clock) {
         this.client = client;
         this.provider = provider;
         this.policy = policy;
         this.sleeper = sleeper;
+        this.clock = clock;
     }
 
     @Override
     public ModelAnswer judge(ModelRequest request) {
         String body = requestBody(request);
+        waitForTokenWindow();
         for (int attempt = 1; ; attempt++) {
             Reply reply;
             try {
@@ -67,6 +77,7 @@ final class OpenAiCompatibleClient implements JudgmentModel {
             }
             int status = reply.status();
             if (status >= 200 && status < 300) {
+                tokenWindow = tokenWindowOf(reply.headers());
                 return answer(reply.body());
             }
             if (status == 429) {
@@ -133,6 +144,43 @@ final class OpenAiCompatibleClient implements JudgmentModel {
         } catch (JacksonException notJson) {
             throw new ModelCallException(
                     "Provider " + provider.name() + " sent " + what + " that is not JSON", notJson);
+        }
+    }
+
+    /** Waits for the reset when the provider reported too few tokens left for one more request. */
+    private void waitForTokenWindow() {
+        TokenWindow window = tokenWindow;
+        tokenWindow = null;
+        if (window == null || window.remainingTokens() >= policy.minRemainingTokens()) {
+            return;
+        }
+        Duration wait = Duration.between(clock.instant(), window.resetsAt());
+        if (wait.isNegative() || wait.isZero()) {
+            return;
+        }
+        if (wait.compareTo(policy.maxRateLimitWait()) > 0) {
+            throw ProviderLimitReachedException.waitTooLong(provider.name(), wait, policy.maxRateLimitWait());
+        }
+        LOG.info(
+                "Provider {} has {} tokens left; waiting {} for the window",
+                provider.name(),
+                window.remainingTokens(),
+                wait);
+        sleep(wait);
+    }
+
+    private TokenWindow tokenWindowOf(HttpHeaders headers) {
+        String remaining = headers.getFirst("x-ratelimit-remaining-tokens");
+        Optional<Duration> reset = Optional.ofNullable(headers.getFirst("x-ratelimit-reset-tokens"))
+                .flatMap(OpenAiCompatibleClient::resetDuration);
+        if (remaining == null || reset.isEmpty()) {
+            return null;
+        }
+        try {
+            return new TokenWindow(
+                    Long.parseLong(remaining.trim()), clock.instant().plus(reset.get()));
+        } catch (NumberFormatException notANumber) {
+            return null;
         }
     }
 
@@ -226,6 +274,8 @@ final class OpenAiCompatibleClient implements JudgmentModel {
                         ? oneLine.substring(0, policy.maxErrorCharacters()) + "..."
                         : oneLine);
     }
+
+    private record TokenWindow(long remainingTokens, Instant resetsAt) {}
 
     private record Reply(int status, HttpHeaders headers, String body) {}
 }

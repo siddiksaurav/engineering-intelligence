@@ -1,6 +1,9 @@
 package com.dsinnovators.ei.judgment;
 
+import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import org.springframework.test.web.client.MockRestServiceServer;
@@ -11,7 +14,7 @@ final class ModelApiFixture {
 
     static final String KEY = "gsk_test-key-never-shown";
     static final String CHAT_COMPLETIONS = "https://api.groq.com/openai/v1/chat/completions";
-    static final CallPolicy POLICY = new CallPolicy(2, Duration.ofSeconds(2), Duration.ofSeconds(60), 300);
+    static final CallPolicy POLICY = new CallPolicy(2, Duration.ofSeconds(2), Duration.ofSeconds(60), 6_000, 300);
 
     final List<Duration> waits = new ArrayList<>();
     final MockRestServiceServer server;
@@ -24,7 +27,12 @@ final class ModelApiFixture {
     ModelApiFixture(JudgmentProvider provider) {
         RestClient.Builder builder = RestClient.builder();
         server = MockRestServiceServer.bindTo(builder).build();
-        client = new OpenAiCompatibleClient(builder.build(), provider, POLICY, waits::add);
+        client = new OpenAiCompatibleClient(
+                builder.build(),
+                provider,
+                POLICY,
+                waits::add,
+                Clock.fixed(Instant.parse("2026-11-01T10:00:00Z"), ZoneOffset.UTC));
     }
 
     /** A chat completion answer holding the given JSON text as the model's message. */

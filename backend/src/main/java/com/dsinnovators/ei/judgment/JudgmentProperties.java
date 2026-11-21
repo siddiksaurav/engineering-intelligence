@@ -17,6 +17,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @param retryWait the wait before the first retry; each further retry waits one more of it
  * @param maxRateLimitWait the longest rate limit wait that is waited out; a longer one puts the
  *     provider at its limit for the run
+ * @param minRemainingTokens the tokens a request needs; below this the client waits for the rate limit
+ *     window to reset before the next call (decision 134)
  * @param maxDiffCharacters the budget of patch text sent per pull request (decision 155)
  * @param maxBodyCharacters where the body of a pull request is cut
  * @param maxErrorCharacters how much of a provider's error text goes into an exception message
@@ -28,6 +30,7 @@ record JudgmentProperties(
         int retries,
         Duration retryWait,
         Duration maxRateLimitWait,
+        long minRemainingTokens,
         int maxDiffCharacters,
         int maxBodyCharacters,
         int maxErrorCharacters) {
@@ -43,6 +46,10 @@ record JudgmentProperties(
         }
         requireZeroOrMore("ei.judgment.retry-wait", retryWait);
         requireZeroOrMore("ei.judgment.max-rate-limit-wait", maxRateLimitWait);
+        if (minRemainingTokens < 0) {
+            throw new IllegalArgumentException(
+                    "ei.judgment.min-remaining-tokens must be zero or more, was " + minRemainingTokens);
+        }
         requireMoreThanZero("ei.judgment.max-diff-characters", maxDiffCharacters);
         requireMoreThanZero("ei.judgment.max-body-characters", maxBodyCharacters);
         requireMoreThanZero("ei.judgment.max-error-characters", maxErrorCharacters);
@@ -53,7 +60,7 @@ record JudgmentProperties(
     }
 
     CallPolicy callPolicy() {
-        return new CallPolicy(retries, retryWait, maxRateLimitWait, maxErrorCharacters);
+        return new CallPolicy(retries, retryWait, maxRateLimitWait, minRemainingTokens, maxErrorCharacters);
     }
 
     private static List<JudgmentProvider> providersWithAKey(List<JudgmentProvider> configured) {

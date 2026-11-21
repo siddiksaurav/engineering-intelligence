@@ -30,6 +30,7 @@ class JudgmentPropertiesTest {
                 3,
                 Duration.ofSeconds(2),
                 Duration.ofSeconds(60),
+                6_000,
                 12_000,
                 4_000,
                 300);
@@ -81,6 +82,7 @@ class JudgmentPropertiesTest {
                         3,
                         Duration.ofSeconds(2),
                         Duration.ofSeconds(60),
+                        6_000,
                         12_000,
                         4_000,
                         300));
@@ -92,6 +94,7 @@ class JudgmentPropertiesTest {
                         -1,
                         Duration.ofSeconds(2),
                         Duration.ofSeconds(60),
+                        6_000,
                         12_000,
                         4_000,
                         300));
@@ -103,6 +106,7 @@ class JudgmentPropertiesTest {
                         3,
                         Duration.ofSeconds(-2),
                         Duration.ofSeconds(60),
+                        6_000,
                         12_000,
                         4_000,
                         300));
@@ -114,6 +118,7 @@ class JudgmentPropertiesTest {
                         3,
                         Duration.ofSeconds(2),
                         Duration.ofSeconds(-1),
+                        6_000,
                         12_000,
                         4_000,
                         300));
@@ -125,6 +130,7 @@ class JudgmentPropertiesTest {
                         3,
                         Duration.ofSeconds(2),
                         Duration.ofSeconds(60),
+                        6_000,
                         0,
                         4_000,
                         300));
@@ -136,6 +142,7 @@ class JudgmentPropertiesTest {
                         3,
                         Duration.ofSeconds(2),
                         Duration.ofSeconds(60),
+                        6_000,
                         12_000,
                         0,
                         300));
@@ -147,16 +154,33 @@ class JudgmentPropertiesTest {
                         3,
                         Duration.ofSeconds(2),
                         Duration.ofSeconds(60),
+                        6_000,
                         12_000,
                         4_000,
                         0));
     }
 
     @Test
+    void minRemainingTokensMayNotBeNegative() {
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> new JudgmentProperties(
+                        List.of(),
+                        Duration.ofSeconds(1),
+                        3,
+                        Duration.ofSeconds(2),
+                        Duration.ofSeconds(60),
+                        -1,
+                        12_000,
+                        4_000,
+                        300));
+    }
+
+    @Test
     void theCallPolicyCarriesTheRetrySettings() {
         CallPolicy policy = propertiesOf(List.of()).callPolicy();
 
-        assertEquals(new CallPolicy(3, Duration.ofSeconds(2), Duration.ofSeconds(60), 300), policy);
+        assertEquals(new CallPolicy(3, Duration.ofSeconds(2), Duration.ofSeconds(60), 6_000, 300), policy);
     }
 
     @Test
@@ -182,6 +206,7 @@ class JudgmentPropertiesTest {
                 Map.entry("ei.judgment.retries", "3"),
                 Map.entry("ei.judgment.retry-wait", "2s"),
                 Map.entry("ei.judgment.max-rate-limit-wait", "60s"),
+                Map.entry("ei.judgment.min-remaining-tokens", "6000"),
                 Map.entry("ei.judgment.max-diff-characters", "12000"),
                 Map.entry("ei.judgment.max-body-characters", "4000"),
                 Map.entry("ei.judgment.max-error-characters", "300"));

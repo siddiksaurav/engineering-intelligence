@@ -59,6 +59,9 @@ ei:
     retry-wait: 2s
     # A rate limit that asks for a longer wait puts the provider at its limit for the run.
     max-rate-limit-wait: 60s
+    # One request needs about this many tokens; with fewer left in the window the next call waits for
+    # the reset (Groq free: 8,000 tokens per minute).
+    min-remaining-tokens: 6000
     max-diff-characters: 12000
     max-body-characters: 4000
     max-error-characters: 300
