@@ -52,9 +52,12 @@ public class EvidenceItemStore {
         return latest.isPresent() ? WriteOutcome.SUPERSEDED : WriteOutcome.CREATED;
     }
 
-    /** Ends the current item of the key with a withdrawn row; the item no longer follows from the records. */
+    /**
+     * Ends the current item of the key with a withdrawn row; the item no longer follows from the
+     * records. Returns the type of the item that ended.
+     */
     @Transactional
-    public void withdraw(String key) {
+    public EvidenceType withdraw(String key) {
         EvidenceItem current = items.findCurrentByKey(key)
                 .orElseThrow(() -> new IllegalStateException("No current evidence item to withdraw for key " + key));
         ObjectNode content = JsonNodeFactory.instance.objectNode();
@@ -74,6 +77,7 @@ public class EvidenceItemStore {
                 current.getId(),
                 clock.instant(),
                 Set.of()));
+        return current.getEvidenceType();
     }
 
     /** The keys of all current, not withdrawn items. */

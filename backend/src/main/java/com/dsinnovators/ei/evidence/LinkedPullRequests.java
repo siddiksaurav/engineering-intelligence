@@ -50,7 +50,7 @@ class LinkedPullRequests {
                 .toList();
         List<LinkedPullRequest> linked =
                 byHumans.stream().map(this::linked).flatMap(Optional::stream).toList();
-        return new Read(linked, all.size() - byHumans.size());
+        return new Read(linked, all.size(), all.size() - byHumans.size());
     }
 
     private boolean isByBot(PullRequestFacts pullRequest, Quarter quarter) {
@@ -78,5 +78,5 @@ class LinkedPullRequests {
     }
 
     /** What one read found. */
-    record Read(List<LinkedPullRequest> pullRequests, int botPullRequestsSkipped) {}
+    record Read(List<LinkedPullRequest> pullRequests, int pullRequestsRead, int botPullRequestsSkipped) {}
 }
