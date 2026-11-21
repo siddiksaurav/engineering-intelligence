@@ -96,3 +96,23 @@
 .reviewCommentWritten {
   background: var(--review-comment-written);
 }
+
+.testChange {
+  background: var(--test-change);
+}
+
+.refactorPerformance {
+  background: var(--refactor-performance);
+}
+
+.security {
+  background: var(--security);
+}
+
+.infraRelease {
+  background: var(--infra-release);
+}
+
+.documentation {
+  background: var(--documentation);
+}

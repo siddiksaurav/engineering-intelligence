@@ -5,6 +5,17 @@ import DevelopersPage from "./page";
 
 vi.mock("@/lib/evidence", () => ({ fetchDevelopers: vi.fn() }));
 
+const NO_ITEMS = {
+  featureWork: 0,
+  bugFix: 0,
+  reviewCommentWritten: 0,
+  testChange: 0,
+  refactorPerformance: 0,
+  security: 0,
+  infraRelease: 0,
+  documentation: 0,
+};
+
 describe("DevelopersPage", () => {
   afterEach(() => {
     vi.mocked(fetchDevelopers).mockReset();
@@ -15,8 +26,12 @@ describe("DevelopersPage", () => {
     vi.mocked(fetchDevelopers).mockResolvedValue({
       status: "ok",
       data: [
-        { personId: 7, displayName: "ada", counts: { featureWork: 2, bugFix: 1, reviewCommentWritten: 5 } },
-        { personId: 8, displayName: "grace", counts: { featureWork: 0, bugFix: 0, reviewCommentWritten: 0 } },
+        {
+          personId: 7,
+          displayName: "ada",
+          counts: { ...NO_ITEMS, featureWork: 2, bugFix: 1, reviewCommentWritten: 5, testChange: 3, security: 4 },
+        },
+        { personId: 8, displayName: "grace", counts: NO_ITEMS },
       ],
     });
 
@@ -29,6 +44,11 @@ describe("DevelopersPage", () => {
     expect(html).toMatch(/Feature work[^0-9]*2/);
     expect(html).toMatch(/Bug fix[^0-9]*1/);
     expect(html).toMatch(/Review comment written[^0-9]*5/);
+    expect(html).toMatch(/Test change[^0-9]*3/);
+    expect(html).toMatch(/Security[^0-9]*4/);
+    for (const label of ["Refactor and performance", "Infra and release", "Documentation"]) {
+      expect(html).toContain(label);
+    }
   });
 
   it("says there are no developers when none is stored", async () => {

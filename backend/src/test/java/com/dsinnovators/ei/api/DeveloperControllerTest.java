@@ -38,6 +38,11 @@ class DeveloperControllerTest extends DatabaseTest {
              "testKind":"integration"}
             """;
 
+    private static final String NO_WORK_ITEM_FIELDS = """
+            {"noWorkItem":true,
+             "pullRequests":[{"externalId":"4","number":104,"title":"Add spec","url":"https://gh.test/pull/104","mergedAt":"2026-10-05T10:00:00Z"}]}
+            """;
+
     @Value("${local.server.port}")
     private int port;
 
@@ -150,6 +155,22 @@ class DeveloperControllerTest extends DatabaseTest {
         assertEquals("Integration tests", withTier.get("tier").get("reason").stringValue());
         assertEquals(untiered, items.get(1).get("id").longValue());
         assertTrue(items.get(1).get("tier").isNull());
+    }
+
+    @Test
+    void featureWorkAndBugFixWithoutAWorkItemShowTheirPullRequest() throws Exception {
+        item(ada, "feature_work:pull_request:104", "feature_work", "2026-10-05", NO_WORK_ITEM_FIELDS, false, null);
+        item(ada, "bug_fix:pull_request:104", "bug_fix", "2026-10-04", NO_WORK_ITEM_FIELDS, false, null);
+
+        JsonNode items = JobEndpointClient.json(client.get("/api/developers/" + ada + "/evidence-items"))
+                .get("items");
+
+        for (JsonNode item : items) {
+            assertEquals("Add spec", item.get("title").stringValue());
+            assertEquals(1, item.get("links").size());
+            assertLink(item.get("links").get(0), "Pull request #104 on GitHub", "https://gh.test/pull/104");
+            assertTrue(item.get("tier").isNull());
+        }
     }
 
     @Test

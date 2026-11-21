@@ -4,7 +4,20 @@ import { fetchDevelopers, fetchEvidenceItems } from "./evidence";
 const BACKEND_URL = "http://localhost:8080";
 
 const DEVELOPERS = [
-  { personId: 7, displayName: "ada", counts: { featureWork: 2, bugFix: 1, reviewCommentWritten: 5 } },
+  {
+    personId: 7,
+    displayName: "ada",
+    counts: {
+      featureWork: 2,
+      bugFix: 1,
+      reviewCommentWritten: 5,
+      testChange: 0,
+      refactorPerformance: 0,
+      security: 0,
+      infraRelease: 0,
+      documentation: 0,
+    },
+  },
 ];
 
 const EVIDENCE = {
@@ -18,6 +31,7 @@ const EVIDENCE = {
       title: "Login fails",
       sourceUrl: "https://community.openproject.org/wp/20",
       links: [{ label: "Work item #20 on OpenProject", url: "https://community.openproject.org/wp/20" }],
+      tier: null,
       fields: {},
     },
   ],

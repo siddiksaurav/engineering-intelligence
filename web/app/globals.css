@@ -10,6 +10,14 @@
   --feature-work: #0284c7;
   --bug-fix: #ea580c;
   --review-comment-written: #059669;
+  --test-change: #0891b2;
+  --refactor-performance: #ca8a04;
+  --security: #dc2626;
+  --infra-release: #db2777;
+  --documentation: #475569;
+  --tier-1: #38bdf8;
+  --tier-2: #0369a1;
+  --tier-3: #0c3a5b;
 }
 
 *,

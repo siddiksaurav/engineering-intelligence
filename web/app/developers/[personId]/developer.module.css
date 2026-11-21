@@ -15,6 +15,26 @@
   --accent: var(--review-comment-written);
 }
 
+.testChange {
+  --accent: var(--test-change);
+}
+
+.refactorPerformance {
+  --accent: var(--refactor-performance);
+}
+
+.security {
+  --accent: var(--security);
+}
+
+.infraRelease {
+  --accent: var(--infra-release);
+}
+
+.documentation {
+  --accent: var(--documentation);
+}
+
 .sectionTitle {
   margin: 0 0 12px;
   padding: 6px 12px;
@@ -123,4 +143,38 @@
   margin: 0 0 4px;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 0.85rem;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.tier {
+  flex: none;
+  min-width: 2.2rem;
+  padding: 0 10px;
+  border-radius: 8px;
+  color: #fff;
+  font-weight: 800;
+  text-align: center;
+}
+
+.tier1 {
+  background: var(--tier-1);
+  color: var(--sky-900);
+}
+
+.tier2 {
+  background: var(--tier-2);
+}
+
+.tier3 {
+  background: var(--tier-3);
+}
+
+.tierReason {
+  margin: 0 0 8px;
+  font-size: 0.95rem;
 }

@@ -1,9 +1,28 @@
-export type EvidenceType = "feature_work" | "bug_fix" | "review_comment_written";
+export type EvidenceType =
+  | "feature_work"
+  | "bug_fix"
+  | "review_comment_written"
+  | "test_change"
+  | "refactor_performance"
+  | "security"
+  | "infra_release"
+  | "documentation";
 
 export type TypeCounts = {
   featureWork: number;
   bugFix: number;
   reviewCommentWritten: number;
+  testChange: number;
+  refactorPerformance: number;
+  security: number;
+  infraRelease: number;
+  documentation: number;
+};
+
+/** The current tier of an item and the reason the judgment gave for it. */
+export type ItemTier = {
+  tier: "T1" | "T2" | "T3" | "T4";
+  reason: string;
 };
 
 export type Developer = {
@@ -31,6 +50,8 @@ export type EvidenceItem = {
   title: string;
   sourceUrl: string;
   links: ItemLink[];
+  /** Null when the item has no tier: Documentation, and an item whose tier is not judged yet. */
+  tier: ItemTier | null;
   /** The type-specific JSON of the item; a Review comment written has `pullRequest` and `comment`. */
   fields: {
     pullRequest?: PullRequestFields;
