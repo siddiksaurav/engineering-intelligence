@@ -19,9 +19,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
-import tools.jackson.databind.node.ArrayNode;
-import tools.jackson.databind.node.JsonNodeFactory;
-import tools.jackson.databind.node.ObjectNode;
 
 class ReviewCommentJudgeTest extends DatabaseTest {
 
@@ -79,18 +76,6 @@ class ReviewCommentJudgeTest extends DatabaseTest {
                 .getFirst();
     }
 
-    /** An answer that gives every comment a type; each pair is a comment id and a type. */
-    private static ObjectNode answerOf(String... idsAndTypes) {
-        ArrayNode comments = JsonNodeFactory.instance.arrayNode();
-        for (int index = 0; index < idsAndTypes.length; index += 2) {
-            comments.addObject()
-                    .put("commentId", idsAndTypes[index])
-                    .put("commentType", idsAndTypes[index + 1])
-                    .put("reason", "Reason for " + idsAndTypes[index]);
-        }
-        return JsonNodeFactory.instance.objectNode().set("comments", comments).deepCopy();
-    }
-
     private Judgment currentJudgmentOf(ReviewCommentChunks.ChunkComment comment) {
         return judgmentStore
                 .findCurrent(
@@ -102,7 +87,7 @@ class ReviewCommentJudgeTest extends DatabaseTest {
     @Test
     void aStyleCommentGetsNoTier() {
         ReviewCommentChunks.Chunk chunk = chunkOf(comment(1, "Please add a space here."));
-        model.answeringByDefault(answerOf("C-1", "style"));
+        model.answeringByDefault(FakeJudgmentModel.aReviewComments("C-1", "style"));
 
         judge().judge(chunk, QUARTER, jobCounts);
 
@@ -116,7 +101,7 @@ class ReviewCommentJudgeTest extends DatabaseTest {
     @CsvSource({"question,T1", "correctness,T2", "security,T3", "architecture,T3"})
     void aSubstantiveCommentGetsTheTierOfItsType(String type, String tier) {
         ReviewCommentChunks.Chunk chunk = chunkOf(comment(1, "A real remark."));
-        model.answeringByDefault(answerOf("C-1", type));
+        model.answeringByDefault(FakeJudgmentModel.aReviewComments("C-1", type));
 
         judge().judge(chunk, QUARTER, jobCounts);
 
@@ -128,7 +113,7 @@ class ReviewCommentJudgeTest extends DatabaseTest {
     @Test
     void storesTheValueReasonFactModelPromptVersionAndHashOfEveryComment() {
         ReviewCommentChunks.Chunk chunk = chunkOf(comment(1, "Why a second query?"), comment(2, "Rename this."));
-        model.answeringByDefault(answerOf("C-1", "question", "C-2", "style"));
+        model.answeringByDefault(FakeJudgmentModel.aReviewComments("C-1", "question", "C-2", "style"));
 
         judge().judge(chunk, QUARTER, jobCounts);
 
@@ -152,7 +137,7 @@ class ReviewCommentJudgeTest extends DatabaseTest {
     @Test
     void quotesOnlyTheFirstTwoHundredCharactersOfTheComment() {
         ReviewCommentChunks.Chunk chunk = chunkOf(comment(1, "x".repeat(300)));
-        model.answeringByDefault(answerOf("C-1", "design"));
+        model.answeringByDefault(FakeJudgmentModel.aReviewComments("C-1", "design"));
 
         judge().judge(chunk, QUARTER, jobCounts);
 
@@ -167,7 +152,7 @@ class ReviewCommentJudgeTest extends DatabaseTest {
     @Test
     void sendsOneRequestForTheChunkWithItsPromptSchemaAndText() {
         ReviewCommentChunks.Chunk chunk = chunkOf(comment(1, "One."), comment(2, "Two."));
-        model.answeringByDefault(answerOf("C-1", "style", "C-2", "style"));
+        model.answeringByDefault(FakeJudgmentModel.aReviewComments("C-1", "style", "C-2", "style"));
 
         judge().judge(chunk, QUARTER, jobCounts);
 
@@ -182,7 +167,7 @@ class ReviewCommentJudgeTest extends DatabaseTest {
     @Test
     void countsTheJudgmentsWrittenAndTheModelUse() {
         ReviewCommentChunks.Chunk chunk = chunkOf(comment(1, "One."), comment(2, "Two."));
-        model.answeringByDefault(answerOf("C-1", "style", "C-2", "style"));
+        model.answeringByDefault(FakeJudgmentModel.aReviewComments("C-1", "style", "C-2", "style"));
 
         judge().judge(chunk, QUARTER, jobCounts);
 
@@ -194,7 +179,7 @@ class ReviewCommentJudgeTest extends DatabaseTest {
     @Test
     void makesNoCallWhenEveryCommentOfTheChunkWasJudged() {
         ReviewCommentChunks.Chunk chunk = chunkOf(comment(1, "One."), comment(2, "Two."));
-        model.answeringByDefault(answerOf("C-1", "style", "C-2", "style"));
+        model.answeringByDefault(FakeJudgmentModel.aReviewComments("C-1", "style", "C-2", "style"));
         judge().judge(chunk, QUARTER, jobCounts);
 
         counts.clear();
@@ -211,7 +196,7 @@ class ReviewCommentJudgeTest extends DatabaseTest {
         ReviewCommentChunks.CommentPart first = comment(1, "One.");
         ReviewCommentChunks.CommentPart second = comment(2, "Two.");
         ReviewCommentChunks.Chunk chunk = chunkOf(first, second);
-        model.answeringByDefault(answerOf("C-1", "style", "C-2", "style"));
+        model.answeringByDefault(FakeJudgmentModel.aReviewComments("C-1", "style", "C-2", "style"));
         judge().judge(chunk, QUARTER, jobCounts);
         ReviewCommentChunks.CommentPart secondOnANewItemRow = new ReviewCommentChunks.CommentPart(
                 new ReviewCommentToJudge(
@@ -242,7 +227,8 @@ class ReviewCommentJudgeTest extends DatabaseTest {
     @Test
     void asksOnceMoreWhenTheAnswerLeavesOutACommentAndFailsAfterTheSecondRefusal() {
         ReviewCommentChunks.Chunk chunk = chunkOf(comment(1, "One."), comment(2, "Two."));
-        model.thenAnswers(answerOf("C-1", "style")).thenAnswers(answerOf("C-1", "style", "C-2", "question"));
+        model.thenAnswers(FakeJudgmentModel.aReviewComments("C-1", "style"))
+                .thenAnswers(FakeJudgmentModel.aReviewComments("C-1", "style", "C-2", "question"));
 
         judge().judge(chunk, QUARTER, jobCounts);
 
@@ -250,7 +236,8 @@ class ReviewCommentJudgeTest extends DatabaseTest {
         assertEquals(2L, counts.get("judgments_written"));
 
         ReviewCommentChunks.Chunk other = chunkOf(comment(3, "Three."));
-        model.thenAnswers(answerOf("C-9", "style")).thenAnswers(answerOf("C-9", "style"));
+        model.thenAnswers(FakeJudgmentModel.aReviewComments("C-9", "style"))
+                .thenAnswers(FakeJudgmentModel.aReviewComments("C-9", "style"));
         assertThrows(InvalidAnswerException.class, () -> judge().judge(other, QUARTER, jobCounts));
         assertEquals(
                 0,
@@ -263,7 +250,7 @@ class ReviewCommentJudgeTest extends DatabaseTest {
     @Test
     void failsNamingTheTypeWhenTheSettingHasNoEntryForIt() {
         ReviewCommentChunks.Chunk chunk = chunkOf(comment(1, "One."));
-        model.answeringByDefault(answerOf("C-1", "security"));
+        model.answeringByDefault(FakeJudgmentModel.aReviewComments("C-1", "security"));
         jdbc.update(
                 "update setting set value = '{\"style\": {\"substantive\": false, \"tier\": null}}'::jsonb where key = 'evidence.review_comment_types'");
 
@@ -277,7 +264,7 @@ class ReviewCommentJudgeTest extends DatabaseTest {
     @Test
     void writesNoJudgmentOfTheChunkWhenOneOfItsTypesCannotBeRead() {
         ReviewCommentChunks.Chunk chunk = chunkOf(comment(1, "One."), comment(2, "Two."));
-        model.answeringByDefault(answerOf("C-1", "style", "C-2", "security"));
+        model.answeringByDefault(FakeJudgmentModel.aReviewComments("C-1", "style", "C-2", "security"));
         jdbc.update(
                 "update setting set value = '{\"style\": {\"substantive\": false, \"tier\": null}}'::jsonb where key = 'evidence.review_comment_types'");
 

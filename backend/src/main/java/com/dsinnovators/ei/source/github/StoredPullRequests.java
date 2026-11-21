@@ -53,4 +53,19 @@ public class StoredPullRequests {
         return rawRecordStore.findLatest(
                 PullRequestRecorder.DATA_SOURCE, GitHubRecordKind.PULL_REQUEST.recordKind(), repository + "#" + number);
     }
+
+    /**
+     * The pull request with this external id, such as {@code opf/openproject#24204}, if it was stored.
+     *
+     * @throws IllegalArgumentException when the id is not a repository, a {@code #} and a number
+     */
+    public Optional<RawRecord> findByExternalId(String externalId) {
+        int separator = externalId.lastIndexOf('#');
+        try {
+            return find(externalId.substring(0, separator), Integer.parseInt(externalId.substring(separator + 1)));
+        } catch (IndexOutOfBoundsException | NumberFormatException malformed) {
+            throw new IllegalArgumentException(
+                    "A pull request external id is a repository, # and a number, was " + externalId, malformed);
+        }
+    }
 }

@@ -7,6 +7,8 @@ import java.util.Deque;
 import java.util.List;
 import java.util.function.Supplier;
 import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.JsonNodeFactory;
 import tools.jackson.databind.node.ObjectNode;
 
 /**
@@ -70,6 +72,19 @@ final class FakeJudgmentModel implements JudgmentModel {
                   "confidence": 0.8
                 }
                 """.formatted(complexity));
+    }
+
+    /** An answer for review comments that follows the schema; the arguments are pairs of a comment id and a type. */
+    static ObjectNode aReviewComments(String... commentIdsAndTypes) {
+        ObjectNode answer = JsonNodeFactory.instance.objectNode();
+        ArrayNode comments = answer.putArray("comments");
+        for (int index = 0; index < commentIdsAndTypes.length; index += 2) {
+            comments.addObject()
+                    .put("commentId", commentIdsAndTypes[index])
+                    .put("commentType", commentIdsAndTypes[index + 1])
+                    .put("reason", "Reason for " + commentIdsAndTypes[index]);
+        }
+        return answer;
     }
 
     static ModelAnswer answerOf(JsonNode digest) {

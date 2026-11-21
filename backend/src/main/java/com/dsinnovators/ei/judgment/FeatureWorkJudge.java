@@ -140,9 +140,8 @@ class FeatureWorkJudge {
     }
 
     private RawRecord storedPullRequest(String externalId) {
-        int separator = externalId.lastIndexOf('#');
         return storedPullRequests
-                .find(externalId.substring(0, separator), Integer.parseInt(externalId.substring(separator + 1)))
+                .findByExternalId(externalId)
                 .orElseThrow(() -> new IllegalStateException("Pull request " + externalId + " is not stored"));
     }
 
