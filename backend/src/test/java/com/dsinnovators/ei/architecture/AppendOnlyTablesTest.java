@@ -21,7 +21,6 @@ class AppendOnlyTablesTest extends DatabaseTest {
     }
 
     @Test
-    @Disabled("F05 creates evidence_item; enable this test in F05")
     void evidenceItemHasATriggerBeforeEveryUpdateAndDelete() {
         hasTriggerBeforeEveryUpdateAndDelete("evidence_item");
     }
