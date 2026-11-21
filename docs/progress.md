@@ -2,6 +2,21 @@
 
 One entry per working session, newest at the top. Each entry says what was done, what is next and what is blocked. Read the top entry first.
 
+## 21 Nov 2026: faster workflow, one-month window, free LLM
+
+**Done**
+- `/ship FNN` replaces `/design`, `/build` and `/done` (decisions 72 to 77): one stop per feature (the question brief, no limit on questions), each task runs only the tests it touches, one implementer per batch of tasks, one review round with blocking and follow-up findings, the session pushes and merges when CI is green.
+- Window cut to 1 to 31 Jul 2026 (decision 78). LLM is a free hosted model, Groq Cloud first, through an OpenAI-compatible API (decision 79). F13 dropped, F08 prompt tuning one round (decision 80). The next design may overlap the current build; F11 may run in parallel after F06 (decision 81).
+- `CLAUDE.md`, `docs/features/README.md`, `docs/master-plan.md` and `.claude/agents/` updated. `.claude/settings.json` is unchanged: new allow rules are the user's to add.
+
+**Next**
+- `/ship F04`. Deadline for the PoC: 22 Nov 2026.
+- Still open from F03: run `openproject-import` on real data and record it in F03 `notes.md`, section "Verification".
+
+**Blocked or needed from the user**
+- A Groq Cloud API key in `.env` before F06 (the name is fixed in F06).
+- Groq's free-tier daily limits may not cover about 450 PRs in one day; F06 checks them and asks.
+
 ## 19 Nov 2026: F03 built, merged without the last review round
 
 **Done**

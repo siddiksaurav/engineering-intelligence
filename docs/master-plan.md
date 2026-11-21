@@ -37,7 +37,8 @@ Every feature follows these. A feature design may not change one without a new e
 
 **Data**
 - Public data only. GitHub through the GraphQL API with a read-only token. OpenProject through API v3 without login.
-- Window: Q3 2026 (1 Jul to 30 Sep 2026) plus one month on each side, so 1 Jun to 31 Oct 2026. For every feature that reached a done status in the quarter, all its linked PRs are pulled whatever their date.
+- Window: one month, 1 to 31 Jul 2026 (decision 78). The quarter is still named 2026-Q3 in `setting` and on the screens; only July's data is in it. For every Feature linked from a PR of the window that reached a done status in the quarter, all its linked PRs are pulled whatever their date (decision 68, unchanged; this is what `openproject-import` does).
+- LLM: a free hosted model (Groq Cloud first) through an OpenAI-compatible API, behind `JudgmentModel` (decision 79). Free tiers limit requests and tokens per minute and per day; F06 measures them and the runs respect them.
 - Real developer names are shown.
 
 **Rules that never change**
@@ -56,7 +57,7 @@ Every feature follows these. A feature design may not change one without a new e
 **Way of working**
 - Test first. Each task in a feature plan has its test before its code.
 - One commit per task.
-- A feature is designed with `/design FNN`, built with `/build FNN` and closed with `/done FNN` (`CLAUDE.md`, "How work is done"). The user's answer to the question brief counts as design and plan approval.
+- A feature is shipped with `/ship FNN` (`CLAUDE.md`, "How work is done", decision 72). The user's answer to the question brief counts as design and plan approval.
 - Secrets (GitHub token, LLM API key) live in a local `.env` that is not committed. `.env.example` lists the names.
 - Jobs are started by a REST endpoint, and every run is recorded. There is no command-line runner and no scheduler.
 
@@ -114,11 +115,11 @@ These are left out on purpose (`poc-plan.md` 3.1). No feature builds them. If a 
 | F06 | `JudgmentModel`, Stage 1 PR digest, builders that need the PR work type | F05 | Every PR has a digest; test, refactor, security and infra items exist with a tier |
 | F07 | Stage 2 Feature work judgment and review comment judgment | F06 | Every Feature work item has a complexity and every review comment a type and tier |
 | F08 | Blind check and the item page | F07 | You label 30 items blind; the item page shows source, AI judgment and your label |
-| F09 | Full-quarter run | F08 | The whole window is ingested and judged |
+| F09 | Full-window run (one month) | F08 | July 2026 is ingested and judged |
 | F10 | Five analytics and the hygiene number | F09 | The analytics API returns the numbers for one developer |
 | F11 | Scoring | F10 | Two dimension scores per developer, with gates G1 and G2 and the trail |
 | F12 | Profile page | F11 | One page per developer where every number opens down to a PR |
-| F13 | Accuracy measurement (optional) | F12 | An accuracy page with the measures of `poc-plan.md` section 4 |
+| F13 | Accuracy measurement (dropped, decision 80) | F12 | An accuracy page with the measures of `poc-plan.md` section 4 |
 
 Each block below gives a new session enough to start the deep dive. "Open questions" are the points the deep dive must answer; they are not decided here.
 
@@ -224,7 +225,7 @@ Each block below gives a new session enough to start the deep dive. "Open questi
 
 **Builds.**
 - Migration for `judgment`.
-- The `JudgmentModel` interface and one implementation for a Claude model through the Anthropic API, with JSON-schema structured output.
+- The `JudgmentModel` interface and one implementation for a free hosted model through an OpenAI-compatible API (Groq Cloud first, decision 79), with JSON-schema structured output where the model supports it. The base URL, model and key come from `.env`, so another provider needs no code change.
 - **Stage 1, PR digest.** One call per PR. Input: title, body, file list, and the diff with generated files, lock files and vendored code removed. Output: work type of the PR (one of the 13 in spec 6.2), modules touched, schema or data migration yes or no, new integration yes or no, nature of the change, tests included yes or no, test kind (unit, integration, regression, CI gate), a short reason. For the test change in a PR, and for a PR whose work type is refactor, performance, security or infra, also a tier from the rows of spec 6.4, with a reason.
 - Builders: **Test change** (one per PR that changes tests), **Refactor and performance item**, **Security item**, **Infra and release item** (a PR with that work type whose work item is not under a Feature), **Documentation** (a PR with no work item whose work type is docs), **Feature work marked "no work item"** (a PR with no work item whose work type is feature or enhancement), **Bug fix** for a PR with no work item whose work type is fix. A PR with no work item and work type maintenance, technical task, research or operational support gets no evidence item and keeps its work type.
 - A measurement of cost and time on 50 PRs.
@@ -233,9 +234,9 @@ Each block below gives a new session enough to start the deep dive. "Open questi
 
 **Gives to later features.** `JudgmentModel`. The judgment store with the skip-on-same-input-hash rule. The PR digest that Stage 2 reads. The file filter for diffs.
 
-**Done when.** Every judgment row has a reason, at least one source link, a model and a prompt version. A second run with the same input makes no call. The cost and time for 50 PRs are written into `notes.md`, with an estimate for the full window. A diff too large for one call is judged on what fits and marked "judged on partial code".
+**Done when.** Every judgment row has a reason, at least one source link, a model and a prompt version. A second run with the same input makes no call. The time, tokens and rate limits met for 50 PRs are written into `notes.md`, with an estimate for the one-month window. A diff too large for one call is judged on what fits and marked "judged on partial code".
 
-**Open questions.** Who sets the tier of a Test change: `poc-plan.md` 3.2 says both that the model gives it (Stage 1 text) and that it follows from the test kind (building table: unit in own PR is T1, integration or regression is T2, a test gate in CI is T3). Reading it from the test kind matches how Feature work is handled; decide. The other side of the F05 overlap: no PR may be in a Feature work group and also be a Refactor, Security or Infra item. The model for Stage 1 (a cheaper one is enough) and the current model ids; check the Anthropic Java SDK and Spring AI at build time, not from memory. The exact JSON schema of the digest. The file filter rules. Where prompts live and how a prompt version is named. How tests run without calling the real model (a fake `JudgmentModel`) and how the real prompts are tried on a small fixed set. Whether calls run in parallel or as a batch.
+**Open questions.** Who sets the tier of a Test change: `poc-plan.md` 3.2 says both that the model gives it (Stage 1 text) and that it follows from the test kind (building table: unit in own PR is T1, integration or regression is T2, a test gate in CI is T3). Reading it from the test kind matches how Feature work is handled; decide. The other side of the F05 overlap: no PR may be in a Feature work group and also be a Refactor, Security or Infra item. The provider and model for Stage 1, and the current model ids and free-tier limits; check them at design time, not from memory. Whether the free tier's tokens per day are enough for the window, and what to do if not (a smaller model, a trimmed diff, a second provider, a paid tier). The exact JSON schema of the digest. The file filter rules. Where prompts live and how a prompt version is named. How tests run without calling the real model (a fake `JudgmentModel`) and how the real prompts are tried on a small fixed set. Whether calls run in parallel or as a batch.
 
 ---
 
@@ -266,7 +267,7 @@ Each block below gives a new session enough to start the deep dive. "Open questi
 - Export of 30 Feature work items as a CSV with the item id and the links to GitHub and OpenProject, without the AI's answer. Import of the filled file (work type, complexity) into `human_label`.
 - **Item page** (read-only): the source on the left (work item text, PR descriptions, files changed, links to GitHub and OpenProject); the AI's work type, complexity, tier, reason and facts on the right; the human label next to it where one exists.
 - The list page of F05 now shows the AI's judgment per item, and how often AI and human label agree.
-- Prompt tuning: the user reads further items, and the prompts of F06 and F07 are adjusted from what is found. Each change is a new prompt version, the affected items are judged again, and the old judgments are kept.
+- Prompt tuning, at most one round (decision 80): the user reads further items, and the prompts of F06 and F07 are adjusted from what is found. Each change is a new prompt version, the affected items are judged again, and the old judgments are kept.
 
 **Read first.** `poc-plan.md` 3.1 item 4, 3.7 step 8, section 4 (these 30 items are its tuning set). Spec 9.7.
 
@@ -276,17 +277,17 @@ Each block below gives a new session enough to start the deep dive. "Open questi
 
 **Order that must be kept.** The item page is opened to the user only after the labels are imported. Building it earlier is fine; showing AI answers before labeling is not.
 
-**Decision at the end.** The user decides whether the agreement is good enough to start F09. F09 is the first large paid run, so it does not start without that decision.
+**Decision at the end.** The user decides whether the agreement is good enough to start F09. F09 is the first large run, so it does not start without that decision.
 
 **Open questions.** How the 30 items are picked (random, or balanced across the AI's complexity values). The CSV columns and how a wrong value in the import is reported. What the item page shows for the other evidence types. The chart library and page layout.
 
 ---
 
-### F09 Full-quarter run
+### F09 Full-window run (one month)
 
-**Goal.** The whole window ingested, built and judged.
+**Goal.** The one-month window ingested, built and judged.
 
-**Builds.** Little new code. The connectors, builders and judgments run on 1 Jun to 31 Oct 2026. What is added: progress output, resume after a failure, a cost cap that stops the run, and a run report.
+**Builds.** Little new code. The connectors, builders and judgments run on 1 to 31 Jul 2026 (decision 78). What is added: progress output, resume after a failure, waiting on the free tier's rate limits, and a run report.
 
 **Read first.** `poc-plan.md` 3.7 step 9, section 5 risk "Cost", the Verification section. `notes.md` of F02, F03 and F06 for the measured limits and costs.
 
@@ -294,9 +295,9 @@ Each block below gives a new session enough to start the deep dive. "Open questi
 
 **Done when.** The number of distinct merged PRs and of distinct work items in `raw_record` matches the GitHub and OpenProject totals for the window. The share of PRs linked to a work item is about 78%. Every PR has a digest and every closed Feature work item a complexity, or a recorded reason why not. The actual cost is in `notes.md`.
 
-**Known facts.** About 2,200 PRs for the five months, and several hundred Feature work items.
+**Known facts.** 215 merged PRs in 1 to 14 Jul 2026 (F02), so about 450 for the month.
 
-**Open questions.** The cost cap. Whether the LLM calls use a batch API. What is done with PRs that failed judgment.
+**Open questions.** How the run waits on rate limits and resumes the next day if the daily quota runs out. What is done with PRs that failed judgment.
 
 ---
 
@@ -368,7 +369,7 @@ Every count is split by tier (spec 7).
 
 ---
 
-### F13 Accuracy measurement (optional)
+### F13 Accuracy measurement (dropped, decision 80)
 
 **Goal.** A defensible number for how often the AI is right.
 
@@ -382,13 +383,16 @@ Every count is split by tier (spec 7).
 
 ## 6. Order
 
-The features are built in number order, one at a time. Each one depends on the one before. A feature starts when the user asks for it; a session does not begin the next deep dive on its own.
+The features are built in number order; each depends on those in the "Depends on" column. A feature starts when the user asks for it. Two overlaps are allowed to save time (decision 81):
 
-F05 is the first point where something can be shown. F08 is the first point where the AI can be judged, and the user decides there whether the full run of F09 starts. F12 completes the PoC.
+- The deep dive and question brief of the next feature may run in its own session while the current feature builds. Its branch is made from `main` only after the current feature is merged; until then the design reads the current feature's `design.md` for what it will give.
+- F11 Scoring may be built in parallel with F07 to F10 once F06 is merged, in its own session and branch. Whichever of two parallel branches merges second renumbers its Flyway migrations above the highest on `main` before it merges.
+
+F05 is the first point where something can be shown. F08 is the first point where the AI can be judged, and the user decides there whether the run of F09 starts. F12 completes the PoC.
 
 ## 7. Status
 
-Update this table when a feature changes state. States: not started, in design, design approved, plan approved, in progress, done. Only the user moves a feature to "design approved" or "plan approved". The user's answer to the question brief of `/design` counts as approval of both the design and the plan, so the feature then goes to "plan approved" (decision 50).
+Update this table when a feature changes state. States: not started, in design, design approved, plan approved, in progress, done. Only the user moves a feature to "design approved" or "plan approved". The user's answer to the question brief of `/ship` counts as approval of both the design and the plan, so the feature then goes to "plan approved" (decision 50).
 
 | Id | Feature | State | Design | Plan |
 | --- | --- | --- | --- | --- |
@@ -400,11 +404,11 @@ Update this table when a feature changes state. States: not started, in design, 
 | F06 | `JudgmentModel`, PR digest, AI-dependent builders | not started | | |
 | F07 | Feature work and review comment judgment | not started | | |
 | F08 | Blind check and item page | not started | | |
-| F09 | Full-quarter run | not started | | |
+| F09 | Full-window run (one month) | not started | | |
 | F10 | Analytics and hygiene | not started | | |
 | F11 | Scoring | not started | | |
 | F12 | Profile page | not started | | |
-| F13 | Accuracy measurement (optional) | not started | | |
+| F13 | Accuracy measurement | dropped (decision 80) | | |
 
 ## 8. Glossary
 

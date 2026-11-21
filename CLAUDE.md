@@ -16,29 +16,25 @@ Read in this order:
 
 ## How work is done
 
-One feature at a time, in the order of the master plan. Each feature goes through five steps (`docs/features/README.md` has the detail):
+One feature at a time, in the order of the master plan (section 6 allows a little overlap). Each feature goes through five steps (`docs/features/README.md` has the detail):
 
 1. Deep dive, written to `design.md`, closed by a question brief the user answers.
-2. Short task plan, written to `plan.md`: the tasks in order, the files each touches, the first failing test of each, the commit. No code in the plan (decision 40).
-3. Implementation, test first, one task at a time, one commit per task.
-4. Verification against the feature's "Done when" in the master plan.
-5. Update the status table, `progress.md`, `decisions.md` and the commands below.
+2. Short task plan, written to `plan.md`: the tasks in order, grouped into batches, the files each touches, the first failing test of each, the commit. No code in the plan (decision 40).
+3. Implementation, test first, one commit per task. Each task runs only the tests it touches; the full suite runs once at the end (decision 73).
+4. One review, then verification against the feature's "Done when" in the master plan.
+5. Status table, `progress.md`, `decisions.md`, push, pull request, merge when CI is green.
 
-Three commands run these steps. Each takes the feature id, for example `/design F03`.
+One command runs all five: `/ship FNN` (decision 72). Its exact rules are in `.claude/skills/ship/SKILL.md`. The user's answer to the question brief is the only stop in the normal flow; after it the session builds, reviews once, verifies, opens the pull request and merges it when CI is green.
 
-| Command | Does | Ends with |
-| --- | --- | --- |
-| `/design FNN` | Branch `feature/FNN` from `main`, `design.md`, the question brief; after the user's answer, `decisions.md`, the final `design.md` and `plan.md` (steps 1 and 2) | "Plan ready. Run /build FNN." |
-| `/build FNN` | Coordinates: one `implementer` subagent per task, the full tests, the `reviewer` subagent (at most 3 rounds), every "Done when" line, `summary.md` (steps 3 and 4) | The summary, shown to the user |
-| `/done FNN` | Marks the feature done in the status table and adds a line to `progress.md` (step 5) | A commit, for the user to push |
+The flow of one feature: `/ship FNN`, the user answers the brief, the session ships it. Then `/clear` (or a new session) and `/ship` of the next feature. One feature per session keeps the context small; everything a later session needs is in the files.
 
-The flow of one feature: `/design FNN`, the user answers the brief, `/clear`, `/build FNN`, the user reviews and pushes, `/done FNN`.
-
-**The question brief.** A deep dive sorts every open point into a business question, an unclear technical decision or a clear technical decision. The session decides the clear technical decisions alone and logs each in `decisions.md`. It asks the user only the first two kinds, in a brief with three parts: "Business questions", "Technical decisions I need your direction on", "Decisions I made myself". Each question has usually 2 to 4 options with a one-line trade-off and one "AI recommendation". When unsure whether a point is clear, it is asked. The user answers with option letters, "OK" for all recommendations, or their own answer. That answer counts as approval of the design and of the plan. The exact rules are in `.claude/skills/design/SKILL.md`.
+**The question brief.** A deep dive sorts every open point into a business question, an unclear technical decision or a clear technical decision. The session decides the clear technical decisions alone and logs each in `decisions.md`. It asks the user the first two kinds, in a brief with three parts: "Business questions", "Technical decisions I need your direction on", "Decisions I made myself". There is no limit on the number of questions: the user wants every choice that shapes what is built put to them. Each question has usually 2 to 4 options with a one-line trade-off and one recommendation. When unsure whether a point is clear, it is asked. The user answers with option letters, "OK" for all recommendations, or their own answer. That answer counts as approval of the design and of the plan.
 
 A written design is not an approved one. Do not start step 2 before the user has answered the question brief.
 
-**Anything a later session needs goes into a file, not only the chat.** The chat is cleared between `/design` and `/build`; a decision, a fact about the data or a blocker that lives only in the chat is lost.
+**The user may be on a phone.** Messages are short, with no wide tables; detail goes into the files.
+
+**Anything a later session needs goes into a file, not only the chat.** The chat is cleared between features; a decision, a fact about the data or a blocker that lives only in the chat is lost.
 
 Architecture tests in `backend/src/test/java/com/dsinnovators/ei/architecture/` check the rules that never change. A test disabled with a feature id in its reason is enabled by that feature, in the task that creates what it checks.
 
