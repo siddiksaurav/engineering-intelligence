@@ -18,6 +18,7 @@ const FEATURE: EvidenceItem = {
     { label: "Work item #10 on OpenProject", url: "https://community.openproject.org/wp/10" },
     { label: "Pull request #101 on GitHub", url: "https://github.com/opf/openproject/pull/101" },
   ],
+  tier: null,
   fields: {},
 };
 
@@ -29,6 +30,7 @@ const BUG: EvidenceItem = {
   title: "Login fails",
   sourceUrl: "https://community.openproject.org/wp/20",
   links: [{ label: "Work item #20 on OpenProject", url: "https://community.openproject.org/wp/20" }],
+  tier: null,
   fields: {},
 };
 
@@ -45,12 +47,36 @@ function comment(id: number, pullRequestNumber: number, title: string, date: str
       { label: "Comment on GitHub", url: `${pullRequestUrl}#discussion_r${id}` },
       { label: `Pull request #${pullRequestNumber} on GitHub`, url: pullRequestUrl },
     ],
+    tier: null,
     fields: {
       pullRequest: { number: pullRequestNumber, title, url: pullRequestUrl },
       comment: { url: `${pullRequestUrl}#discussion_r${id}`, path: "app/model.rb", isReply: false },
     },
   };
 }
+
+const TEST_CHANGE: EvidenceItem = {
+  id: 4,
+  type: "test_change",
+  date: "2026-10-05",
+  quarter: "2026-Q4",
+  title: "Add spec for login",
+  sourceUrl: "https://github.com/opf/openproject/pull/104",
+  links: [{ label: "Pull request #104 on GitHub", url: "https://github.com/opf/openproject/pull/104" }],
+  tier: { tier: "T2", reason: "Integration tests of the login flow" },
+  fields: {
+    pullRequest: { number: 104, title: "Add spec for login", url: "https://github.com/opf/openproject/pull/104" },
+  },
+};
+
+const DOCUMENTATION: EvidenceItem = {
+  ...TEST_CHANGE,
+  id: 5,
+  type: "documentation",
+  title: "Explain the API",
+  tier: null,
+  links: [{ label: "Pull request #105 on GitHub", url: "https://github.com/opf/openproject/pull/105" }],
+};
 
 function answering(items: EvidenceItem[]): DeveloperEvidence {
   return { person: PERSON, items };
@@ -85,6 +111,31 @@ describe("DeveloperPage", () => {
     expect(html).toContain('href="https://community.openproject.org/wp/10"');
     expect(html).toContain('href="https://github.com/opf/openproject/pull/101"');
     expect(html).toContain('href="https://github.com/opf/openproject/pull/103#discussion_r30"');
+  });
+
+  it("shows a Test change section with its tier", async () => {
+    vi.mocked(fetchEvidenceItems).mockResolvedValue({ status: "ok", data: answering([TEST_CHANGE]) });
+
+    const html = await render();
+
+    expect(html).toContain("Test change");
+    expect(html).toContain("Add spec for login");
+    expect(html).toContain("2026-10-05");
+    expect(html).toContain("T2");
+    expect(html).toContain("Integration tests of the login flow");
+    expect(html).toContain('href="https://github.com/opf/openproject/pull/104"');
+  });
+
+  it("shows a section for every new type, and no tier for an item without one", async () => {
+    vi.mocked(fetchEvidenceItems).mockResolvedValue({ status: "ok", data: answering([DOCUMENTATION]) });
+
+    const html = await render();
+
+    for (const title of ["Test change", "Refactor and performance", "Security", "Infra and release", "Documentation"]) {
+      expect(html).toContain(title);
+    }
+    expect(html).toContain("Explain the API");
+    expect(html).not.toMatch(/>T[123]</);
   });
 
   it("groups the review comments per pull request", async () => {

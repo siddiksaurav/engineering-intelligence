@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { fetchEvidenceItems, type EvidenceItem, type EvidenceType } from "@/lib/evidence";
+import { fetchEvidenceItems, type EvidenceItem } from "@/lib/evidence";
+import { EVIDENCE_SECTIONS } from "../evidenceSections";
 import developers from "../developers.module.css";
+import { PullRequestItemSection } from "./PullRequestItemSection";
 import { ReviewCommentSection } from "./ReviewCommentSection";
 import { WorkItemSection } from "./WorkItemSection";
 import styles from "./developer.module.css";
@@ -40,12 +42,18 @@ export default async function DeveloperPage({ params }: { params: Promise<{ pers
 }
 
 function Sections({ items }: { items: EvidenceItem[] }) {
-  const ofType = (type: EvidenceType) => items.filter((item) => item.type === type);
   return (
     <>
-      <WorkItemSection title="Feature work" accentClass={styles.featureWork} items={ofType("feature_work")} />
-      <WorkItemSection title="Bug fix" accentClass={styles.bugFix} items={ofType("bug_fix")} />
-      <ReviewCommentSection items={ofType("review_comment_written")} />
+      {EVIDENCE_SECTIONS.map((section) => {
+        const ofType = items.filter((item) => item.type === section.type);
+        const accentClass = styles[section.colorClass];
+        if (section.type === "review_comment_written") {
+          return <ReviewCommentSection key={section.type} items={ofType} />;
+        }
+        const Section =
+          section.type === "feature_work" || section.type === "bug_fix" ? WorkItemSection : PullRequestItemSection;
+        return <Section key={section.type} title={section.title} accentClass={accentClass} items={ofType} />;
+      })}
     </>
   );
 }

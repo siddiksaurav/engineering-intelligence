@@ -1,6 +1,7 @@
 package com.dsinnovators.ei.evidence;
 
 import com.dsinnovators.ei.common.CanonicalJson;
+import com.dsinnovators.ei.judgment.PullRequestDigests.CurrentDigest;
 import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.List;
@@ -15,6 +16,8 @@ import tools.jackson.databind.node.ObjectNode;
  *
  * @param projectId the OpenProject project; null for a Review comment written
  * @param fields the type-specific fields of design "Tables (migration V8)"
+ * @param digests the digests of the pull requests the item rests on (F06); its content hash covers
+ *     their ids, so a new digest gives a new item row (decision 140). Empty for the items of F05.
  */
 public record BuiltItem(
         String key,
@@ -24,13 +27,28 @@ public record BuiltItem(
         LocalDate occurredOn,
         String sourceUrl,
         JsonNode fields,
-        List<EvidenceItemSource> sources) {
+        List<EvidenceItemSource> sources,
+        List<CurrentDigest> digests) {
 
     private static final Comparator<EvidenceItemSource> BY_RECORD_THEN_ROLE =
             Comparator.comparing(EvidenceItemSource::rawRecordId).thenComparing(EvidenceItemSource::role);
 
     public BuiltItem {
         sources = List.copyOf(sources);
+        digests = List.copyOf(digests);
+    }
+
+    /** An item that rests on no digest. */
+    public BuiltItem(
+            String key,
+            EvidenceType type,
+            long personId,
+            Long projectId,
+            LocalDate occurredOn,
+            String sourceUrl,
+            JsonNode fields,
+            List<EvidenceItemSource> sources) {
+        this(key, type, personId, projectId, occurredOn, sourceUrl, fields, sources, List.of());
     }
 
     /** SHA-256 of the canonical JSON of everything in the item, the sources included. */
@@ -54,6 +72,10 @@ public record BuiltItem(
             sourceNode.put("rawRecordId", source.rawRecordId());
             sourceNode.put("role", source.role().name());
         });
+        if (!digests.isEmpty()) {
+            ArrayNode digestIds = content.putArray("digestJudgmentIds");
+            digests.stream().map(CurrentDigest::judgmentId).sorted().forEach(digestIds::add);
+        }
         return CanonicalJson.sha256Hex(content);
     }
 }

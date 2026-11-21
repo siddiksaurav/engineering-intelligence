@@ -1,9 +1,12 @@
 package com.dsinnovators.ei.api;
 
 import com.dsinnovators.ei.evidence.CurrentEvidenceItems;
+import com.dsinnovators.ei.evidence.EvidenceItem;
 import com.dsinnovators.ei.evidence.EvidenceType;
 import com.dsinnovators.ei.identity.PersonDirectory;
 import com.dsinnovators.ei.identity.PersonSummary;
+import com.dsinnovators.ei.judgment.CurrentItemTiers;
+import com.dsinnovators.ei.judgment.ItemTier;
 import java.util.List;
 import java.util.Map;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,10 +21,12 @@ class DeveloperController {
 
     private final PersonDirectory persons;
     private final CurrentEvidenceItems evidenceItems;
+    private final CurrentItemTiers itemTiers;
 
-    DeveloperController(PersonDirectory persons, CurrentEvidenceItems evidenceItems) {
+    DeveloperController(PersonDirectory persons, CurrentEvidenceItems evidenceItems, CurrentItemTiers itemTiers) {
         this.persons = persons;
         this.evidenceItems = evidenceItems;
+        this.itemTiers = itemTiers;
     }
 
     @GetMapping
@@ -38,8 +43,11 @@ class DeveloperController {
     @GetMapping("/{personId}/evidence-items")
     DeveloperEvidenceResponse evidenceItems(@PathVariable long personId) {
         PersonSummary person = persons.find(personId).orElseThrow(() -> new DeveloperNotFoundException(personId));
-        List<EvidenceItemResponse> items = evidenceItems.ofPerson(personId).stream()
-                .map(EvidenceItemResponse::of)
+        List<EvidenceItem> current = evidenceItems.ofPerson(personId);
+        Map<Long, ItemTier> tiers =
+                itemTiers.ofItems(current.stream().map(EvidenceItem::getId).toList());
+        List<EvidenceItemResponse> items = current.stream()
+                .map(item -> EvidenceItemResponse.of(item, tiers.get(item.getId())))
                 .toList();
         return new DeveloperEvidenceResponse(new PersonResponse(person.personId(), person.displayName()), items);
     }

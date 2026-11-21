@@ -1,0 +1,89 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "workType",
+    "modulesTouched",
+    "schemaOrDataMigration",
+    "newIntegration",
+    "natureOfChange",
+    "testsIncluded",
+    "testKind",
+    "workTypeTier",
+    "securityKind",
+    "infraKind",
+    "infraScope",
+    "dependencyChanges",
+    "documentationScope",
+    "reason",
+    "facts"
+  ],
+  "properties": {
+    "workType": {
+      "type": "string",
+      "enum": [
+        "feature",
+        "enhancement",
+        "fix",
+        "maintenance",
+        "research",
+        "technical_task",
+        "operational_support",
+        "refactor",
+        "test",
+        "docs",
+        "infra",
+        "performance",
+        "security"
+      ]
+    },
+    "modulesTouched": { "type": "array", "items": { "type": "string" } },
+    "schemaOrDataMigration": { "type": "boolean" },
+    "newIntegration": { "type": "boolean" },
+    "natureOfChange": { "type": "string" },
+    "testsIncluded": { "type": "boolean" },
+    "testKind": { "type": "string", "enum": ["none", "unit", "integration", "regression", "ci_gate"] },
+    "workTypeTier": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tier", "reason"],
+      "properties": {
+        "tier": { "type": "string", "enum": ["T1", "T2", "T3", "not_applicable"] },
+        "reason": { "type": "string" }
+      }
+    },
+    "securityKind": {
+      "type": "string",
+      "enum": ["vulnerability_fix", "dependency_upgrade", "access_control", "not_applicable"]
+    },
+    "infraKind": {
+      "type": "string",
+      "enum": [
+        "pipeline",
+        "container",
+        "infrastructure_code",
+        "monitoring",
+        "release_tag",
+        "release_branch",
+        "hotfix",
+        "not_applicable"
+      ]
+    },
+    "infraScope": { "type": "string", "enum": ["own_feature", "team", "not_applicable"] },
+    "dependencyChanges": { "type": "boolean" },
+    "documentationScope": { "type": "string", "enum": ["own_work", "team", "not_applicable"] },
+    "reason": { "type": "string" },
+    "facts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["fact", "filePath"],
+        "properties": {
+          "fact": { "type": "string" },
+          "filePath": { "type": "string" }
+        }
+      }
+    }
+  }
+}

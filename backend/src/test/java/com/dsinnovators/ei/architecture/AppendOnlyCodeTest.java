@@ -17,7 +17,6 @@ import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import org.hibernate.annotations.Immutable;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -45,7 +44,6 @@ class AppendOnlyCodeTest {
     }
 
     @Test
-    @Disabled("F06 creates Judgment; enable this test in F06")
     void theJudgmentEntityIsImmutable() {
         entityIsImmutable("Judgment");
     }
@@ -61,7 +59,6 @@ class AppendOnlyCodeTest {
     }
 
     @Test
-    @Disabled("F06 creates the repository of Judgment; enable this test in F06")
     void noRepositoryOfJudgmentCanUpdateOrDelete() {
         repositoryCannotUpdateOrDelete("Judgment");
     }

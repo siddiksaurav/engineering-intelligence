@@ -19,7 +19,9 @@ import org.springframework.stereotype.Component;
 
 /**
  * Builds all evidence items from the stored records by rule and writes what is new or changed
- * (F05 design, "Main flows"). An item whose records no longer give it is withdrawn (decision 123).
+ * (F05 design, "Main flows"), the items that rest on a pull request digest included (F06 design,
+ * "Main flows" 4), with the tier judgment of those that have a tier. An item whose records no
+ * longer give it is withdrawn (decision 123).
  * Running it again with the same records writes nothing. Run it after {@code identity-build}.
  */
 @Component
@@ -31,7 +33,10 @@ class EvidenceBuildJob implements Job {
     private final FeatureWorkBuilder featureWorkBuilder;
     private final BugFixBuilder bugFixBuilder;
     private final ReviewCommentBuilder reviewCommentBuilder;
+    private final TestChangeBuilder testChangeBuilder;
+    private final WorkTypeItemBuilder workTypeItemBuilder;
     private final EvidenceItemStore store;
+    private final ItemTiers itemTiers;
     private final Clock clock;
 
     EvidenceBuildJob(
@@ -39,13 +44,19 @@ class EvidenceBuildJob implements Job {
             FeatureWorkBuilder featureWorkBuilder,
             BugFixBuilder bugFixBuilder,
             ReviewCommentBuilder reviewCommentBuilder,
+            TestChangeBuilder testChangeBuilder,
+            WorkTypeItemBuilder workTypeItemBuilder,
             EvidenceItemStore store,
+            ItemTiers itemTiers,
             Clock clock) {
         this.linkedPullRequests = linkedPullRequests;
         this.featureWorkBuilder = featureWorkBuilder;
         this.bugFixBuilder = bugFixBuilder;
         this.reviewCommentBuilder = reviewCommentBuilder;
+        this.testChangeBuilder = testChangeBuilder;
+        this.workTypeItemBuilder = workTypeItemBuilder;
         this.store = store;
+        this.itemTiers = itemTiers;
         this.clock = clock;
     }
 
@@ -74,10 +85,13 @@ class EvidenceBuildJob implements Job {
         counts.add("pull_requests_read", read.pullRequestsRead());
         counts.add("bot_records_skipped", read.botPullRequestsSkipped());
         counts.add("records_without_author", read.pullRequestsWithoutAuthor());
+        counts.add("pull_requests_without_digest", read.pullRequestsWithoutDigest());
         List<BuildResult> results = List.of(
                 featureWorkBuilder.build(read.pullRequests(), quarter),
                 bugFixBuilder.build(read.pullRequests(), quarter),
-                reviewCommentBuilder.build(quarter));
+                reviewCommentBuilder.build(quarter),
+                testChangeBuilder.build(read.pullRequests(), quarter),
+                workTypeItemBuilder.build(read.pullRequests(), quarter));
         List<String> failedNames = new ArrayList<>();
         Set<String> keptKeys = new HashSet<>();
         for (BuildResult result : results) {
@@ -89,7 +103,7 @@ class EvidenceBuildJob implements Job {
             }
             for (BuiltItem item : result.items()) {
                 keptKeys.add(item.key());
-                write(item, failedNames, counts);
+                write(item, quarter, failedNames, counts);
             }
         }
         withdrawGone(keptKeys, failedNames, counts);
@@ -100,7 +114,7 @@ class EvidenceBuildJob implements Job {
         }
     }
 
-    private void write(BuiltItem item, List<String> failedNames, JobCounts counts) {
+    private void write(BuiltItem item, Quarter quarter, List<String> failedNames, JobCounts counts) {
         try {
             String outcome = store.write(item).name().toLowerCase(Locale.ROOT);
             counts.add("items_" + outcome, 1);
@@ -108,6 +122,22 @@ class EvidenceBuildJob implements Job {
         } catch (RuntimeException failure) {
             LOG.error("Evidence item {} could not be written", item.key(), failure);
             failedNames.add(item.key());
+            return;
+        }
+        if (ItemTiers.givesTier(item.type())) {
+            writeTier(item, quarter, failedNames, counts);
+        }
+    }
+
+    // Tried for an unchanged item too, so a tier that a failed run did not write is written by the next.
+    private void writeTier(BuiltItem item, Quarter quarter, List<String> failedNames, JobCounts counts) {
+        try {
+            if (itemTiers.write(item, quarter)) {
+                counts.add("item_tiers_written", 1);
+            }
+        } catch (RuntimeException failure) {
+            LOG.error("The tier of evidence item {} could not be written", item.key(), failure);
+            failedNames.add(item.key() + " (tier)");
         }
     }
 

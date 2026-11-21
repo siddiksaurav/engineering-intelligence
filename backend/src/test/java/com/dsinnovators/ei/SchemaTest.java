@@ -42,6 +42,7 @@ class SchemaTest extends DatabaseTest {
                         "evidence_item_source",
                         "identity_proposal",
                         "job_run",
+                        "judgment",
                         "person",
                         "person_identity",
                         "project",

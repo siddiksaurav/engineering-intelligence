@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.dsinnovators.ei.DatabaseTest;
 import java.util.List;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -26,7 +25,6 @@ class AppendOnlyTablesTest extends DatabaseTest {
     }
 
     @Test
-    @Disabled("F06 creates judgment; enable this test in F06")
     void judgmentHasATriggerBeforeEveryUpdateAndDelete() {
         hasTriggerBeforeEveryUpdateAndDelete("judgment");
     }

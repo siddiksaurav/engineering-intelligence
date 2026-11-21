@@ -7,6 +7,7 @@ import java.util.Locale;
 /** What a source record is to the item it was used for. The database holds the lower-case name. */
 public enum SourceRole {
     PULL_REQUEST,
+    PULL_REQUEST_DIFF,
     WORK_PACKAGE,
     REVIEW_COMMENT;
 

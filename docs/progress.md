@@ -2,6 +2,25 @@
 
 One entry per working session, newest at the top. Each entry says what was done, what is next and what is blocked. Read the top entry first.
 
+## 22 Nov 2026: F06 JudgmentModel, PR digest and the digest-based builders shipped
+
+**Done**
+- `/ship F06`: question brief answered (Q1 own answer: free keys, free alternatives, minimal processing; after a follow-up F1 "all PRs of the two weeks", F2 and Q2 to Q11 as recommended): decisions 144 to 156; 127 to 143, 157, 158 by the session, 159 to 162 from the build and review. 14 tasks in 4 batches and 5 review fixes on `feature/f06`.
+- Migrations V9 (`judgment`, new evidence types, settings) and V10; package `judgment` (`JudgmentModel`, OpenAI-compatible client paced by rate-limit headers, provider chain Groq then Gemini, versioned prompt `pull-request-digest/v1`, diff filter and budget, judgment store, job `pull-request-digest`); `evidence` builds Test change, Refactor and performance, Security, Infra and release, Documentation, and Feature work and Bug fix of PRs without a usable work item, with `item_tier` judgments; API and web show the new types with their tier.
+- Real data without a key (runs 10, 11): the digest job refuses to start without a key; `evidence-build` leaves all 476 F05 items unchanged.
+- Pull request: see the F06 row of the status table and `notes.md`.
+
+**Checks still open (waiting for the user)**
+- Put `LLM_PROVIDER_1_API_KEY` (Groq) and, for the fallback, `LLM_PROVIDER_2_API_KEY` and `LLM_PROVIDER_2_MODEL` (Gemini) in `.env` (`cp .env.example .env` first; also set `POSTGRES_PASSWORD`). Then the 50-PR measurement, the run over all 172 human PRs, `evidence-build`, and the SQL checks: `docs/features/F06-pr-digest/notes.md`, "Verification".
+- From F05: the 20 Feature work groups. From F04: the 19 identity proposals.
+
+**Next**
+- `/clear`, then `/ship F07` (it can be built while the digests run; its real-data check needs them).
+
+**Blocked or needed from the user**
+- The LLM keys above. Several keys of one provider are not used (Groq's policy, decision 144).
+- The scope of F09 (the July run) is open after decision 145.
+
 ## 22 Nov 2026: F05 Evidence builders and the evidence list page shipped
 
 **Done**

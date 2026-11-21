@@ -5,6 +5,7 @@ import com.dsinnovators.ei.source.openproject.StoredWorkPackages;
 import com.dsinnovators.ei.source.openproject.WorkPackageFacts;
 import java.time.Instant;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -25,6 +26,11 @@ final class WorkItemLookup {
 
     Optional<WorkPackageFacts> facts(long number) {
         return facts.computeIfAbsent(number, storedWorkPackages::facts);
+    }
+
+    /** The facts of the work items with these numbers that are stored, in the order given. */
+    List<WorkPackageFacts> linkedFacts(List<Long> numbers) {
+        return numbers.stream().map(this::facts).flatMap(Optional::stream).toList();
     }
 
     /** The work item itself when it is a Feature, else its nearest Feature ancestor. */

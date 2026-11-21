@@ -3,7 +3,6 @@ package com.dsinnovators.ei.architecture;
 import static com.tngtech.archunit.core.domain.JavaClass.Predicates.simpleName;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -32,7 +31,6 @@ class JudgmentModelBoundaryTest {
     }
 
     @Test
-    @Disabled("F06 creates JudgmentModel; enable this test in F06")
     void noClassOutsideTheJudgmentPackageUsesJudgmentModel() {
         noClasses()
                 .that()
@@ -44,7 +42,6 @@ class JudgmentModelBoundaryTest {
     }
 
     @Test
-    @Disabled("F06 creates JudgmentModel and its first implementation; enable this test in F06")
     void insideTheJudgmentPackageOnlyAJudgmentModelUsesAModelClient() {
         noClasses()
                 .that()
