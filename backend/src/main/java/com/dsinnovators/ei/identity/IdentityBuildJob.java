@@ -87,10 +87,11 @@ class IdentityBuildJob implements Job {
             }
             try {
                 long personId = ensurePerson(account, counts);
+                List<Candidate> found = candidates.of(storedAccounts.pullRequestsOf(account.databaseId()));
                 accountsByPerson.put(personId, account);
-                candidatesByPerson.put(personId, candidates.of(storedAccounts.pullRequestsOf(account.databaseId())));
+                candidatesByPerson.put(personId, found);
             } catch (RuntimeException failure) {
-                fail(account, failure, failedLogins, counts);
+                fail(account, "its person and candidates could not be built", failure, failedLogins, counts);
             }
         }
         Set<PersonUser> confirmed = Set.copyOf(proposals.pairsIn(IdentityProposal.CONFIRMED));
@@ -100,7 +101,7 @@ class IdentityBuildJob implements Job {
             try {
                 writeProposal(person.getKey(), winners, confirmed, counts);
             } catch (RuntimeException failure) {
-                fail(person.getValue(), failure, failedLogins, counts);
+                fail(person.getValue(), "its proposal could not be written", failure, failedLogins, counts);
             }
         }
         if (!failedLogins.isEmpty()) {
@@ -140,8 +141,12 @@ class IdentityBuildJob implements Job {
     }
 
     private static void fail(
-            GitHubAccount account, RuntimeException failure, List<String> failedLogins, JobCounts counts) {
-        LOG.error("Account {} could not be turned into a person", account.login(), failure);
+            GitHubAccount account,
+            String failedStep,
+            RuntimeException failure,
+            List<String> failedLogins,
+            JobCounts counts) {
+        LOG.error("Account {} failed: {}", account.login(), failedStep, failure);
         failedLogins.add(account.login());
         counts.add("accounts_failed", 1);
     }
