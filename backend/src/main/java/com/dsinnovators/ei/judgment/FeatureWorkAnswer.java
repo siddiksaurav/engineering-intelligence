@@ -106,7 +106,6 @@ record FeatureWorkAnswer(
                 .put("quote", fact.quote())
                 .put("source", fact.source()));
         value.put("reason", reason);
-        value.put("confidence", confidence);
         value.put("judgedOnPartialInput", judgedOnPartialInput);
         ArrayNode leftOut = value.putArray("leftOutPullRequests");
         leftOutPullRequests.forEach(leftOut::add);

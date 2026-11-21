@@ -120,7 +120,7 @@ class FeatureWorkJudgeTest extends DatabaseTest {
         assertEquals(64, judgment.getInputHash().length());
         assertNull(judgment.getBasedOnJudgmentId());
         assertEquals("feature", judgment.getValue().path("workType").asString());
-        assertEquals(0.8, judgment.getValue().path("confidence").asDouble());
+        assertTrue(judgment.getValue().path("confidence").isMissingNode());
         assertFalse(judgment.getValue().path("judgedOnPartialInput").asBoolean());
         assertEquals(
                 List.of(

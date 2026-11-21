@@ -191,7 +191,7 @@ class FeatureWorkAnswerTest {
         assertEquals(
                 "Two modules and one schema change make this Medium.",
                 value.path("reason").asString());
-        assertEquals(0.8, value.path("confidence").asDouble());
+        assertTrue(value.path("confidence").isMissingNode());
         assertTrue(value.path("judgedOnPartialInput").asBoolean());
         assertEquals(
                 "opf/openproject#9", value.path("leftOutPullRequests").get(0).asString());

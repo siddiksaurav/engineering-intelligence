@@ -104,7 +104,7 @@ The setting's value is `{"question": {"substantive": true, "tier": "T1"}, ..., "
 ### Judgments written
 
 `feature_work_complexity`, subject the Feature work item row:
-- `value`: the model's answer (`workType`, `complexity`, `rubric`, `facts` with quote and source, `reason`, `confidence`) plus `judgedOnPartialInput` and `leftOutPullRequests` set by the system.
+- `value`: the model's answer (`workType`, `complexity`, `rubric`, `facts` with quote and source, `reason`; the confidence is only in the column) plus `judgedOnPartialInput` and `leftOutPullRequests` set by the system.
 - `tier`: from `evidence.complexity_tiers` (quarter of the run day).
 - `reason`: the model's reason. `facts`: one per model fact, text `<fact> ("<quote>")`, link made by the system (decision 136): the work item on OpenProject or the PR on GitHub named by the fact's source; an unknown source gets the item's source link.
 - `confidence`: the model's value, 0 to 1 (decision 173).
