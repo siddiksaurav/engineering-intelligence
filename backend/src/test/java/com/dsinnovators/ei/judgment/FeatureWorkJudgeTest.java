@@ -135,6 +135,22 @@ class FeatureWorkJudgeTest extends DatabaseTest {
     }
 
     @Test
+    void storesTheModelsConfidenceInItsColumn() {
+        FeatureWorkToJudge item = stored.item(100, List.of(), 1);
+        model.answeringByDefault(FakeJudgmentModel.aFeatureWork("medium"));
+
+        judge.judge(item, QUARTER, jobCounts);
+
+        assertEquals(0.8, currentJudgmentOf(item).getConfidence());
+        assertEquals(
+                0,
+                new java.math.BigDecimal("0.8")
+                        .compareTo(jdbc.queryForObject(
+                                "select confidence from judgment where kind = 'feature_work_complexity'",
+                                java.math.BigDecimal.class)));
+    }
+
+    @Test
     void countsTheWrittenJudgmentAndTheModelUse() {
         FeatureWorkToJudge item = stored.item(100, List.of(), 1);
         model.answeringByDefault(FakeJudgmentModel.aFeatureWork("low"));

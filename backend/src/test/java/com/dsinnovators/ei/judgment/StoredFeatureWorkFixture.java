@@ -68,6 +68,7 @@ final class StoredFeatureWorkFixture {
                 "The title names a crash that is now handled.",
                 List.of(new JudgmentFact(
                         "Adds a regression spec", "https://github.com/" + REPOSITORY + "/pull/" + pullRequestNumber)),
+                null,
                 JudgedBy.MODEL,
                 FakeJudgmentModel.MODEL,
                 "pull-request-digest/v1",

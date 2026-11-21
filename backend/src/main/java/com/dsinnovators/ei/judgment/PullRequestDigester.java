@@ -91,6 +91,7 @@ class PullRequestDigester {
                 null,
                 digest.reason(),
                 DigestFacts.of(digest.facts(), facts.url(), diff),
+                null,
                 JudgedBy.MODEL,
                 answered.model(),
                 PROMPT_VERSION,

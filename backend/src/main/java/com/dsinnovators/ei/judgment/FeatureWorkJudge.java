@@ -103,6 +103,7 @@ class FeatureWorkJudge {
                 tierOf(answer.complexity(), quarter),
                 answer.reason(),
                 factsOf(answer, input),
+                answer.confidence(),
                 JudgedBy.MODEL,
                 answered.model(),
                 PROMPT_VERSION,

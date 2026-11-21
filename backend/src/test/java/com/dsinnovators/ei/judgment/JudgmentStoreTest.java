@@ -68,6 +68,16 @@ class JudgmentStoreTest extends DatabaseTest {
     }
 
     @Test
+    void refusesAConfidenceOutsideZeroToOne() {
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> store.write(aDigestOf(pullRequest).confidence(1.5).build()));
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> store.write(aDigestOf(pullRequest).confidence(-0.1).build()));
+    }
+
+    @Test
     void refusesATierOutsideT1ToT4() {
         assertThrows(
                 IllegalArgumentException.class,
