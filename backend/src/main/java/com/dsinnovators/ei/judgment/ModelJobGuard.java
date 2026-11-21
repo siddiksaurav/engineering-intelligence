@@ -42,4 +42,19 @@ class ModelJobGuard {
         }
         return run;
     }
+
+    /**
+     * Runs the work of a model job while it holds the guard, and releases the guard when the work ends
+     * or fails.
+     *
+     * @throws IllegalStateException naming both jobs when another model job holds the guard
+     */
+    void runGuarded(String jobName, Runnable work) {
+        Run hold = enter(jobName);
+        try {
+            work.run();
+        } finally {
+            hold.close();
+        }
+    }
 }

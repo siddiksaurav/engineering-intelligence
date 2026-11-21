@@ -9,8 +9,6 @@ import java.time.Clock;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 /**
@@ -23,7 +21,8 @@ import org.springframework.stereotype.Component;
 @Component
 class FeatureWorkJudgmentJob implements Job {
 
-    private static final Logger LOG = LoggerFactory.getLogger(FeatureWorkJudgmentJob.class);
+    private static final JudgingLoop<FeatureWorkToJudge> LOOP =
+            new JudgingLoop<>("items_left_for_later", "items", item -> 1L, FeatureWorkToJudge::key);
 
     private final FeatureWorkItems featureWorkItems;
     private final FeatureWorkJudge judge;
@@ -51,10 +50,7 @@ class FeatureWorkJudgmentJob implements Job {
 
     @Override
     public void checkArguments(JobArguments arguments) {
-        if (!arguments.names().isEmpty()) {
-            throw new IllegalArgumentException(
-                    "The job " + name() + " takes no arguments, was given " + arguments.names());
-        }
+        arguments.requireNone(name());
     }
 
     /**
@@ -64,12 +60,7 @@ class FeatureWorkJudgmentJob implements Job {
      */
     @Override
     public void run(JobArguments arguments, JobCounts counts) {
-        ModelJobGuard.Run hold = modelJobGuard.enter(name());
-        try {
-            runGuarded(counts);
-        } finally {
-            hold.close();
-        }
+        modelJobGuard.runGuarded(name(), () -> runGuarded(counts));
     }
 
     private void runGuarded(JobCounts counts) {
@@ -79,7 +70,7 @@ class FeatureWorkJudgmentJob implements Job {
         counts.add("items_read", items.size());
         List<String> failed = new ArrayList<>();
         try {
-            judgeAll(items, quarter, counts, failed);
+            failed.addAll(LOOP.run(items, item -> judge.judge(item, quarter, counts), counts));
         } finally {
             providerChain.reportUseTo(counts);
         }
@@ -87,22 +78,6 @@ class FeatureWorkJudgmentJob implements Job {
             counts.add("items_failed", failed.size());
             throw new JudgmentJobFailedException(
                     failed.size() + " of " + items.size() + " Feature work items failed: " + FailedItems.named(failed));
-        }
-    }
-
-    private void judgeAll(List<FeatureWorkToJudge> items, Quarter quarter, JobCounts counts, List<String> failed) {
-        for (int index = 0; index < items.size(); index++) {
-            FeatureWorkToJudge item = items.get(index);
-            try {
-                judge.judge(item, quarter, counts);
-            } catch (ModelLimitReachedException limit) {
-                LOG.warn("{}; the next run goes on with the items not yet judged", limit.getMessage());
-                counts.add("items_left_for_later", items.size() - index);
-                return;
-            } catch (RuntimeException failure) {
-                LOG.error("{} could not be judged", item.key(), failure);
-                failed.add(item.key());
-            }
         }
     }
 }

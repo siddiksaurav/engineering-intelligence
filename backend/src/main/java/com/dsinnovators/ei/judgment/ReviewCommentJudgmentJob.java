@@ -31,6 +31,8 @@ import org.springframework.stereotype.Component;
 class ReviewCommentJudgmentJob implements Job {
 
     private static final Logger LOG = LoggerFactory.getLogger(ReviewCommentJudgmentJob.class);
+    private static final JudgingLoop<ReviewCommentChunks.Chunk> LOOP = new JudgingLoop<>(
+            "items_left_for_later", "comments", chunk -> chunk.comments().size(), ReviewCommentChunks.Chunk::describe);
 
     private final ReviewCommentItems reviewCommentItems;
     private final StoredReviewComments storedReviewComments;
@@ -67,10 +69,7 @@ class ReviewCommentJudgmentJob implements Job {
 
     @Override
     public void checkArguments(JobArguments arguments) {
-        if (!arguments.names().isEmpty()) {
-            throw new IllegalArgumentException(
-                    "The job " + name() + " takes no arguments, was given " + arguments.names());
-        }
+        arguments.requireNone(name());
     }
 
     /**
@@ -81,12 +80,7 @@ class ReviewCommentJudgmentJob implements Job {
      */
     @Override
     public void run(JobArguments arguments, JobCounts counts) {
-        ModelJobGuard.Run hold = modelJobGuard.enter(name());
-        try {
-            runGuarded(counts);
-        } finally {
-            hold.close();
-        }
+        modelJobGuard.runGuarded(name(), () -> runGuarded(counts));
     }
 
     private void runGuarded(JobCounts counts) {
@@ -102,7 +96,7 @@ class ReviewCommentJudgmentJob implements Job {
         List<ReviewCommentChunks.Chunk> chunks = chunksOf(itemsByPullRequest, failed);
         counts.add("chunks", chunks.size());
         try {
-            judgeAll(chunks, quarter, counts, failed);
+            failed.addAll(LOOP.run(chunks, chunk -> judge.judge(chunk, quarter, counts), counts));
         } finally {
             providerChain.reportUseTo(counts);
         }
@@ -149,28 +143,5 @@ class ReviewCommentJudgmentJob implements Job {
                 comments,
                 limits,
                 ReviewCommentJudge.PROMPT_VERSION);
-    }
-
-    private void judgeAll(
-            List<ReviewCommentChunks.Chunk> chunks, Quarter quarter, JobCounts counts, List<String> failed) {
-        for (int index = 0; index < chunks.size(); index++) {
-            ReviewCommentChunks.Chunk chunk = chunks.get(index);
-            try {
-                judge.judge(chunk, quarter, counts);
-            } catch (ModelLimitReachedException limit) {
-                LOG.warn("{}; the next run goes on with the comments not yet judged", limit.getMessage());
-                counts.add("items_left_for_later", commentsFrom(chunks, index));
-                return;
-            } catch (RuntimeException failure) {
-                LOG.error("The review comments of {} could not be judged", chunk.describe(), failure);
-                failed.add(chunk.describe());
-            }
-        }
-    }
-
-    private static long commentsFrom(List<ReviewCommentChunks.Chunk> chunks, int index) {
-        return chunks.subList(index, chunks.size()).stream()
-                .mapToLong(chunk -> chunk.comments().size())
-                .sum();
     }
 }

@@ -44,4 +44,17 @@ class ModelJobGuardTest {
             second.close();
         }
     }
+
+    @Test
+    void runsTheWorkHoldingTheGuardAndReleasesItWhenTheWorkFails() {
+        IllegalStateException failure = assertThrows(
+                IllegalStateException.class,
+                () -> guard.runGuarded("pull-request-digest", () -> {
+                    assertThrows(IllegalStateException.class, () -> guard.enter("feature-work-judgment"));
+                    throw new IllegalStateException("work failed");
+                }));
+
+        assertTrue(failure.getMessage().contains("work failed"));
+        assertDoesNotThrow(() -> guard.enter("feature-work-judgment").close());
+    }
 }

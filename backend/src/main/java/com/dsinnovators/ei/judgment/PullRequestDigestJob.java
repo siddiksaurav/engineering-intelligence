@@ -18,8 +18,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 /**
@@ -32,7 +30,8 @@ import org.springframework.stereotype.Component;
 @Component
 class PullRequestDigestJob implements Job {
 
-    private static final Logger LOG = LoggerFactory.getLogger(PullRequestDigestJob.class);
+    private static final JudgingLoop<RawRecord> LOOP = new JudgingLoop<>(
+            "pull_requests_left_for_later", "pull requests", pullRequest -> 1L, RawRecord::getExternalId);
     private static final String PULL_REQUEST_NUMBERS = "pullRequestNumbers";
 
     private final StoredPullRequests storedPullRequests;
@@ -74,12 +73,7 @@ class PullRequestDigestJob implements Job {
      */
     @Override
     public void run(JobArguments arguments, JobCounts counts) {
-        ModelJobGuard.Run hold = modelJobGuard.enter(name());
-        try {
-            runGuarded(arguments, counts);
-        } finally {
-            hold.close();
-        }
+        modelJobGuard.runGuarded(name(), () -> runGuarded(arguments, counts));
     }
 
     private void runGuarded(JobArguments arguments, JobCounts counts) {
@@ -96,7 +90,7 @@ class PullRequestDigestJob implements Job {
         List<String> failed = new ArrayList<>(notStored);
         List<RawRecord> humans = humansOf(selected, quarter, counts);
         try {
-            digestAll(humans, quarter, counts, failed);
+            failed.addAll(LOOP.run(humans, pullRequest -> digester.digest(pullRequest, quarter, counts), counts));
         } finally {
             providerChain.reportUseTo(counts);
         }
@@ -104,22 +98,6 @@ class PullRequestDigestJob implements Job {
             counts.add("pull_requests_failed", failed.size());
             throw new PullRequestDigestFailedException(failed.size() + " of " + (humans.size() + notStored.size())
                     + " pull requests failed: " + FailedItems.named(failed));
-        }
-    }
-
-    private void digestAll(List<RawRecord> humans, Quarter quarter, JobCounts counts, List<String> failed) {
-        for (int index = 0; index < humans.size(); index++) {
-            RawRecord pullRequest = humans.get(index);
-            try {
-                digester.digest(pullRequest, quarter, counts);
-            } catch (ModelLimitReachedException limit) {
-                LOG.warn("{}; the next run goes on with the pull requests not yet judged", limit.getMessage());
-                counts.add("pull_requests_left_for_later", humans.size() - index);
-                return;
-            } catch (RuntimeException failure) {
-                LOG.error("{} could not be digested", pullRequest.getExternalId(), failure);
-                failed.add(pullRequest.getExternalId());
-            }
         }
     }
 
