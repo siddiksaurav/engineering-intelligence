@@ -120,6 +120,9 @@ curl -s localhost:8080/api/jobs/runs/1                       see a run: status, 
 curl -s -X POST localhost:8080/api/jobs/identity-build/runs \
   -H 'Content-Type: application/json' -d '{}'
                                                              make persons of the stored GitHub accounts and propose their OpenProject users (after openproject-import)
+curl -s -X POST localhost:8080/api/jobs/pull-request-digest/runs \
+  -H 'Content-Type: application/json' -d '{}'
+                                                             Stage 1 digest of every human PR (after github-import; needs LLM_PROVIDER_1_API_KEY in .env); add "pullRequestNumbers" for some PRs only
 curl -s -X POST localhost:8080/api/jobs/evidence-build/runs \
   -H 'Content-Type: application/json' -d '{}'
                                                              build the evidence items from the stored records (after identity-build)
@@ -132,6 +135,7 @@ docker compose exec postgres psql -U ei -d ei -c "select reject_identity_proposa
 - Backend tests need Docker running. They start their own PostgreSQL container and never use the Compose database.
 - Jobs are started only through `POST /api/jobs/{name}/runs`, from the machine the backend runs on. Every run is recorded in `job_run`. A second start of a running job answers `409`. `github-import` takes `repository` and either `mergedFrom` and `mergedTo` or `pullRequestNumbers` (comma-separated).
 - `github-import` needs a read-only `GITHUB_TOKEN` in `.env` (a fine-grained token with public repository access). Two weeks take about six minutes.
+- `pull-request-digest` calls a free LLM through `LLM_PROVIDER_1_*` (Groq) and, when that one is at its limit, `LLM_PROVIDER_2_*` (Gemini) from `.env` (decisions 144, 146, 158). With every provider at its limit the run stops, counts what is left and succeeds; run it again later. Never several keys of one provider.
 - Tests run with the profile `test` and never read `.env`. They never call GitHub; `GitHubApiFixture` gives a client on a mock server.
 - Health: `curl -s localhost:8080/actuator/health`. The web page at `localhost:3000` shows "backend up" or "backend down".
 - Evidence list: `localhost:3000/developers` (after `evidence-build`).

@@ -401,7 +401,7 @@ Update this table when a feature changes state. States: not started, in design, 
 | F03 | OpenProject connector | done | `docs/features/F03-openproject-connector/design.md` | `docs/features/F03-openproject-connector/plan.md` |
 | F04 | Identity | done | `docs/features/F04-identity/design.md` | `docs/features/F04-identity/plan.md` |
 | F05 | Evidence builders without AI, list page | done | `docs/features/F05-evidence-builders/design.md` | `docs/features/F05-evidence-builders/plan.md` |
-| F06 | `JudgmentModel`, PR digest, AI-dependent builders | in progress | `docs/features/F06-pr-digest/design.md` | `docs/features/F06-pr-digest/plan.md` |
+| F06 | `JudgmentModel`, PR digest, AI-dependent builders | done | `docs/features/F06-pr-digest/design.md` | `docs/features/F06-pr-digest/plan.md` |
 | F07 | Feature work and review comment judgment | not started | | |
 | F08 | Blind check and item page | not started | | |
 | F09 | Full-window run (one month) | not started | | |

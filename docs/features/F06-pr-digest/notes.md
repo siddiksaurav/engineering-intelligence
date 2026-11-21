@@ -20,3 +20,40 @@ Code that nothing calls yet; the `pull-request-digest` job (task 8) uses it.
 - Task 12: `EvidenceItemStore` is unchanged: `ItemTiers` finds the new row through `EvidenceItemRepository.findCurrentByKey`. The job tries the tier of every built Test change, Refactor, Security and Infra item, changed or not, and `ItemTiers` writes only when the current row has no `item_tier` judgment, so a tier a failed run did not write is written by the next run and an unchanged item gets none. The input hash covers the kind, the digest id, the item row id and the item's content hash (the row id is in it so an item that returns to an earlier content still gets its tier). The tier judgment is `judged_by` model with the digest's model and prompt version: no call is made. A tier that cannot be written fails the run naming `<key> (tier)`; the item stays. New counts: `pull_requests_without_digest`, `item_tiers_written`.
 - Task 13: the plan listed no new class, but the `api` package needed a public reader of the current tier: `judgment.CurrentItemTiers` (one query for all item rows of a developer, new `JudgmentRepository.findCurrentOfEvidenceItems`) and the record `ItemTier(tier, reason)`. `EvidenceItemResponse.tier` is `{tier, reason}` or null; `TypeCounts` has the five new counts (`testChange`, `refactorPerformance`, `security`, `infraRelease`, `documentation`).
 - Task 14: the web has `app/developers/evidenceSections.ts` (the order, titles and colours of the eight types, used by the count badges and the page) and the section component `PullRequestItemSection` (title, tier badge T1/T2/T3, reason, links; no badge when the item has no tier, as Documentation never has one). Colours: Test change cyan, Refactor and performance amber, Security red, Infra and release pink, Documentation slate; tier badges are three blues. A Feature work or Bug fix item of a PR without a work item (`fields.noWorkItem`, no `feature`/`bug`) made `EvidenceItemResponse` throw; it now takes the title of its first pull request and shows only pull request links (test `featureWorkAndBugFixWithoutAWorkItemShowTheirPullRequest`, committed with task 14 because it was found there).
+
+## Review (one round, 22 Nov 2026)
+
+Blocking, fixed: pacing by the rate-limit headers was missing (`f76a578`; new property `ei.judgment.min-remaining-tokens`, default 6000). Fixed at once although listed as follow-ups, because they change numbers or hashes and no digest was stored yet: a fix PR linking a Bug and a standalone item got a second Bug fix (`5ff89d3`, decision 159); the T1 of test kind `none` was in code (`c6286e7`, migration V10 because V9 was already applied to the development database, decision 160); an unreadable answer was not retried (`09e900e`); two spellings of the judgment kind in the hashes (`40a45d9`).
+
+## Follow-ups
+
+- `OpenAiCompatibleClient`: `temperature` is not sent (design "Main flows" 2 names it). No number depends on it; add it with a property if the 50-PR run shows unstable answers.
+- `WorkTypeItemBuilder.java:121`: a Documentation item's `files` lists every changed file, code included; spec 6.5 means the documentation files.
+- `WorkTypeItemBuilder`: a Bug fix with no work item can hold `work_package` sources (a standalone link) while its fields say `noWorkItem: true` and list none.
+- `ProviderLimitReachedException.providerName()` is used only by a test.
+- `JudgmentModelBoundaryTest`: its client-package list does not include Spring's `RestClient` (decision 156), so the "only a JudgmentModel uses a model client" rule checks nothing for this client. A rule on `RestClient` inside `judgment` would.
+- `PullRequestDigests.CurrentDigest` exposes the `Judgment` entity to `evidence`; expose only the fields `ItemTiers` copies.
+- `DigestInput` names a file twice under "Patches not sent" when it is both excluded and has no patch.
+- `PullRequestDigester.bodyOf` reads the payload directly instead of through `PullRequestFacts`.
+- `JudgmentStore` javadoc cites decision 127 for the skip rule; it is 157.
+- Web: the "no work item" mark of Feature work and Bug fix items is not shown.
+- The diff record's `truncated` flag is not read (false on all 215 stored diffs, 22 Nov 2026); a truncated diff should set `judgedOnPartialCode`.
+- A malformed `x-ratelimit-*` header is not tested; the client then does not pace.
+
+## Verification (22 Nov 2026)
+
+- Backend: full `./mvnw verify` green after the review fixes: 713 tests, 0 failures, 2 skipped (F10, F11). Web: format, lint, typecheck, 50 tests and build green.
+- Real data, no model key (`.env` does not exist on this machine): run 10 `pull-request-digest` failed at its start with "No model provider has a key. Set LLM_PROVIDER_1_API_KEY in .env" (as designed). Run 11 `evidence-build`: 476 items unchanged (35 Feature work, 62 Bug fix, 379 Review comment written), 0 written, 0 failed, `pull_requests_without_digest` 172: F05's item hashes are unchanged by F06.
+- "Done when" 1 (every judgment has reason, link, model, prompt version): store tests and architecture tests green; SQL on real data waiting for the user's key.
+- "Done when" 2 (second run makes no call): `PullRequestDigestJobTest.aSecondRunWithTheSameInputMakesNoCall` green; real rerun waiting for the key.
+- "Done when" 3 (50-PR measurement): waiting for the user: needs `LLM_PROVIDER_1_API_KEY` (Groq) and optionally `LLM_PROVIDER_2_API_KEY` and `LLM_PROVIDER_2_MODEL` (Gemini) in `.env`. Then, with the backend running: `curl -s -X POST localhost:8080/api/jobs/pull-request-digest/runs -H 'Content-Type: application/json' -d '{"pullRequestNumbers":"<50 numbers>"}'`; the 50 numbers are chosen by the next session to cover small, median and large diffs.
+- "Done when" 4 (partial code marked): `DigestInputTest` green; real count waiting for the key.
+- Goal line (every human PR has a digest; tiered items exist): waiting for the key; then `evidence-build` and the SQL of design "How it will be tested" 5.
+
+## What a later feature should know
+
+- Order of jobs: `github-import`, `openproject-import`, `identity-build`, `pull-request-digest`, `evidence-build`. `pull-request-digest` needs a provider key in `.env`; with all providers at their limit it stops, counts `pull_requests_left_for_later` and succeeds; run it again later.
+- F07 reads digests through `judgment.PullRequestDigests.currentOf(prExternalId)` and calls the model through `JudgmentModel` (the `ProviderChain` bean). Add a prompt as a new versioned file under `resources/judgment/prompts/` and pin its hash in `PromptLibraryTest`; add new kinds to the `judgment.kind` check in a new migration.
+- The input hash does not include the model (decision 157): a digest is not redone when another provider answers. To judge again, add a prompt version.
+- Tiers of items are `item_tier` judgments on the item row; `judgment.CurrentItemTiers.ofItems(ids)` reads them in one query.
+- `ei.judgment.max-diff-characters` (12,000) and `min-remaining-tokens` (6,000) are sized for Groq's free 8,000 tokens per minute.
