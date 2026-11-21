@@ -1,5 +1,6 @@
 package com.dsinnovators.ei.evidence;
 
+import com.dsinnovators.ei.common.Quarter;
 import com.dsinnovators.ei.source.github.PullRequestFacts;
 import com.dsinnovators.ei.source.openproject.StoredWorkPackages;
 import com.dsinnovators.ei.source.openproject.WorkPackageFacts;
@@ -21,19 +22,21 @@ import tools.jackson.databind.node.ObjectNode;
 @Component
 class BugFixBuilder {
 
-    private final LinkedPullRequests linkedPullRequests;
     private final StoredWorkPackages storedWorkPackages;
 
-    BugFixBuilder(LinkedPullRequests linkedPullRequests, StoredWorkPackages storedWorkPackages) {
-        this.linkedPullRequests = linkedPullRequests;
+    BugFixBuilder(StoredWorkPackages storedWorkPackages) {
         this.storedWorkPackages = storedWorkPackages;
     }
 
-    BuildResult build() {
-        WorkItemLookup workItems = new WorkItemLookup(storedWorkPackages);
+    /**
+     * @param linkedPullRequests what {@link LinkedPullRequests#read} returned for this run
+     * @param doneStatusesQuarter the quarter whose done statuses apply (decision 125)
+     */
+    BuildResult build(List<LinkedPullRequest> linkedPullRequests, Quarter doneStatusesQuarter) {
+        WorkItemLookup workItems = new WorkItemLookup(storedWorkPackages, doneStatusesQuarter);
         List<BuiltItem> items = new ArrayList<>();
         List<String> failures = new ArrayList<>();
-        fixes(workItems).forEach((group, fix) -> {
+        fixes(linkedPullRequests, workItems).forEach((group, fix) -> {
             Optional<Instant> doneAt = workItems.firstDoneAt(group.bug());
             if (doneAt.isEmpty()) {
                 return;
@@ -48,9 +51,9 @@ class BugFixBuilder {
         return new BuildResult(items, failures);
     }
 
-    private Map<Group, Fix> fixes(WorkItemLookup workItems) {
+    private Map<Group, Fix> fixes(List<LinkedPullRequest> linkedPullRequests, WorkItemLookup workItems) {
         Map<Group, Fix> fixes = new LinkedHashMap<>();
-        for (LinkedPullRequest linked : linkedPullRequests.read()) {
+        for (LinkedPullRequest linked : linkedPullRequests) {
             for (long number : linked.workItems()) {
                 if (workItems.facts(number).filter(WorkPackageFacts::isBug).isPresent()) {
                     fixes.computeIfAbsent(

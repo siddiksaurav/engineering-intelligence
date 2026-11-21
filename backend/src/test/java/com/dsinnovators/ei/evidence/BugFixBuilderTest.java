@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.dsinnovators.ei.DatabaseTest;
 import com.dsinnovators.ei.common.CanonicalJson;
+import com.dsinnovators.ei.common.Quarter;
 import com.dsinnovators.ei.identity.Persons;
 import com.dsinnovators.ei.source.RawRecordStore;
 import java.time.LocalDate;
@@ -15,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 class BugFixBuilderTest extends DatabaseTest {
 
+    private static final Quarter DONE_STATUSES_QUARTER = Quarter.parse("2026-Q3");
     private static final String DONE_STATUS = "tested";
     private static final String BUG_DONE_AT = "2026-08-05T09:00:00.000Z";
 
@@ -23,6 +25,9 @@ class BugFixBuilderTest extends DatabaseTest {
 
     @Autowired
     private FeatureWorkBuilder featureWorkBuilder;
+
+    @Autowired
+    private LinkedPullRequests linkedPullRequestsReader;
 
     @Autowired
     private RawRecordStore rawRecords;
@@ -43,6 +48,10 @@ class BugFixBuilderTest extends DatabaseTest {
 
     private void adaMergesPullRequest(int number, String mergedAt) {
         records.pullRequest(number, "ada", "User", 1, mergedAt);
+    }
+
+    private List<LinkedPullRequest> linkedPullRequests() {
+        return linkedPullRequestsReader.read(DONE_STATUSES_QUARTER).pullRequests();
     }
 
     private long rawRecordId(String recordKind, String externalId) {
@@ -66,7 +75,7 @@ class BugFixBuilderTest extends DatabaseTest {
         adaMergesPullRequest(2, "2026-07-03T08:00:00Z");
         records.link(2, 102);
 
-        BuildResult result = bugFixBuilder.build();
+        BuildResult result = bugFixBuilder.build(linkedPullRequests(), DONE_STATUSES_QUARTER);
 
         assertEquals(List.of(), result.failures());
         assertEquals(1, result.items().size());
@@ -101,7 +110,10 @@ class BugFixBuilderTest extends DatabaseTest {
         adaMergesPullRequest(1, "2026-07-02T08:00:00Z");
         records.link(1, 102);
 
-        BuiltItem item = bugFixBuilder.build().items().get(0);
+        BuiltItem item = bugFixBuilder
+                .build(linkedPullRequests(), DONE_STATUSES_QUARTER)
+                .items()
+                .get(0);
 
         assertTrue(item.fields().path("underFeature").isNull());
     }
@@ -115,8 +127,11 @@ class BugFixBuilderTest extends DatabaseTest {
         records.link(1, 101);
         records.link(1, 102);
 
-        List<BuiltItem> bugFixes = bugFixBuilder.build().items();
-        List<BuiltItem> featureWork = featureWorkBuilder.build().items();
+        List<BuiltItem> bugFixes =
+                bugFixBuilder.build(linkedPullRequests(), DONE_STATUSES_QUARTER).items();
+        List<BuiltItem> featureWork = featureWorkBuilder
+                .build(linkedPullRequests(), DONE_STATUSES_QUARTER)
+                .items();
 
         assertEquals(
                 List.of("bug_fix:102:" + ada),
@@ -149,7 +164,9 @@ class BugFixBuilderTest extends DatabaseTest {
         adaMergesPullRequest(1, "2026-07-02T08:00:00Z");
         records.link(1, 102);
 
-        assertEquals(List.of(), bugFixBuilder.build().items());
+        assertEquals(
+                List.of(),
+                bugFixBuilder.build(linkedPullRequests(), DONE_STATUSES_QUARTER).items());
     }
 
     @Test
@@ -158,7 +175,9 @@ class BugFixBuilderTest extends DatabaseTest {
         adaMergesPullRequest(1, "2026-07-02T08:00:00Z");
         records.link(1, 101);
 
-        assertEquals(List.of(), bugFixBuilder.build().items());
+        assertEquals(
+                List.of(),
+                bugFixBuilder.build(linkedPullRequests(), DONE_STATUSES_QUARTER).items());
     }
 
     @Test
@@ -170,7 +189,8 @@ class BugFixBuilderTest extends DatabaseTest {
         records.pullRequest(2, "grace", "User", 2, "2026-07-03T08:00:00Z");
         records.link(2, 102);
 
-        List<BuiltItem> items = bugFixBuilder.build().items();
+        List<BuiltItem> items =
+                bugFixBuilder.build(linkedPullRequests(), DONE_STATUSES_QUARTER).items();
 
         assertEquals(
                 List.of("bug_fix:102:" + ada, "bug_fix:102:" + grace),
@@ -187,7 +207,7 @@ class BugFixBuilderTest extends DatabaseTest {
         records.pullRequest(2, "stranger", "User", 77, "2026-07-03T08:00:00Z");
         records.link(2, 102);
 
-        BuildResult result = bugFixBuilder.build();
+        BuildResult result = bugFixBuilder.build(linkedPullRequests(), DONE_STATUSES_QUARTER);
 
         assertEquals(List.of(), result.items());
         assertEquals(1, result.failures().size());

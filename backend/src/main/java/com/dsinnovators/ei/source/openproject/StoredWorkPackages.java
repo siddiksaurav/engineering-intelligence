@@ -8,11 +8,9 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -159,15 +157,13 @@ public class StoredWorkPackages {
 
     /**
      * The first moment the work package changed into a done status, or empty when it never did.
-     * Each change is checked against {@code openproject.done_statuses} of the quarter of its own
-     * UTC day (decision 107).
+     * Every change, whatever its date, is checked against {@code openproject.done_statuses} of the
+     * given quarter (decision 125), because the setting starts later than the history.
      */
-    public Optional<Instant> firstDoneAt(long number) {
-        Map<Quarter, Set<String>> doneStatusesByQuarter = new HashMap<>();
+    public Optional<Instant> firstDoneAt(long number, Quarter doneStatusesQuarter) {
+        Set<String> doneStatuses = doneStatuses(doneStatusesQuarter);
         return statusChanges(number).stream()
-                .filter(change -> doneStatusesByQuarter
-                        .computeIfAbsent(quarterOf(change), this::doneStatuses)
-                        .contains(change.status()))
+                .filter(change -> doneStatuses.contains(change.status()))
                 .map(StatusChange::at)
                 .findFirst();
     }
@@ -201,10 +197,6 @@ public class StoredWorkPackages {
 
     private Set<String> doneStatuses(Quarter quarter) {
         return Set.copyOf(settings.getTextList(DONE_STATUSES_SETTING, quarter));
-    }
-
-    private static Quarter quarterOf(StatusChange change) {
-        return Quarter.of(change.at().atOffset(ZoneOffset.UTC).toLocalDate());
     }
 
     private Stream<RawRecord> latestWorkPackages() {

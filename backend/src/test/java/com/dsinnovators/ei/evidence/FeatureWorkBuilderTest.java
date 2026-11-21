@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.dsinnovators.ei.DatabaseTest;
 import com.dsinnovators.ei.common.CanonicalJson;
+import com.dsinnovators.ei.common.Quarter;
 import com.dsinnovators.ei.identity.Persons;
 import com.dsinnovators.ei.source.RawRecordStore;
 import java.time.LocalDate;
@@ -15,11 +16,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 class FeatureWorkBuilderTest extends DatabaseTest {
 
+    private static final Quarter DONE_STATUSES_QUARTER = Quarter.parse("2026-Q3");
     private static final String DONE_STATUS = "tested";
     private static final String FEATURE_DONE_AT = "2026-09-10T08:30:00.000Z";
 
     @Autowired
     private FeatureWorkBuilder builder;
+
+    @Autowired
+    private LinkedPullRequests linkedPullRequestsReader;
 
     @Autowired
     private RawRecordStore rawRecords;
@@ -42,6 +47,10 @@ class FeatureWorkBuilderTest extends DatabaseTest {
         records.pullRequest(number, "ada", "User", 1, mergedAt);
     }
 
+    private List<LinkedPullRequest> linkedPullRequests() {
+        return linkedPullRequestsReader.read(DONE_STATUSES_QUARTER).pullRequests();
+    }
+
     private long rawRecordId(String recordKind, String externalId) {
         return jdbc.queryForObject(
                 "select max(id) from raw_record where record_kind = ? and external_id = ?",
@@ -61,7 +70,7 @@ class FeatureWorkBuilderTest extends DatabaseTest {
         adaMergesPullRequest(1, "2026-07-02T08:00:00Z");
         records.link(1, 101);
 
-        BuildResult result = builder.build();
+        BuildResult result = builder.build(linkedPullRequests(), DONE_STATUSES_QUARTER);
 
         assertEquals(List.of(), result.failures());
         assertEquals(1, result.items().size());
@@ -98,7 +107,9 @@ class FeatureWorkBuilderTest extends DatabaseTest {
         adaMergesPullRequest(2, "2026-07-03T08:00:00Z");
         records.link(2, 102);
 
-        BuiltItem item = builder.build().items().get(0);
+        BuiltItem item = builder.build(linkedPullRequests(), DONE_STATUSES_QUARTER)
+                .items()
+                .get(0);
 
         assertEquals(List.of(101L), taskNumbers(item));
         assertEquals(List.of("opf/openproject#1"), pullRequestIds(item));
@@ -112,7 +123,11 @@ class FeatureWorkBuilderTest extends DatabaseTest {
         adaMergesPullRequest(1, "2026-07-02T08:00:00Z");
         records.link(1, 100);
 
-        assertEquals(List.of(100L), taskNumbers(builder.build().items().get(0)));
+        assertEquals(
+                List.of(100L),
+                taskNumbers(builder.build(linkedPullRequests(), DONE_STATUSES_QUARTER)
+                        .items()
+                        .get(0)));
     }
 
     @Test
@@ -125,7 +140,8 @@ class FeatureWorkBuilderTest extends DatabaseTest {
         records.link(1, 101);
         records.link(1, 201);
 
-        List<BuiltItem> items = builder.build().items();
+        List<BuiltItem> items =
+                builder.build(linkedPullRequests(), DONE_STATUSES_QUARTER).items();
 
         assertEquals(List.of("feature_work:100:" + ada, "feature_work:200:" + ada), keys(items));
         assertEquals(List.of("opf/openproject#1"), pullRequestIds(items.get(0)));
@@ -140,7 +156,9 @@ class FeatureWorkBuilderTest extends DatabaseTest {
         adaMergesPullRequest(1, "2026-07-02T08:00:00Z");
         records.link(1, 300);
 
-        assertEquals(List.of(), builder.build().items());
+        assertEquals(
+                List.of(),
+                builder.build(linkedPullRequests(), DONE_STATUSES_QUARTER).items());
     }
 
     @Test
@@ -149,7 +167,7 @@ class FeatureWorkBuilderTest extends DatabaseTest {
         records.linkNotVisible(1, "FND-1");
         adaMergesPullRequest(2, "2026-07-03T08:00:00Z");
 
-        BuildResult result = builder.build();
+        BuildResult result = builder.build(linkedPullRequests(), DONE_STATUSES_QUARTER);
 
         assertEquals(List.of(), result.items());
         assertEquals(List.of(), result.failures());
@@ -162,7 +180,9 @@ class FeatureWorkBuilderTest extends DatabaseTest {
         adaMergesPullRequest(1, "2026-07-02T08:00:00Z");
         records.link(1, 101);
 
-        assertEquals(List.of(), builder.build().items());
+        assertEquals(
+                List.of(),
+                builder.build(linkedPullRequests(), DONE_STATUSES_QUARTER).items());
     }
 
     @Test
@@ -172,7 +192,9 @@ class FeatureWorkBuilderTest extends DatabaseTest {
         adaMergesPullRequest(1, "2026-07-02T08:00:00Z");
         records.link(1, 100);
 
-        BuiltItem item = builder.build().items().get(0);
+        BuiltItem item = builder.build(linkedPullRequests(), DONE_STATUSES_QUARTER)
+                .items()
+                .get(0);
 
         assertEquals(LocalDate.of(2026, 9, 10), item.occurredOn());
         assertEquals("2026-09-10T23:59:59Z", item.fields().path("doneAt").asString());
@@ -189,7 +211,8 @@ class FeatureWorkBuilderTest extends DatabaseTest {
         records.pullRequest(2, "grace", "User", 2, "2026-07-03T08:00:00Z");
         records.link(2, 102);
 
-        List<BuiltItem> items = builder.build().items();
+        List<BuiltItem> items =
+                builder.build(linkedPullRequests(), DONE_STATUSES_QUARTER).items();
 
         assertEquals(List.of("feature_work:100:" + ada, "feature_work:100:" + grace), keys(items));
         assertEquals(List.of(101L), taskNumbers(items.get(0)));
@@ -205,7 +228,7 @@ class FeatureWorkBuilderTest extends DatabaseTest {
         records.pullRequest(2, "openprojectci", "User", 98, "2026-07-03T08:00:00Z");
         records.link(2, 101);
 
-        BuildResult result = builder.build();
+        BuildResult result = builder.build(linkedPullRequests(), DONE_STATUSES_QUARTER);
 
         assertEquals(List.of(), result.items());
         assertEquals(List.of(), result.failures());
@@ -220,7 +243,7 @@ class FeatureWorkBuilderTest extends DatabaseTest {
         adaMergesPullRequest(2, "2026-07-03T08:00:00Z");
         records.link(2, 101);
 
-        BuildResult result = builder.build();
+        BuildResult result = builder.build(linkedPullRequests(), DONE_STATUSES_QUARTER);
 
         assertEquals(List.of("feature_work:100:" + ada), keys(result.items()));
         assertEquals(1, result.failures().size());

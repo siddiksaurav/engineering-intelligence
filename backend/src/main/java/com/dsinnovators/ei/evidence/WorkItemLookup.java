@@ -1,5 +1,6 @@
 package com.dsinnovators.ei.evidence;
 
+import com.dsinnovators.ei.common.Quarter;
 import com.dsinnovators.ei.source.openproject.StoredWorkPackages;
 import com.dsinnovators.ei.source.openproject.WorkPackageFacts;
 import java.time.Instant;
@@ -11,12 +12,15 @@ import java.util.Optional;
 final class WorkItemLookup {
 
     private final StoredWorkPackages storedWorkPackages;
+    private final Quarter doneStatusesQuarter;
     private final Map<Long, Optional<WorkPackageFacts>> facts = new HashMap<>();
     private final Map<Long, Optional<Long>> nearestFeatures = new HashMap<>();
     private final Map<Long, Optional<Instant>> firstDoneAt = new HashMap<>();
 
-    WorkItemLookup(StoredWorkPackages storedWorkPackages) {
+    /** @param doneStatusesQuarter the quarter whose done statuses apply to every status change (decision 125) */
+    WorkItemLookup(StoredWorkPackages storedWorkPackages, Quarter doneStatusesQuarter) {
         this.storedWorkPackages = storedWorkPackages;
+        this.doneStatusesQuarter = doneStatusesQuarter;
     }
 
     Optional<WorkPackageFacts> facts(long number) {
@@ -29,7 +33,7 @@ final class WorkItemLookup {
     }
 
     Optional<Instant> firstDoneAt(long number) {
-        return firstDoneAt.computeIfAbsent(number, storedWorkPackages::firstDoneAt);
+        return firstDoneAt.computeIfAbsent(number, key -> storedWorkPackages.firstDoneAt(key, doneStatusesQuarter));
     }
 
     /** The facts of a work item that must be stored because something else led to it. */

@@ -174,30 +174,20 @@ class StoredWorkPackagesTest extends DatabaseTest {
         storeWithActivities(41, "Feature", statusChange(4, 41, "new", "in development", "2026-08-01T10:00:00.000Z", 7));
         storeWithActivities(42, "Feature");
 
-        assertEquals(Optional.of(Instant.parse("2026-09-10T08:30:00Z")), stored.firstDoneAt(40));
-        assertEquals(Optional.empty(), stored.firstDoneAt(41));
-        assertEquals(Optional.empty(), stored.firstDoneAt(42));
+        assertEquals(Optional.of(Instant.parse("2026-09-10T08:30:00Z")), stored.firstDoneAt(40, Q3));
+        assertEquals(Optional.empty(), stored.firstDoneAt(41, Q3));
+        assertEquals(Optional.empty(), stored.firstDoneAt(42, Q3));
     }
 
     @Test
-    void eachChangeIsCheckedAgainstTheDoneStatusesOfItsOwnQuarter() {
-        jdbc.update("""
-                insert into setting (key, valid_from_quarter, value, description)
-                values ('openproject.done_statuses', '2026-Q3', '["closed"]', 'Only closed is done from Q3')
-                """);
+    void firstDoneAtChecksAChangeFrom2019AgainstTheGivenQuartersStatuses() {
         storeWithActivities(
                 50,
                 "Feature",
-                statusChange(1, 50, "new", "tested", "2026-06-30T23:59:59.000Z", 7),
-                statusChange(2, 50, "tested", "closed", "2026-09-20T10:00:00.000Z", 7));
-        storeWithActivities(
-                51,
-                "Feature",
-                statusChange(3, 51, "new", "tested", "2026-07-01T00:00:00.000Z", 7),
-                statusChange(4, 51, "tested", "closed", "2026-09-20T10:00:00.000Z", 7));
+                statusChange(1, 50, "new", "closed", "2019-03-04T10:00:00.000Z", 7),
+                statusChange(2, 50, "closed", "in development", "2019-05-04T10:00:00.000Z", 7));
 
-        assertEquals(Optional.of(Instant.parse("2026-06-30T23:59:59Z")), stored.firstDoneAt(50));
-        assertEquals(Optional.of(Instant.parse("2026-09-20T10:00:00Z")), stored.firstDoneAt(51));
+        assertEquals(Optional.of(Instant.parse("2019-03-04T10:00:00Z")), stored.firstDoneAt(50, Q3));
     }
 
     @Test
