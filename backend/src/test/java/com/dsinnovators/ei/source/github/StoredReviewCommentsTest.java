@@ -10,6 +10,7 @@ import com.dsinnovators.ei.source.RawRecordStore;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalLong;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -31,7 +32,8 @@ class StoredReviewCommentsTest extends DatabaseTest {
                         + ",\"url\":\"https://github.com/opf/openproject/pull/7#discussion_r"
                         + databaseId
                         + "\",\"author\":{\"login\":\"reviewer\",\"__typename\":\"User\",\"databaseId\":55},"
-                        + "\"body\":\"" + body + "\",\"path\":\"app/model.rb\",\"replyTo\":" + replyTo
+                        + "\"body\":\"" + body
+                        + "\",\"path\":\"app/model.rb\",\"diffHunk\":\"@@ -1 +1 @@\\n+x\",\"replyTo\":" + replyTo
                         + ",\"createdAt\":\"2026-07-03T09:30:00Z\","
                         + "\"pullRequest\":{\"number\":7,\"repository\":{\"nameWithOwner\":\"opf/openproject\"}}}"));
     }
@@ -69,5 +71,51 @@ class StoredReviewCommentsTest extends DatabaseTest {
         assertEquals("opf/openproject#7", reply.pullRequestExternalId());
         assertEquals(Optional.of(new GitHubAuthor("reviewer", "User", 55)), reply.author());
         assertEquals(false, facts.get(1).isReply());
+    }
+
+    @Test
+    void aCommentIsReadAsItsText() {
+        storeComment(102, "a reply", "{\"databaseId\":101}");
+        storeComment(103, "a first comment", "null");
+
+        List<ReviewCommentText> texts = storedReviewComments.texts();
+
+        assertEquals(
+                List.of(
+                        new ReviewCommentText(
+                                texts.get(0).rawRecordId(),
+                                102,
+                                "https://github.com/opf/openproject/pull/7#discussion_r102",
+                                "app/model.rb",
+                                Instant.parse("2026-07-03T09:30:00Z"),
+                                "a reply",
+                                "@@ -1 +1 @@\n+x",
+                                OptionalLong.of(101)),
+                        new ReviewCommentText(
+                                texts.get(1).rawRecordId(),
+                                103,
+                                "https://github.com/opf/openproject/pull/7#discussion_r103",
+                                "app/model.rb",
+                                Instant.parse("2026-07-03T09:30:00Z"),
+                                "a first comment",
+                                "@@ -1 +1 @@\n+x",
+                                OptionalLong.empty())),
+                texts);
+    }
+
+    @Test
+    void aCommentWithoutBodyOrHunkIsReadWithEmptyTexts() {
+        store.store(
+                PullRequestRecorder.DATA_SOURCE,
+                GitHubRecordKind.REVIEW_COMMENT.recordKind(),
+                "104",
+                "https://github.com/opf/openproject/pull/7#discussion_r104",
+                CanonicalJson.parse("{\"databaseId\":104,\"url\":\"u\",\"path\":\"a.rb\","
+                        + "\"createdAt\":\"2026-07-03T09:30:00Z\",\"replyTo\":null}"));
+
+        ReviewCommentText text = storedReviewComments.texts().getFirst();
+
+        assertEquals("", text.body());
+        assertEquals("", text.diffHunk());
     }
 }

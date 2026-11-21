@@ -22,4 +22,13 @@ public class StoredReviewComments {
         return rawRecordStore.findLatestByKind(
                 PullRequestRecorder.DATA_SOURCE, GitHubRecordKind.REVIEW_COMMENT.recordKind());
     }
+
+    /**
+     * The text of every stored inline review comment, oldest record first. A reply finds the comment it
+     * answers here, whoever wrote it.
+     */
+    @Transactional(readOnly = true)
+    public List<ReviewCommentText> texts() {
+        return all().stream().map(ReviewCommentText::of).toList();
+    }
 }
