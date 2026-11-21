@@ -87,6 +87,8 @@ Before any backend command, select Java 25 (the machine's default is 21 and the 
 export JAVA_HOME=~/.jdks/temurin-25.0.5
 ```
 
+On the build machine used from 21 Nov 2026, Java 25 is the system JDK at `/usr/lib/jvm/jdk-25-oracle-x64`; use that path there.
+
 Before any web command, in a shell where `node` is not on the `PATH`:
 
 ```

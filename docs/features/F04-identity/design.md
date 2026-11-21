@@ -142,7 +142,7 @@ No arguments (decision 83): identity is not tied to a window; the job reads ever
    - An OpenProject user in a `confirmed` proposal is taken by that person; that person keeps it and gets nothing else.
    - The remaining (person, candidate) pairs are ranked by `supporting_items`, then `status_change_items`, both high first. They are taken in that order: a pair is assigned when its person has nothing yet and its user is not taken.
    - A person's best untaken candidate must be unique: if their next two untaken candidates are equal on both counts, the person gets no proposal (a tie, decision 93).
-   - Two persons equal on both counts for the same user: neither gets it from that pair; each goes on to their next candidate.
+   - Two persons equal on both counts for the same user: neither gets it, nor does any weaker person (decision 99); each goes on to their next candidate.
    - One supporting item is enough (decision 94).
 6. **Write:** per person, in one transaction: replace the person's `proposed` row with the assigned one (or delete it when nothing is assigned), and keep exactly one OpenProject `person_identity` row for the person's current proposal. Counted `proposals_written`, `proposals_unchanged`, `persons_without_proposal`.
 
@@ -188,7 +188,7 @@ The bot list is a setting read for a quarter; the job reads it for the quarter o
 In package `identity` (exact class names in `plan.md`):
 - `PersonDirectory.personOfGitHubAccount(long databaseId)` → `Optional<Long>` person id.
 - `PersonDirectory.personOfOpenProjectUser(long userId)` → `Optional<Long>` person id, read from `person_identity` (a proposed or confirmed match, decision 95).
-- `GitHubAccounts.isBot(String login, String typename, Quarter quarter)`: the one bot rule, for F05.
+- `BotAccounts.isBot(String login, String typename, Quarter quarter)`: the one bot rule, for F05.
 - Tables `person`, `person_identity`, `identity_proposal`.
 - In `source.github`: a reader of stored GitHub records by author: the accounts of the stored records, and the pull requests of one account.
 

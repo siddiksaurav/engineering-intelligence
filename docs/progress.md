@@ -2,6 +2,24 @@
 
 One entry per working session, newest at the top. Each entry says what was done, what is next and what is blocked. Read the top entry first.
 
+## 21 Nov 2026: F04 Identity shipped
+
+**Done**
+- Restored the user's database dump from the earlier machine (decision 91): F02's 215 PRs of 1 to 14 Jul 2026. Ran `openproject-import` on it (run 3): 320 work items, 133 PRs linked; its completion step failed for 109 PRs for lack of a `GITHUB_TOKEN`.
+- `/ship F04`: question brief answered one question at a time (decisions 92 to 98); decisions 82 to 91 by the session, 99 from the review. 8 tasks in 3 batches plus 3 review fixes on `feature/f04`.
+- Job `identity-build`, table `identity_proposal`, functions `confirm_identity_proposal` and `reject_identity_proposal`, `PersonDirectory`, `BotAccounts` (for F05), `StoredGitHubAccounts`.
+- Real data (run 6): 30 persons, no bot, 19 proposals each with evidence; a second run changes nothing. Backend 435 tests, web 27 tests, all green.
+
+**Checks still open (waiting for the user)**
+- Check the 19 proposals listed in `docs/features/F04-identity/notes.md`, "Verification", and confirm or reject them with the two SQL functions (commands in `CLAUDE.md`).
+
+**Next**
+- `/clear`, then `/ship F05`.
+
+**Blocked or needed from the user**
+- `cp .env.example .env` on this machine (sessions may not write it), and a `GITHUB_TOKEN` in it to finish the 109 completion PRs of `openproject-import`.
+- A Groq Cloud API key before F06.
+
 ## 21 Nov 2026: faster workflow, one-month window, free LLM
 
 **Done**

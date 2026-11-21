@@ -102,6 +102,7 @@ Every decision that shapes the PoC, newest at the bottom. A later entry override
 | 96 | 21 Nov 2026 | `person.display_name` is the GitHub login | User's choice | F04 question brief, user |
 | 97 | 21 Nov 2026 | When one OpenProject user is the best candidate of two persons, the person with more supporting items (then more status changes) gets it and the other gets their next candidate. A confirmed user stays with its person | User's choice | F04 question brief, user |
 | 98 | 21 Nov 2026 | A proposal is confirmed or rejected by SQL, through two database functions created by migration V7: `confirm_identity_proposal(id)` and `reject_identity_proposal(id)`, run with `psql` | User chose SQL; the session made it two functions so the rule (state, time, removing the identity) lives once, in the product, with tests (decision 38) | F04 question brief, user; functions: session |
+| 99 | 21 Nov 2026 | When two persons are equally strong for one OpenProject user, that user is taken by nobody in the run: neither of them gets it, and no weaker person gets it either | Decision 97, "the stronger claim wins": a weaker claim must not win what two stronger ones tied on. Found by the F04 review | F04 review, session |
 
 ## Not decided yet
 

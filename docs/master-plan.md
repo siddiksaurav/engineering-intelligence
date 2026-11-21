@@ -186,7 +186,7 @@ Each block below gives a new session enough to start the deep dive. "Open questi
 
 **Goal.** One person per developer, however many outside identities they have.
 
-**Builds.** Persons are created from PR authors. For each person the system proposes the OpenProject user, taken from the "Developers" field and the status history of the work items their PRs link to. Bot accounts are marked and never become persons. `level` stays empty.
+**Builds.** Persons are created from every human GitHub account that wrote a PR, review or comment (decision 92). For each person the system proposes the OpenProject user, taken from the "Developers" field and the status history of the work items their PRs link to. Bot accounts are marked and never become persons. `level` stays empty.
 
 **Read first.** `poc-plan.md` 3.4 (`person`, `person_identity`), 3.7 step 4. Spec section 5, "One identity per person".
 
@@ -399,7 +399,7 @@ Update this table when a feature changes state. States: not started, in design, 
 | F01 | Repository skeleton | done | `docs/features/F01-repository-skeleton/design.md` | `docs/features/F01-repository-skeleton/plan.md` |
 | F02 | GitHub connector | done | `docs/features/F02-github-connector/design.md` | `docs/features/F02-github-connector/plan.md` |
 | F03 | OpenProject connector | done | `docs/features/F03-openproject-connector/design.md` | `docs/features/F03-openproject-connector/plan.md` |
-| F04 | Identity | in progress | `docs/features/F04-identity/design.md` | `docs/features/F04-identity/plan.md` |
+| F04 | Identity | done | `docs/features/F04-identity/design.md` | `docs/features/F04-identity/plan.md` |
 | F05 | Evidence builders without AI, list page | not started | | |
 | F06 | `JudgmentModel`, PR digest, AI-dependent builders | not started | | |
 | F07 | Feature work and review comment judgment | not started | | |
