@@ -4,6 +4,7 @@ import com.dsinnovators.ei.source.RawRecord;
 import com.dsinnovators.ei.source.RawRecordStore;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.stereotype.Component;
@@ -33,6 +34,18 @@ public class StoredPullRequests {
                 repository + "#",
                 from.atStartOfDay().toInstant(ZoneOffset.UTC),
                 to.plusDays(1).atStartOfDay().toInstant(ZoneOffset.UTC));
+    }
+
+    /** Every stored pull request, the latest version of each, oldest merge first. */
+    @Transactional(readOnly = true)
+    public List<RawRecord> all() {
+        return rawRecordStore
+                .findLatestByKind(PullRequestRecorder.DATA_SOURCE, GitHubRecordKind.PULL_REQUEST.recordKind())
+                .stream()
+                .sorted(Comparator.comparing((RawRecord record) ->
+                                PullRequestFacts.of(record).mergedAt())
+                        .thenComparing(RawRecord::getId))
+                .toList();
     }
 
     /** The pull request with this number in this repository, if it was stored. */
