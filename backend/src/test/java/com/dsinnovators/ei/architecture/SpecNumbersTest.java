@@ -51,7 +51,6 @@ class SpecNumbersTest {
     }
 
     @Test
-    @Disabled("F06 creates the judgment package; enable this test in F06")
     void theJudgmentPackageHoldsNoNumberConstant() {
         holdsNoNumberConstant("judgment");
     }

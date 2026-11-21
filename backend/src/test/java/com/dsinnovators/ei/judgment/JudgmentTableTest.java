@@ -15,21 +15,8 @@ class JudgmentTableTest extends DatabaseTest {
 
     @BeforeEach
     void insertSubjects() {
-        rawRecordId = jdbc.queryForObject("""
-                insert into raw_record (data_source_id, record_kind, external_id, version, url, content_hash, payload, fetched_at)
-                values ((select id from data_source where key = 'github'), 'pull_request', 'opf/openproject#1', 1,
-                        'https://example.test/1', 'hash', '{}'::jsonb, now())
-                returning id
-                """, Long.class);
-        long personId =
-                jdbc.queryForObject("insert into person (display_name) values ('Ada') returning id", Long.class);
-        evidenceItemId = jdbc.queryForObject("""
-                insert into evidence_item (item_key, evidence_type, person_id, occurred_on, source_url,
-                                           fields, content_hash, withdrawn, built_at)
-                values ('test_change:opf/openproject#1', 'test_change', ?, date '2026-07-01', 'https://example.test/1',
-                        '{}'::jsonb, 'hash', false, now())
-                returning id
-                """, Long.class, personId);
+        rawRecordId = JudgmentSubjectRows.insertPullRequestRecord(jdbc, 1);
+        evidenceItemId = JudgmentSubjectRows.insertEvidenceItem(jdbc);
     }
 
     private long insertJudgment(
