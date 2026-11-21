@@ -272,6 +272,42 @@ class ReviewCommentJudgmentJobTest extends DatabaseTest {
     }
 
     @Test
+    void aReplyToACommentThatIsNotStoredIsJudgedWithoutIt() throws Exception {
+        stored.reply(5, 8, "2026-07-03T10:40:00Z", "Thanks.", 404);
+        model.thenAnswers(FakeJudgmentModel.aReviewComments("C-1", "question", "C-2", "style"))
+                .thenAnswers(FakeJudgmentModel.aReviewComments("C-3", "correctness", "C-5", "acknowledgement"));
+
+        run();
+
+        String input = model.requests().get(1).input();
+        assertTrue(input.contains("[C-5]"), input);
+        assertFalse(input.contains("This comment replies to:"), input);
+        assertEquals(4, reviewCommentJudgments());
+        assertNull(counts.get("chunks_failed"));
+    }
+
+    @Test
+    void aNewCommentOnAJudgedPullRequestGivesNewJudgmentsThatSupersedeTheOldOnes() throws Exception {
+        answerTheThreeComments();
+        run();
+        stored.comment(6, 7, "2026-07-03T09:10:00Z", "One more thing.");
+        model.thenAnswers(FakeJudgmentModel.aReviewComments("C-1", "question", "C-2", "style", "C-6", "design"));
+
+        run();
+
+        assertEquals(6, reviewCommentJudgments());
+        assertEquals(3L, counts.get("judgments_written"));
+        assertEquals(1L, counts.get("skipped_same_input"));
+        assertEquals(
+                2,
+                jdbc.queryForObject(
+                        "select count(*) from judgment newer join judgment older on older.id = newer.supersedes_id"
+                                + " where newer.kind = 'review_comment'"
+                                + " and newer.evidence_item_id = older.evidence_item_id",
+                        Long.class));
+    }
+
+    @Test
     void anUnreadableCommentFailsOnlyItsPullRequestNamingIt() {
         stored.unreadableComment(10, 8);
         model.thenAnswers(FakeJudgmentModel.aReviewComments("C-1", "question", "C-2", "style"));
