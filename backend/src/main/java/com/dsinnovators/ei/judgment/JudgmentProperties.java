@@ -48,6 +48,10 @@ record JudgmentProperties(
         requireMoreThanZero("ei.judgment.max-error-characters", maxErrorCharacters);
     }
 
+    DigestLimits digestLimits() {
+        return new DigestLimits(maxBodyCharacters, maxDiffCharacters);
+    }
+
     CallPolicy callPolicy() {
         return new CallPolicy(retries, retryWait, maxRateLimitWait, maxErrorCharacters);
     }
