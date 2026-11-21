@@ -20,7 +20,12 @@
       "Bash(git fetch:*)",
       "Bash(git pull:*)",
       "Bash(gh pr:*)",
-      "Bash(gh run:*)"
+      "Bash(gh run:*)",
+      "Bash(git merge:*)", 
+      "Bash(git rebase:*)", 
+      "Bash(git rm:*)",
+      "Bash(curl -s localhost:*)", 
+      "Bash(curl -s -X POST localhost:*)"
     ],
     "deny": [
       "Bash(git push --force:*)",

@@ -49,14 +49,12 @@ public class StoredWorkPackages {
         this.settings = settings;
     }
 
-    // Read by F05 (a work package of a Feature work item), not yet by production code.
     /** The {@code work_package} record with this number, if it was stored. */
     public Optional<RawRecord> find(long number) {
         return rawRecords.findLatest(
                 OpenProjectSource.KEY, OpenProjectRecordKind.WORK_PACKAGE.recordKind(), String.valueOf(number));
     }
 
-    // Read by F05 (the work item behind a pull request), not yet by production code.
     /** Every link found for one pull request, by its F02 external id, in the order they were written. */
     @Transactional(readOnly = true)
     public List<PullRequestWorkItemLink> linksOf(String pullRequestExternalId) {
@@ -124,8 +122,6 @@ public class StoredWorkPackages {
         return listed;
     }
 
-    // Read by F04 (who changed the status of the work items of a person's pull requests), and by
-    // F05 (when a Feature is done); production code reads it only through isDoneIn.
     /** The changes of status of a work package, read from its activities, oldest first. */
     @Transactional(readOnly = true)
     public List<StatusChange> statusChanges(long number) {

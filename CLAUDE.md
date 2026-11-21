@@ -87,6 +87,8 @@ Before any backend command, select Java 25 (the machine's default is 21 and the 
 export JAVA_HOME=~/.jdks/temurin-25.0.5
 ```
 
+On the build machine used from 21 Nov 2026, Java 25 is the system JDK at `/usr/lib/jvm/jdk-25-oracle-x64`; use that path there.
+
 Before any web command, in a shell where `node` is not on the `PATH`:
 
 ```
@@ -115,6 +117,13 @@ curl -s -X POST localhost:8080/api/jobs/openproject-import/runs \
   -d '{"repository":"opf/openproject","mergedFrom":"2026-07-01","mergedTo":"2026-07-14","quarter":"2026-Q3"}'
                                                              link stored PRs to OpenProject work items (after github-import)
 curl -s localhost:8080/api/jobs/runs/1                       see a run: status, counts, error
+curl -s -X POST localhost:8080/api/jobs/identity-build/runs \
+  -H 'Content-Type: application/json' -d '{}'
+                                                             make persons of the stored GitHub accounts and propose their OpenProject users (after openproject-import)
+docker compose exec postgres psql -U ei -d ei -c "select confirm_identity_proposal(7);"
+                                                             confirm proposal 7 (list them in identity_proposal)
+docker compose exec postgres psql -U ei -d ei -c "select reject_identity_proposal(7);"
+                                                             reject proposal 7; the next identity-build proposes the next candidate
 ```
 
 - Backend tests need Docker running. They start their own PostgreSQL container and never use the Compose database.
