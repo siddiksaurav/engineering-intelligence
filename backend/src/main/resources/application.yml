@@ -40,6 +40,28 @@ ei:
     retries: 3
     retry-wait: 2s
     timeout: 60s
+  judgment:
+    # Free hosted models, tried in this order (decisions 144, 146, 158). A provider with no key is
+    # left out. The keys come from .env; never committed, never printed.
+    providers:
+      - name: ${LLM_PROVIDER_1_NAME:groq}
+        base-url: ${LLM_PROVIDER_1_BASE_URL:https://api.groq.com/openai/v1}
+        api-key: ${LLM_PROVIDER_1_API_KEY:}
+        model: ${LLM_PROVIDER_1_MODEL:openai/gpt-oss-120b}
+        reasoning-effort: ${LLM_PROVIDER_1_REASONING_EFFORT:low}
+      - name: ${LLM_PROVIDER_2_NAME:gemini}
+        base-url: ${LLM_PROVIDER_2_BASE_URL:https://generativelanguage.googleapis.com/v1beta/openai}
+        api-key: ${LLM_PROVIDER_2_API_KEY:}
+        model: ${LLM_PROVIDER_2_MODEL:}
+        reasoning-effort: ${LLM_PROVIDER_2_REASONING_EFFORT:}
+    timeout: 120s
+    retries: 3
+    retry-wait: 2s
+    # A rate limit that asks for a longer wait puts the provider at its limit for the run.
+    max-rate-limit-wait: 60s
+    max-diff-characters: 12000
+    max-body-characters: 4000
+    max-error-characters: 300
 
 ---
 # The one .env at the repository root. Found when started from the root or from backend/.
