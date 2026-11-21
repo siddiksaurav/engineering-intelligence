@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { checkBackend } from "@/lib/health";
 
 // Asked on every request, on the server. The browser never calls the backend.
@@ -9,6 +10,9 @@ export default async function Home() {
     <main>
       <h1>Engineering Intelligence</h1>
       <p>{status === "up" ? "backend up" : "backend down"}</p>
+      <p>
+        <Link href="/developers">Developers</Link>
+      </p>
     </main>
   );
 }

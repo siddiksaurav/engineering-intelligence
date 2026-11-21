@@ -120,6 +120,9 @@ curl -s localhost:8080/api/jobs/runs/1                       see a run: status, 
 curl -s -X POST localhost:8080/api/jobs/identity-build/runs \
   -H 'Content-Type: application/json' -d '{}'
                                                              make persons of the stored GitHub accounts and propose their OpenProject users (after openproject-import)
+curl -s -X POST localhost:8080/api/jobs/evidence-build/runs \
+  -H 'Content-Type: application/json' -d '{}'
+                                                             build the evidence items from the stored records (after identity-build)
 docker compose exec postgres psql -U ei -d ei -c "select confirm_identity_proposal(7);"
                                                              confirm proposal 7 (list them in identity_proposal)
 docker compose exec postgres psql -U ei -d ei -c "select reject_identity_proposal(7);"
@@ -131,6 +134,7 @@ docker compose exec postgres psql -U ei -d ei -c "select reject_identity_proposa
 - `github-import` needs a read-only `GITHUB_TOKEN` in `.env` (a fine-grained token with public repository access). Two weeks take about six minutes.
 - Tests run with the profile `test` and never read `.env`. They never call GitHub; `GitHubApiFixture` gives a client on a mock server.
 - Health: `curl -s localhost:8080/actuator/health`. The web page at `localhost:3000` shows "backend up" or "backend down".
+- Evidence list: `localhost:3000/developers` (after `evidence-build`).
 - A test that needs the database extends `com.dsinnovators.ei.DatabaseTest`.
 - Do not put quotes around values in `.env`: the backend would read them as part of the value.
 - The backend build fails on any compiler warning, any Error Prone finding and any unformatted file. Run `./mvnw spotless:apply` before `./mvnw verify`.

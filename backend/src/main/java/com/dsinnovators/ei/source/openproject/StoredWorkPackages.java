@@ -37,13 +37,19 @@ public class StoredWorkPackages {
     private final WorkPackageActivityRecords activityRecords;
     private final PullRequestWorkItemLinkRepository links;
     private final SettingService settings;
+    private final ProjectRepository projects;
+    private final OpenProjectSource source;
 
     StoredWorkPackages(
             RawRecordStore rawRecords,
             WorkPackageActivityRecords activityRecords,
             PullRequestWorkItemLinkRepository links,
-            SettingService settings) {
+            SettingService settings,
+            ProjectRepository projects,
+            OpenProjectSource source) {
         this.rawRecords = rawRecords;
+        this.projects = projects;
+        this.source = source;
         this.activityRecords = activityRecords;
         this.links = links;
         this.settings = settings;
@@ -61,7 +67,6 @@ public class StoredWorkPackages {
         return links.findOfPullRequest(pullRequestExternalId);
     }
 
-    // Read by F05 (follows a work item up to its Feature), not yet by production code.
     /**
      * The work package itself when it is a Feature, else its nearest Feature ancestor. Empty when
      * none is stored: the walk up ends at a work package that is not stored or has no parent.
@@ -143,11 +148,55 @@ public class StoredWorkPackages {
      * quarter; a name must match exactly, keeping its case. The day of a change is read in UTC.
      */
     public boolean isDoneIn(long number, Quarter quarter) {
-        Set<String> doneStatuses = Set.copyOf(settings.getTextList(DONE_STATUSES_SETTING, quarter));
+        Set<String> doneStatuses = doneStatuses(quarter);
         return statusChanges(number).stream()
                 .filter(change ->
                         quarter.contains(change.at().atOffset(ZoneOffset.UTC).toLocalDate()))
                 .anyMatch(change -> doneStatuses.contains(change.status()));
+    }
+
+    /**
+     * The first moment the work package changed into a done status, or empty when it never did.
+     * Every change, whatever its date, is checked against {@code openproject.done_statuses} of the
+     * given quarter (decision 125), because the setting starts later than the history.
+     */
+    public Optional<Instant> firstDoneAt(long number, Quarter doneStatusesQuarter) {
+        Set<String> doneStatuses = doneStatuses(doneStatusesQuarter);
+        return statusChanges(number).stream()
+                .filter(change -> doneStatuses.contains(change.status()))
+                .map(StatusChange::at)
+                .findFirst();
+    }
+
+    /** The facts of the stored work package with this number; empty when it is not stored. */
+    @Transactional(readOnly = true)
+    public Optional<WorkPackageFacts> facts(long number) {
+        return rawRecords
+                .findLatest(
+                        OpenProjectSource.KEY, OpenProjectRecordKind.WORK_PACKAGE.recordKind(), String.valueOf(number))
+                .map(record -> factsOf(record, number));
+    }
+
+    private WorkPackageFacts factsOf(RawRecord record, long number) {
+        JsonNode workPackage = record.getPayload();
+        JsonNode links = workPackage.path("_links");
+        Long projectId = HrefNumbers.trailingNumber(
+                        links.path("project").path("href").asString(""))
+                .flatMap(externalId -> projects.findId(OpenProjectSource.KEY, String.valueOf(externalId)))
+                .orElse(null);
+        return new WorkPackageFacts(
+                record.getId(),
+                number,
+                workPackage.path("subject").asString(),
+                WorkPackageType.nameOf(workPackage),
+                WorkPackageType.isBug(workPackage),
+                projectId,
+                links.path("priority").path("title").asString(null),
+                source.dataSource().getBaseUrl() + "/wp/" + number);
+    }
+
+    private Set<String> doneStatuses(Quarter quarter) {
+        return Set.copyOf(settings.getTextList(DONE_STATUSES_SETTING, quarter));
     }
 
     private Stream<RawRecord> latestWorkPackages() {

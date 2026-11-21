@@ -158,4 +158,79 @@ class StoredWorkPackagesTest extends DatabaseTest {
 
         assertEquals(Optional.empty(), stored.nearestFeature(8));
     }
+
+    private void storeWithActivities(long number, String type, String... activities) {
+        store(number, type, null, activities);
+    }
+
+    @Test
+    void firstDoneAtIsTheFirstChangeIntoADoneStatus() {
+        storeWithActivities(
+                40,
+                "Feature",
+                statusChange(1, 40, "new", "in development", "2026-08-01T10:00:00.000Z", 7),
+                statusChange(3, 40, "tested", "closed", "2026-09-20T10:00:00.000Z", 7),
+                statusChange(2, 40, "in development", "tested", "2026-09-10T08:30:00.000Z", 7));
+        storeWithActivities(41, "Feature", statusChange(4, 41, "new", "in development", "2026-08-01T10:00:00.000Z", 7));
+        storeWithActivities(42, "Feature");
+
+        assertEquals(Optional.of(Instant.parse("2026-09-10T08:30:00Z")), stored.firstDoneAt(40, Q3));
+        assertEquals(Optional.empty(), stored.firstDoneAt(41, Q3));
+        assertEquals(Optional.empty(), stored.firstDoneAt(42, Q3));
+    }
+
+    @Test
+    void firstDoneAtChecksAChangeFrom2019AgainstTheGivenQuartersStatuses() {
+        storeWithActivities(
+                50,
+                "Feature",
+                statusChange(1, 50, "new", "closed", "2019-03-04T10:00:00.000Z", 7),
+                statusChange(2, 50, "closed", "in development", "2019-05-04T10:00:00.000Z", 7));
+
+        assertEquals(Optional.of(Instant.parse("2019-03-04T10:00:00Z")), stored.firstDoneAt(50, Q3));
+    }
+
+    @Test
+    void theFactsOfAWorkPackageAreReadFromItsRecordAndItsProject() {
+        jdbc.update("""
+                insert into project (data_source_id, external_id, identifier, name, url)
+                values ((select id from data_source where key = 'openproject'), '1395', 'comms', 'Comms',
+                        'https://community.openproject.org/projects/comms')
+                """);
+        Long projectId = jdbc.queryForObject("select id from project", Long.class);
+        recorder.store(new FetchedWorkPackage(
+                81224,
+                json("{\"id\":81224,\"subject\":\"Notify desktop users\",\"_links\":{"
+                        + "\"type\":{\"title\":\"Bug\"},\"priority\":{\"title\":\"High\"},"
+                        + "\"project\":{\"href\":\"/api/v3/projects/1395\"}}}"),
+                json("{\"_embedded\":{\"elements\":[]}}"),
+                json("{\"reduced\":true,\"pullRequests\":[]}")));
+        Long recordId = jdbc.queryForObject("select id from raw_record where record_kind = 'work_package'", Long.class);
+
+        WorkPackageFacts facts = stored.facts(81224).orElseThrow();
+
+        assertEquals(
+                new WorkPackageFacts(
+                        recordId,
+                        81224,
+                        "Notify desktop users",
+                        "Bug",
+                        true,
+                        projectId,
+                        "High",
+                        "https://community.openproject.org/wp/81224"),
+                facts);
+        assertEquals(Optional.empty(), stored.facts(1));
+    }
+
+    @Test
+    void aFeatureIsNotABugAndAProjectThatIsNotStoredGivesNoProjectId() {
+        store(60, "Feature", null);
+
+        WorkPackageFacts facts = stored.facts(60).orElseThrow();
+
+        assertFalse(facts.isBug());
+        assertEquals(null, facts.projectId());
+        assertEquals(null, facts.priority());
+    }
 }

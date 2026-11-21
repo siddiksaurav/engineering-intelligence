@@ -1,0 +1,98 @@
+.header {
+  background: linear-gradient(135deg, var(--sky-700), var(--sky-500));
+  color: #fff;
+  padding: 24px 16px;
+}
+
+.header h1 {
+  margin: 0;
+  font-size: 1.6rem;
+}
+
+.header a {
+  color: #fff;
+}
+
+.back {
+  display: inline-block;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.content {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.notice {
+  background: #fff;
+  border: 2px solid var(--sky-200);
+  border-radius: 12px;
+  padding: 16px;
+  font-weight: 600;
+}
+
+.developerList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.developerCard {
+  display: block;
+  background: #fff;
+  border: 2px solid var(--sky-200);
+  border-left: 8px solid var(--sky-500);
+  border-radius: 12px;
+  padding: 12px 16px;
+  text-decoration: none;
+  color: var(--ink);
+}
+
+.developerCard:hover {
+  border-color: var(--sky-500);
+}
+
+.developerName {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--sky-700);
+}
+
+.counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+}
+
+.count {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  border-radius: 999px;
+  padding: 2px 12px;
+  color: #fff;
+  font-size: 0.9rem;
+}
+
+.count strong {
+  font-size: 1.05rem;
+}
+
+.featureWork {
+  background: var(--feature-work);
+}
+
+.bugFix {
+  background: var(--bug-fix);
+}
+
+.reviewCommentWritten {
+  background: var(--review-comment-written);
+}
