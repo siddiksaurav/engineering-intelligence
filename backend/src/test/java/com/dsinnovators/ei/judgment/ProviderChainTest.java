@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.dsinnovators.ei.common.CanonicalJson;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
@@ -140,5 +141,39 @@ class ProviderChainTest {
                 new ProviderChain.Provider("gemini", answering("gemini", "b")));
 
         assertEquals(List.of("groq", "gemini"), chain.providerNames());
+    }
+
+    @Test
+    void startsARunOnlyWhenAProviderHasAKey() {
+        ProviderChain withoutProviders = new ProviderChain(List.of(), new WaitMeter(duration -> {}));
+
+        IllegalStateException failure =
+                assertThrows(IllegalStateException.class, withoutProviders::startRunRequiringAProvider);
+
+        assertTrue(failure.getMessage().contains("LLM_PROVIDER_1_API_KEY"));
+    }
+
+    @Test
+    void startsAFreshRunWhenAProviderHasAKey() {
+        ProviderChain chain = chainOf(new ProviderChain.Provider("groq", atItsLimit("groq")));
+        assertThrows(ModelLimitReachedException.class, () -> chain.judge(REQUEST));
+
+        chain.startRunRequiringAProvider();
+
+        assertThrows(ModelLimitReachedException.class, () -> chain.judge(REQUEST));
+        assertEquals(List.of("groq", "groq"), asked);
+    }
+
+    @Test
+    void reportsTheCallsPerProviderAndTheWaitToTheCountsOfTheRun() {
+        ProviderChain chain = chainOf(
+                new ProviderChain.Provider("groq", atItsLimit("groq")),
+                new ProviderChain.Provider("gemini", answering("gemini", "flash")));
+        chain.judge(REQUEST);
+        Map<String, Long> counts = new HashMap<>();
+
+        chain.reportUseTo((name, amount) -> counts.merge(name, amount, Long::sum));
+
+        assertEquals(Map.of("calls_groq", 0L, "calls_gemini", 1L, "rate_limit_wait_seconds", 0L), counts);
     }
 }

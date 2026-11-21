@@ -15,6 +15,7 @@ final class NewJudgmentBuilder {
     private String tier;
     private String reason = "Fixes a defect";
     private List<JudgmentFact> facts = List.of(FACT);
+    private Double confidence;
     private String model = "openai/gpt-oss-120b";
     private String promptVersion = "pull-request-digest/v1";
     private String inputHash = "hash";
@@ -58,6 +59,11 @@ final class NewJudgmentBuilder {
         return this;
     }
 
+    NewJudgmentBuilder confidence(Double confidence) {
+        this.confidence = confidence;
+        return this;
+    }
+
     NewJudgmentBuilder model(String model) {
         this.model = model;
         return this;
@@ -91,6 +97,7 @@ final class NewJudgmentBuilder {
                 tier,
                 reason,
                 facts,
+                confidence,
                 JudgedBy.MODEL,
                 model,
                 promptVersion,

@@ -7,6 +7,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import org.hibernate.annotations.Immutable;
@@ -49,6 +50,8 @@ public class Judgment {
     @JdbcTypeCode(SqlTypes.JSON)
     private String facts;
 
+    private BigDecimal confidence;
+
     @Convert(converter = JudgedBy.DatabaseConverter.class)
     private JudgedBy judgedBy;
 
@@ -77,6 +80,7 @@ public class Judgment {
         this.tier = judgment.tier();
         this.reason = judgment.reason();
         this.facts = CanonicalJson.canonicalize(factsAsJson(judgment.facts()));
+        this.confidence = judgment.confidence() == null ? null : BigDecimal.valueOf(judgment.confidence());
         this.judgedBy = judgment.judgedBy();
         this.model = judgment.model();
         this.promptVersion = judgment.promptVersion();
@@ -129,6 +133,11 @@ public class Judgment {
                 .map(fact -> new JudgmentFact(
                         fact.path("fact").asString(), fact.path("link").asString()))
                 .toList();
+    }
+
+    /** The model's own value from 0 to 1, when the kind has one; else null. */
+    public Double getConfidence() {
+        return confidence == null ? null : confidence.doubleValue();
     }
 
     public JudgedBy getJudgedBy() {

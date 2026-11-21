@@ -6,10 +6,7 @@ import com.dsinnovators.ei.source.RawRecord;
 import com.dsinnovators.ei.source.github.PullRequestDiff;
 import com.dsinnovators.ei.source.github.PullRequestFacts;
 import com.dsinnovators.ei.source.github.StoredPullRequestDiffs;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
-import tools.jackson.databind.JsonNode;
 
 /**
  * Stage 1 for one pull request: builds the input, asks the model unless this input was judged
@@ -21,10 +18,7 @@ class PullRequestDigester {
 
     static final String PROMPT_VERSION = "pull-request-digest/v1";
 
-    private static final Logger LOG = LoggerFactory.getLogger(PullRequestDigester.class);
     private static final String SCHEMA_NAME = "pull_request_digest";
-
-    private record Answered(PullRequestDigest digest, String model) {}
 
     private final StoredPullRequestDiffs storedDiffs;
     private final DiffFileFilter diffFileFilter;
@@ -53,7 +47,7 @@ class PullRequestDigester {
      * pull request.
      *
      * @throws IllegalStateException when no diff record is stored for the pull request
-     * @throws InvalidDigestException when the answer breaks the schema twice
+     * @throws InvalidAnswerException when the answer breaks the schema twice
      * @throws UnreadableAnswerException when the answer cannot be read twice
      * @throws ModelLimitReachedException when every provider is at its limit
      */
@@ -66,7 +60,7 @@ class PullRequestDigester {
         DigestInput input = DigestInput.of(
                 pullRequest.getId(),
                 facts.title(),
-                bodyOf(pullRequest),
+                PullRequestBody.of(pullRequest),
                 diff,
                 diffFileFilter.select(diff, quarter),
                 limits,
@@ -75,12 +69,21 @@ class PullRequestDigester {
             counts.add("skipped_same_input", 1);
             return;
         }
-        Answered answered = judge(input, counts);
+        CheckedAnswers.Answered<PullRequestDigest> answered = CheckedAnswers.ask(
+                model,
+                new ModelRequest(
+                        PROMPT_VERSION,
+                        promptLibrary.instructions(PROMPT_VERSION),
+                        input.text(),
+                        SCHEMA_NAME,
+                        promptLibrary.schema(PROMPT_VERSION)),
+                answer -> PullRequestDigest.fromAnswer(answer, input.judgedOnPartialCode()),
+                counts);
         Long supersedesId = judgmentStore
                 .findCurrentOfPullRequest(JudgmentKind.PULL_REQUEST_DIGEST, externalId)
                 .map(Judgment::getId)
                 .orElse(null);
-        PullRequestDigest digest = answered.digest();
+        PullRequestDigest digest = answered.value();
         judgmentStore.write(new NewJudgment(
                 JudgmentKind.PULL_REQUEST_DIGEST,
                 JudgmentSubject.pullRequestRecord(pullRequest.getId()),
@@ -88,6 +91,7 @@ class PullRequestDigester {
                 null,
                 digest.reason(),
                 DigestFacts.of(digest.facts(), facts.url(), diff),
+                null,
                 JudgedBy.MODEL,
                 answered.model(),
                 PROMPT_VERSION,
@@ -98,34 +102,5 @@ class PullRequestDigester {
         if (input.judgedOnPartialCode()) {
             counts.add("judged_on_partial_code", 1);
         }
-    }
-
-    /** Asks the model; an answer that breaks the schema or cannot be read is asked for once more (decision 135). */
-    private Answered judge(DigestInput input, JobCounts counts) {
-        ModelRequest request = new ModelRequest(
-                PROMPT_VERSION,
-                promptLibrary.instructions(PROMPT_VERSION),
-                input.text(),
-                SCHEMA_NAME,
-                promptLibrary.schema(PROMPT_VERSION));
-        try {
-            return ask(request, input.judgedOnPartialCode(), counts);
-        } catch (InvalidDigestException | UnreadableAnswerException firstRefusal) {
-            LOG.warn("The model's answer was refused, asking once more: {}", firstRefusal.getMessage());
-            return ask(request, input.judgedOnPartialCode(), counts);
-        }
-    }
-
-    private Answered ask(ModelRequest request, boolean judgedOnPartialCode, JobCounts counts) {
-        ModelAnswer answer = model.judge(request);
-        counts.add("model_calls", 1);
-        counts.add("input_tokens", answer.inputTokens());
-        counts.add("output_tokens", answer.outputTokens());
-        return new Answered(PullRequestDigest.fromAnswer(answer.answer(), judgedOnPartialCode), answer.model());
-    }
-
-    private static String bodyOf(RawRecord pullRequest) {
-        JsonNode body = pullRequest.getPayload().path("body");
-        return body.isString() ? body.asString() : "";
     }
 }

@@ -7,11 +7,13 @@ import java.util.Deque;
 import java.util.List;
 import java.util.function.Supplier;
 import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.JsonNodeFactory;
 import tools.jackson.databind.node.ObjectNode;
 
 /**
  * A model for tests that never calls a real one (decision 142). It answers a valid digest of a fix
- * unless a reply was scripted, and it keeps every request it was given.
+ * unless a reply was scripted or another default set, and it keeps every request it was given.
  */
 final class FakeJudgmentModel implements JudgmentModel {
 
@@ -21,6 +23,7 @@ final class FakeJudgmentModel implements JudgmentModel {
 
     private final Deque<Supplier<ModelAnswer>> scripted = new ArrayDeque<>();
     private final List<ModelRequest> requests = new ArrayList<>();
+    private JsonNode unscriptedAnswer = aDigest();
 
     /** A digest answer that follows the schema, for a fix with a regression spec. */
     static ObjectNode aDigest() {
@@ -45,8 +48,53 @@ final class FakeJudgmentModel implements JudgmentModel {
                 """);
     }
 
+    /** An answer for a Feature work item that follows the schema; the complexity is the one given. */
+    static ObjectNode aFeatureWork(String complexity) {
+        return (ObjectNode) CanonicalJson.parse("""
+                {
+                  "workType": "feature",
+                  "complexity": "%s",
+                  "rubric": {
+                    "modulesTouched": ["core", "api"],
+                    "dataChange": "schema_change",
+                    "integration": "none",
+                    "requirementsUnclear": false,
+                    "knownPattern": true,
+                    "acrossSystems": false,
+                    "newArchitecture": false,
+                    "clientCriticalWithoutEarlierExample": false
+                  },
+                  "facts": [
+                    {"fact": "The feature adds a table", "quote": "Nature of the change", "source": "PR-1"},
+                    {"fact": "The ticket asks for a series", "quote": "Users miss alerts", "source": "WI-100"}
+                  ],
+                  "reason": "Two modules and one schema change.",
+                  "confidence": 0.8
+                }
+                """.formatted(complexity));
+    }
+
+    /** An answer for review comments that follows the schema; the arguments are pairs of a comment id and a type. */
+    static ObjectNode aReviewComments(String... commentIdsAndTypes) {
+        ObjectNode answer = JsonNodeFactory.instance.objectNode();
+        ArrayNode comments = answer.putArray("comments");
+        for (int index = 0; index < commentIdsAndTypes.length; index += 2) {
+            comments.addObject()
+                    .put("commentId", commentIdsAndTypes[index])
+                    .put("commentType", commentIdsAndTypes[index + 1])
+                    .put("reason", "Reason for " + commentIdsAndTypes[index]);
+        }
+        return answer;
+    }
+
     static ModelAnswer answerOf(JsonNode digest) {
         return new ModelAnswer(digest, MODEL, INPUT_TOKENS, OUTPUT_TOKENS);
+    }
+
+    /** Every call that no script covers answers this instead of a digest. */
+    FakeJudgmentModel answeringByDefault(JsonNode answer) {
+        unscriptedAnswer = answer;
+        return this;
     }
 
     /** The next call answers this. */
@@ -67,7 +115,7 @@ final class FakeJudgmentModel implements JudgmentModel {
     FakeJudgmentModel thenDoes(Runnable action) {
         scripted.add(() -> {
             action.run();
-            return answerOf(aDigest());
+            return answerOf(unscriptedAnswer);
         });
         return this;
     }
@@ -84,6 +132,6 @@ final class FakeJudgmentModel implements JudgmentModel {
     public ModelAnswer judge(ModelRequest request) {
         requests.add(request);
         Supplier<ModelAnswer> next = scripted.poll();
-        return next == null ? answerOf(aDigest()) : next.get();
+        return next == null ? answerOf(unscriptedAnswer) : next.get();
     }
 }

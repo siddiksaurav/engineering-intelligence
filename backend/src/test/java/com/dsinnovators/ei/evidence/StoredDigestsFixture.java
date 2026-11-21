@@ -80,6 +80,7 @@ final class StoredDigestsFixture {
                         "Changes the list",
                         "https://github.com/" + StoredRecordsFixture.REPOSITORY + "/pull/" + pullRequestNumber
                                 + "/files")),
+                null,
                 JudgedBy.MODEL,
                 MODEL,
                 PROMPT_VERSION,

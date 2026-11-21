@@ -233,4 +233,41 @@ class StoredWorkPackagesTest extends DatabaseTest {
         assertEquals(null, facts.projectId());
         assertEquals(null, facts.priority());
     }
+
+    @Test
+    void theTextOfAWorkPackageHoldsTitleTypePriorityParentDescriptionAndLink() {
+        recorder.store(new FetchedWorkPackage(
+                81224,
+                json("{\"id\":81224,\"subject\":\"Notify desktop users\","
+                        + "\"description\":{\"format\":\"markdown\",\"raw\":\"# Problem\\nUsers miss alerts.\"},"
+                        + "\"_links\":{\"type\":{\"title\":\"Feature\"},\"priority\":{\"title\":\"High\"},"
+                        + "\"parent\":{\"href\":\"/api/v3/work_packages/70725\",\"title\":\"Admin section\"}}}"),
+                json("{\"_embedded\":{\"elements\":[]}}"),
+                json("{\"reduced\":true,\"pullRequests\":[]}")));
+
+        WorkPackageText text = stored.text(81224).orElseThrow();
+
+        assertEquals(
+                new WorkPackageText(
+                        81224,
+                        "Notify desktop users",
+                        "Feature",
+                        Optional.of("High"),
+                        Optional.of("Admin section"),
+                        "# Problem\nUsers miss alerts.",
+                        "https://community.openproject.org/wp/81224"),
+                text);
+        assertEquals(Optional.empty(), stored.text(1));
+    }
+
+    @Test
+    void aWorkPackageWithoutPriorityParentOrDescriptionHasEmptyParts() {
+        store(60, "Feature", null);
+
+        WorkPackageText text = stored.text(60).orElseThrow();
+
+        assertEquals(Optional.empty(), text.priority());
+        assertEquals(Optional.empty(), text.parentTitle());
+        assertEquals("", text.description());
+    }
 }

@@ -1,6 +1,7 @@
 package com.dsinnovators.ei.source.github;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.dsinnovators.ei.DatabaseTest;
@@ -72,6 +73,28 @@ class StoredPullRequestsTest extends DatabaseTest {
                         .get("title")
                         .asString());
         assertTrue(storedPullRequests.find(REPOSITORY, 8).isEmpty());
+    }
+
+    @Test
+    void findByExternalIdGivesTheLatestVersionOfThatPullRequest() {
+        storePullRequest(REPOSITORY, 7, "2026-07-02T08:00:00Z", "first version");
+        storePullRequest(REPOSITORY, 7, "2026-07-02T08:00:00Z", "second version");
+
+        assertEquals(
+                "second version",
+                storedPullRequests
+                        .findByExternalId(REPOSITORY + "#7")
+                        .orElseThrow()
+                        .getPayload()
+                        .get("title")
+                        .asString());
+        assertTrue(storedPullRequests.findByExternalId(REPOSITORY + "#8").isEmpty());
+    }
+
+    @Test
+    void findByExternalIdRefusesAnIdWithoutANumber() {
+        assertThrows(IllegalArgumentException.class, () -> storedPullRequests.findByExternalId("opf/openproject"));
+        assertThrows(IllegalArgumentException.class, () -> storedPullRequests.findByExternalId("opf/openproject#x"));
     }
 
     @Test

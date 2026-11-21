@@ -11,6 +11,7 @@ import tools.jackson.databind.JsonNode;
  * @param value the answer: the digest, or the facts an item tier rests on
  * @param tier T1 to T4 when the kind gives one, else null
  * @param facts at least one, each with a link
+ * @param confidence the model's own value from 0 to 1 when the kind has one, else null
  * @param model the model id the provider answered with; required for a judgment by a model
  * @param promptVersion such as {@code pull-request-digest/v1}; required for a judgment by a model
  * @param inputHash SHA-256 of the input; the same input is never judged twice by a model
@@ -25,6 +26,7 @@ public record NewJudgment(
         String tier,
         String reason,
         List<JudgmentFact> facts,
+        Double confidence,
         JudgedBy judgedBy,
         String model,
         String promptVersion,
@@ -42,6 +44,9 @@ public record NewJudgment(
         require(tier == null || TIER.matcher(tier).matches(), "a tier from T1 to T4, was " + tier);
         require(!isBlank(reason), "a reason");
         require(facts != null && !facts.isEmpty(), "at least one fact");
+        require(
+                confidence == null || (confidence >= 0 && confidence <= 1),
+                "a confidence from 0 to 1, was " + confidence);
         require(!isBlank(inputHash), "an input hash");
         require(
                 judgedBy != JudgedBy.MODEL || (!isBlank(model) && !isBlank(promptVersion)),

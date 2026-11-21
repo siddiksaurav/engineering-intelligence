@@ -26,6 +26,18 @@ public interface JobArguments {
      */
     String require(String name);
 
+    /**
+     * Checks that the job was given no argument at all.
+     *
+     * @param jobName the job, named in the message
+     * @throws IllegalArgumentException that names the job and the arguments given
+     */
+    default void requireNone(String jobName) {
+        if (!names().isEmpty()) {
+            throw new IllegalArgumentException("The job " + jobName + " takes no arguments, was given " + names());
+        }
+    }
+
     /** The names of the given arguments. */
     Set<String> names();
 

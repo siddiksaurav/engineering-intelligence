@@ -177,6 +177,23 @@ public class StoredWorkPackages {
                 .map(record -> factsOf(record, number));
     }
 
+    /** The text of the stored work package with this number, for a judgment; empty when it is not stored. */
+    public Optional<WorkPackageText> text(long number) {
+        return find(number).map(record -> textOf(record.getPayload(), number));
+    }
+
+    private WorkPackageText textOf(JsonNode workPackage, long number) {
+        JsonNode links = workPackage.path("_links");
+        return new WorkPackageText(
+                number,
+                workPackage.path("subject").asString(),
+                WorkPackageType.nameOf(workPackage),
+                Optional.ofNullable(links.path("priority").path("title").asString(null)),
+                Optional.ofNullable(links.path("parent").path("title").asString(null)),
+                workPackage.path("description").path("raw").asString(""),
+                source.dataSource().getBaseUrl() + "/wp/" + number);
+    }
+
     private WorkPackageFacts factsOf(RawRecord record, long number) {
         JsonNode workPackage = record.getPayload();
         JsonNode links = workPackage.path("_links");

@@ -62,4 +62,15 @@ class JobArgumentsTest {
     void aBlankNameIsRefused() {
         assertThrows(IllegalArgumentException.class, () -> JobArguments.of(Map.of(" ", "x")));
     }
+
+    @Test
+    void requireNoneAcceptsNoArgumentsAndRefusesAnyNamingTheJobAndTheArguments() {
+        JobArguments.of(Map.of()).requireNone("some-job");
+
+        IllegalArgumentException refused = assertThrows(
+                IllegalArgumentException.class,
+                () -> JobArguments.of(Map.of("repository", "a/b")).requireNone("some-job"));
+
+        assertEquals("The job some-job takes no arguments, was given [repository]", refused.getMessage());
+    }
 }

@@ -118,6 +118,18 @@ class RawRecordStoreTest extends DatabaseTest {
     }
 
     @Test
+    void aRecordIsFoundByItsIdWhateverVersionItIs() {
+        StoreResult first = store.store(GITHUB, PULL_REQUEST, "107", URL, json("{\"title\":\"A\"}"));
+        store.store(GITHUB, PULL_REQUEST, "107", URL, json("{\"title\":\"B\"}"));
+
+        RawRecord found = store.findById(first.record().getId()).orElseThrow();
+
+        assertEquals(1, found.getVersion());
+        assertEquals("A", found.getPayload().get("title").asString());
+        assertTrue(store.findById(-1).isEmpty());
+    }
+
+    @Test
     void anUnknownRecordHasNoLatestVersion() {
         assertTrue(store.findLatest(GITHUB, PULL_REQUEST, "none").isEmpty());
         assertTrue(store.findVersions(GITHUB, PULL_REQUEST, "none").isEmpty());

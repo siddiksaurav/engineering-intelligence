@@ -50,7 +50,7 @@ class PullRequestDigestTest {
     void refusesAWorkTypeOutsideTheThirteen() {
         ObjectNode answer = validAnswer().put("workType", "bugfix");
 
-        InvalidDigestException refused = assertThrows(InvalidDigestException.class, () -> read(answer));
+        InvalidAnswerException refused = assertThrows(InvalidAnswerException.class, () -> read(answer));
 
         assertTrue(refused.getMessage().contains("workType"));
         assertTrue(refused.getMessage().contains("bugfix"));
@@ -112,7 +112,7 @@ class PullRequestDigestTest {
         ObjectNode answer = validAnswer();
         answer.remove(field);
 
-        InvalidDigestException refused = assertThrows(InvalidDigestException.class, () -> read(answer));
+        InvalidAnswerException refused = assertThrows(InvalidAnswerException.class, () -> read(answer));
 
         assertTrue(refused.getMessage().contains(field), refused.getMessage());
     }
@@ -122,7 +122,7 @@ class PullRequestDigestTest {
     void refusesAValueOutsideAnEnum(String field) {
         ObjectNode answer = validAnswer().put(field, "sometimes");
 
-        InvalidDigestException refused = assertThrows(InvalidDigestException.class, () -> read(answer));
+        InvalidAnswerException refused = assertThrows(InvalidAnswerException.class, () -> read(answer));
 
         assertTrue(refused.getMessage().contains(field));
         assertTrue(refused.getMessage().contains("sometimes"));
@@ -132,12 +132,12 @@ class PullRequestDigestTest {
     void refusesAYesNoFieldThatIsNotABoolean() {
         ObjectNode answer = validAnswer().put("testsIncluded", "yes");
 
-        assertThrows(InvalidDigestException.class, () -> read(answer));
+        assertThrows(InvalidAnswerException.class, () -> read(answer));
     }
 
     @Test
     void refusesABlankReason() {
-        assertThrows(InvalidDigestException.class, () -> read(validAnswer().put("reason", " ")));
+        assertThrows(InvalidAnswerException.class, () -> read(validAnswer().put("reason", " ")));
     }
 
     @Test
@@ -145,7 +145,7 @@ class PullRequestDigestTest {
         ObjectNode answer = validAnswer();
         answer.putArray("facts");
 
-        assertThrows(InvalidDigestException.class, () -> read(answer));
+        assertThrows(InvalidAnswerException.class, () -> read(answer));
     }
 
     @Test
@@ -153,13 +153,13 @@ class PullRequestDigestTest {
         ObjectNode answer = validAnswer();
         answer.set("facts", CanonicalJson.parse("[{\"fact\":\" \",\"filePath\":\"a.rb\"}]"));
 
-        assertThrows(InvalidDigestException.class, () -> read(answer));
+        assertThrows(InvalidAnswerException.class, () -> read(answer));
     }
 
     @Test
     void refusesAnAnswerThatIsNotAnObject() {
         assertThrows(
-                InvalidDigestException.class, () -> PullRequestDigest.fromAnswer(CanonicalJson.parse("[]"), false));
+                InvalidAnswerException.class, () -> PullRequestDigest.fromAnswer(CanonicalJson.parse("[]"), false));
     }
 
     @ParameterizedTest
@@ -167,7 +167,7 @@ class PullRequestDigestTest {
     void refusesATierlessAnswerForAWorkTypeThatNeedsATier(String workType) {
         ObjectNode answer = validAnswer().put("workType", workType);
 
-        InvalidDigestException refused = assertThrows(InvalidDigestException.class, () -> read(answer));
+        InvalidAnswerException refused = assertThrows(InvalidAnswerException.class, () -> read(answer));
 
         assertTrue(refused.getMessage().contains("workTypeTier"));
     }
@@ -188,7 +188,7 @@ class PullRequestDigestTest {
         ObjectNode answer = validAnswer().put("workType", "infra");
         answer.set("workTypeTier", CanonicalJson.parse("{\"tier\":\"T4\",\"reason\":\"Too much\"}"));
 
-        assertThrows(InvalidDigestException.class, () -> read(answer));
+        assertThrows(InvalidAnswerException.class, () -> read(answer));
     }
 
     @Test

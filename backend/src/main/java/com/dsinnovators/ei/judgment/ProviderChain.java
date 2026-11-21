@@ -1,5 +1,6 @@
 package com.dsinnovators.ei.judgment;
 
+import com.dsinnovators.ei.job.JobCounts;
 import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -53,6 +54,24 @@ final class ProviderChain implements JudgmentModel {
                 providers.isEmpty()
                         ? "No model provider is configured. Set LLM_PROVIDER_1_API_KEY"
                         : "Every model provider has reached its limit: " + providerNames());
+    }
+
+    /**
+     * Starts a run of a job that needs the model.
+     *
+     * @throws IllegalStateException when no provider has a key
+     */
+    void startRunRequiringAProvider() {
+        startRun();
+        if (providerNames().isEmpty()) {
+            throw new IllegalStateException("No model provider has a key. Set LLM_PROVIDER_1_API_KEY in .env");
+        }
+    }
+
+    /** Adds the calls of each provider and the seconds waited since the run started to the counts of the run. */
+    void reportUseTo(JobCounts counts) {
+        callsPerProvider().forEach((provider, calls) -> counts.add("calls_" + provider, calls));
+        counts.add("rate_limit_wait_seconds", waited().toSeconds());
     }
 
     /** Forgets the limits, the counts and the waits of the last run. */

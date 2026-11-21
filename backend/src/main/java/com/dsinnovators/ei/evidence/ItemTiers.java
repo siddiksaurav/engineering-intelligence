@@ -83,6 +83,7 @@ class ItemTiers {
                 tier.tier(),
                 tier.reason(),
                 digest.getFacts(),
+                null,
                 JudgedBy.MODEL,
                 digest.getModel(),
                 digest.getPromptVersion(),

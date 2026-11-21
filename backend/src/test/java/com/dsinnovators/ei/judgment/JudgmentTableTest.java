@@ -161,4 +161,49 @@ class JudgmentTableTest extends DatabaseTest {
                     jdbc.queryForObject("select valid_from_quarter from setting where key = ?", String.class, key));
         }
     }
+
+    @Test
+    void acceptsTheStage2KindsOnAnEvidenceItem() {
+        insertJudgment("feature_work_complexity", null, evidenceItemId, "model", "m", "complexity", null);
+        insertJudgment("review_comment", null, evidenceItemId, "model", "m", "comment", null);
+
+        assertEquals(
+                2,
+                jdbc.queryForObject(
+                        "select count(*) from judgment where kind in ('feature_work_complexity', 'review_comment')",
+                        Integer.class));
+    }
+
+    @Test
+    void theStage2SettingsAreSeededFromQuarter2026Q2() {
+        for (String key : new String[] {"evidence.complexity_tiers", "evidence.review_comment_types"}) {
+            assertEquals(
+                    "2026-Q2",
+                    jdbc.queryForObject("select valid_from_quarter from setting where key = ?", String.class, key));
+        }
+    }
+
+    @Test
+    void veryHighComplexityCountsAsTierT3AndStyleHasNoTier() {
+        assertEquals(
+                "T3",
+                jdbc.queryForObject(
+                        "select value ->> 'very_high' from setting where key = 'evidence.complexity_tiers'",
+                        String.class));
+        assertEquals(
+                10,
+                jdbc.queryForObject(
+                        "select count(*) from setting, jsonb_object_keys(value) where key = 'evidence.review_comment_types'",
+                        Integer.class));
+        assertEquals(
+                "false",
+                jdbc.queryForObject(
+                        "select value -> 'style' ->> 'substantive' from setting where key = 'evidence.review_comment_types'",
+                        String.class));
+        assertEquals(
+                "T3",
+                jdbc.queryForObject(
+                        "select value -> 'architecture' ->> 'tier' from setting where key = 'evidence.review_comment_types'",
+                        String.class));
+    }
 }
