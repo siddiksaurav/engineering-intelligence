@@ -64,11 +64,11 @@ class DeveloperControllerTest extends DatabaseTest {
         long featureId = item(ada, "feature_work:10:1", "feature_work", "2026-07-03", FEATURE_FIELDS, false, null);
         long oldBug = item(ada, "bug_fix:20:1", "bug_fix", "2026-07-09", BUG_FIELDS, false, null);
         long currentBug = item(ada, "bug_fix:20:1", "bug_fix", "2026-07-09", BUG_FIELDS, false, oldBug);
-        long commentId =
-                item(ada, "review_comment:77", "review_comment_written", "2026-10-02", COMMENT_FIELDS, false, null);
-        long withdrawn =
-                item(ada, "review_comment:78", "review_comment_written", "2026-10-03", COMMENT_FIELDS, false, null);
-        item(ada, "review_comment:78", "review_comment_written", "2026-10-03", COMMENT_FIELDS, true, withdrawn);
+        long commentId = item(
+                ada, "review_comment_written:77", "review_comment_written", "2026-10-02", COMMENT_FIELDS, false, null);
+        long withdrawn = item(
+                ada, "review_comment_written:78", "review_comment_written", "2026-10-03", COMMENT_FIELDS, false, null);
+        item(ada, "review_comment_written:78", "review_comment_written", "2026-10-03", COMMENT_FIELDS, true, withdrawn);
 
         HttpResponse<String> response = client.get("/api/developers/" + ada + "/evidence-items");
 
@@ -87,7 +87,7 @@ class DeveloperControllerTest extends DatabaseTest {
     void anItemHasItsTypeDateQuarterTitleAndLinks() throws Exception {
         item(ada, "feature_work:10:1", "feature_work", "2026-07-03", FEATURE_FIELDS, false, null);
         item(ada, "bug_fix:20:1", "bug_fix", "2026-07-09", BUG_FIELDS, false, null);
-        item(ada, "review_comment:77", "review_comment_written", "2026-10-02", COMMENT_FIELDS, false, null);
+        item(ada, "review_comment_written:77", "review_comment_written", "2026-10-02", COMMENT_FIELDS, false, null);
 
         JsonNode items = JobEndpointClient.json(client.get("/api/developers/" + ada + "/evidence-items"))
                 .get("items");
@@ -98,7 +98,7 @@ class DeveloperControllerTest extends DatabaseTest {
         assertEquals("2026-Q4", comment.get("quarter").stringValue());
         assertEquals("Add cache", comment.get("title").stringValue());
         assertEquals(
-                "https://source.test/review_comment:77",
+                "https://source.test/review_comment_written:77",
                 comment.get("sourceUrl").stringValue());
         assertLink(comment.get("links").get(0), "Comment on GitHub", "https://gh.test/pull/103#discussion_r77");
         assertLink(comment.get("links").get(1), "Pull request #103 on GitHub", "https://gh.test/pull/103");
@@ -127,8 +127,9 @@ class DeveloperControllerTest extends DatabaseTest {
         item(ada, "feature_work:10:1", "feature_work", "2026-07-03", FEATURE_FIELDS, false, null);
         long oldBug = item(ada, "bug_fix:20:1", "bug_fix", "2026-07-09", BUG_FIELDS, false, null);
         item(ada, "bug_fix:20:1", "bug_fix", "2026-07-09", BUG_FIELDS, false, oldBug);
-        long gone = item(ada, "review_comment:77", "review_comment_written", "2026-10-02", COMMENT_FIELDS, false, null);
-        item(ada, "review_comment:77", "review_comment_written", "2026-10-02", COMMENT_FIELDS, true, gone);
+        long gone = item(
+                ada, "review_comment_written:77", "review_comment_written", "2026-10-02", COMMENT_FIELDS, false, null);
+        item(ada, "review_comment_written:77", "review_comment_written", "2026-10-02", COMMENT_FIELDS, true, gone);
 
         JsonNode developers = JobEndpointClient.json(client.get("/api/developers"));
 
