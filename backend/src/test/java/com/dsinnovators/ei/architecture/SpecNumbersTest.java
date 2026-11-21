@@ -46,7 +46,6 @@ class SpecNumbersTest {
                     && (isStaticFinal(field) || field.getOwner().isEnum()));
 
     @Test
-    @Disabled("F05 creates the evidence package; enable this test in F05")
     void theEvidencePackageHoldsNoNumberConstant() {
         holdsNoNumberConstant("evidence");
     }

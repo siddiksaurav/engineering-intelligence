@@ -40,7 +40,6 @@ class AppendOnlyCodeTest {
     }
 
     @Test
-    @Disabled("F05 creates EvidenceItem; enable this test in F05")
     void theEvidenceItemEntityIsImmutable() {
         entityIsImmutable("EvidenceItem");
     }
@@ -57,7 +56,6 @@ class AppendOnlyCodeTest {
     }
 
     @Test
-    @Disabled("F05 creates the repository of EvidenceItem; enable this test in F05")
     void noRepositoryOfEvidenceItemCanUpdateOrDelete() {
         repositoryCannotUpdateOrDelete("EvidenceItem");
     }
