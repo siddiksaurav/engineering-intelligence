@@ -26,3 +26,35 @@ Nothing blocking. Fixed as follow-ups:
 - `c460f9c`: `ModelJobGuard.runGuarded`, `JobArguments.requireNone` and `JudgingLoop` replace the copies in the three model jobs.
 - `6b50a78`: confidence only in the column.
 - `fc0b8b3`: title through `PullRequestFacts`, `WireNamed` at package level, imports in two tests.
+
+## Follow-ups
+
+- `ReviewCommentLimits`: the start-up check adds the four cut limits but not the text that always comes with them (PR title, file path, labels, cut marks). With the defaults (6,000 of 12,000) there is room; an oversized comment would go in a chunk of its own.
+- `items_left_for_later` (both Stage 2 jobs) counts every remaining item, including those the next run will skip as already judged. Counts only; no judgment is affected.
+
+## Verification (22 Nov 2026)
+
+No LLM key on this machine (user, 22 Nov 2026), so every real-model check waits for the user.
+
+- Backend: full `./mvnw verify` green after the review fixes: 896 tests, 0 failures, 2 skipped (F10, F11). The backend could not be started against the Compose database: no `.env` (no `POSTGRES_PASSWORD`) on this machine, so V11 is not yet applied there; it runs at the next start. Web: format, lint, typecheck, 50 tests and build green (no web change in F07).
+- "Done when" 1 (every closed Feature work item has one current complexity judgment, every fact with a quote or link): `FeatureWorkJudgmentJobTest` and `FeatureWorkJudgeTest` green with the fake model. Real data waiting for the user's key.
+- "Done when" 2 (every human reviewer comment has one current judgment): `ReviewCommentJudgmentJobTest.everyCurrentReviewCommentGetsOneJudgment` green. Real data waiting for the key.
+- "Done when" 3 (a rename across five modules is judged Low): the prompt states the rule and the example (`PromptLibraryTest`). The model's behaviour waits for the key.
+
+### Steps for the user once the key is in `.env`
+
+1. `cp .env.example .env`, set `POSTGRES_PASSWORD`, `LLM_PROVIDER_1_API_KEY` (Groq) and optionally `LLM_PROVIDER_2_API_KEY` and `LLM_PROVIDER_2_MODEL` (Gemini). Start the backend.
+2. Run, one after the other (each `POST ... -d '{}'`, check with `GET /api/jobs/runs/<id>`): `pull-request-digest` (may need several days of the free limit; run again until `pull_requests_left_for_later` is 0), `evidence-build`, `feature-work-judgment`, `review-comment-judgment`.
+3. SQL checks (Compose database):
+   - Current Feature work items without a current `feature_work_complexity` judgment: 0.
+   - Current Review comment written items without a current `review_comment` judgment: 0.
+   - `select count(*) from judgment j, jsonb_array_elements(j.facts) f where j.kind in ('feature_work_complexity','review_comment') and coalesce(f->>'link','') = '';` gives 0.
+4. Five-module rename: find a Feature work item whose PR digests name five or more modules and whose nature of change is a rename; its complexity should be `low`. If none is in the two weeks, note it for F08's tuning set.
+
+## What a later feature should know
+
+- Job order: `github-import`, `openproject-import`, `identity-build`, `pull-request-digest`, `evidence-build`, `feature-work-judgment`, `review-comment-judgment`. The three model jobs never run at once (decision 174); a second start fails naming the running one.
+- `feature_work_complexity` value: `workType`, `complexity` (`low` to `very_high`), `rubric`, `facts` (with `quote`, `source`), `reason`, `judgedOnPartialInput`, `leftOutPullRequests`; tier on the row (Very high gives T3, decision 171); confidence in the `confidence` column only.
+- `review_comment` value: `commentType`, `substantive`, `reason`; tier null when not substantive (decision 170). F10 reads substantive from the value, not from the setting.
+- No screen or API shows these judgments yet (decision 175): F08 adds them after the blind labels.
+- Prompt tuning (F08) adds `feature-work-complexity/v2` or `review-comments/v2` and pins its hash in `PromptLibraryTest`.

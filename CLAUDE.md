@@ -126,6 +126,12 @@ curl -s -X POST localhost:8080/api/jobs/pull-request-digest/runs \
 curl -s -X POST localhost:8080/api/jobs/evidence-build/runs \
   -H 'Content-Type: application/json' -d '{}'
                                                              build the evidence items from the stored records (after identity-build)
+curl -s -X POST localhost:8080/api/jobs/feature-work-judgment/runs \
+  -H 'Content-Type: application/json' -d '{}'
+                                                             Stage 2: complexity of every Feature work item (after evidence-build; needs a provider key)
+curl -s -X POST localhost:8080/api/jobs/review-comment-judgment/runs \
+  -H 'Content-Type: application/json' -d '{}'
+                                                             Stage 2: type and tier of every review comment item (after evidence-build; needs a provider key)
 docker compose exec postgres psql -U ei -d ei -c "select confirm_identity_proposal(7);"
                                                              confirm proposal 7 (list them in identity_proposal)
 docker compose exec postgres psql -U ei -d ei -c "select reject_identity_proposal(7);"
@@ -135,7 +141,7 @@ docker compose exec postgres psql -U ei -d ei -c "select reject_identity_proposa
 - Backend tests need Docker running. They start their own PostgreSQL container and never use the Compose database.
 - Jobs are started only through `POST /api/jobs/{name}/runs`, from the machine the backend runs on. Every run is recorded in `job_run`. A second start of a running job answers `409`. `github-import` takes `repository` and either `mergedFrom` and `mergedTo` or `pullRequestNumbers` (comma-separated).
 - `github-import` needs a read-only `GITHUB_TOKEN` in `.env` (a fine-grained token with public repository access). Two weeks take about six minutes.
-- `pull-request-digest` calls a free LLM through `LLM_PROVIDER_1_*` (Groq) and, when that one is at its limit, `LLM_PROVIDER_2_*` (Gemini) from `.env` (decisions 144, 146, 158). With every provider at its limit the run stops, counts what is left and succeeds; run it again later. Never several keys of one provider.
+- `pull-request-digest` calls a free LLM through `LLM_PROVIDER_1_*` (Groq) and, when that one is at its limit, `LLM_PROVIDER_2_*` (Gemini) from `.env` (decisions 144, 146, 158). With every provider at its limit the run stops, counts what is left and succeeds; run it again later. Never several keys of one provider. `feature-work-judgment` and `review-comment-judgment` use the same providers and rules; the three model jobs never run at once (decision 174).
 - Tests run with the profile `test` and never read `.env`. They never call GitHub; `GitHubApiFixture` gives a client on a mock server.
 - Health: `curl -s localhost:8080/actuator/health`. The web page at `localhost:3000` shows "backend up" or "backend down".
 - Evidence list: `localhost:3000/developers` (after `evidence-build`).

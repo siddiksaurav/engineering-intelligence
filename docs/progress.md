@@ -2,6 +2,24 @@
 
 One entry per working session, newest at the top. Each entry says what was done, what is next and what is blocked. Read the top entry first.
 
+## 22 Nov 2026: F07 Stage 2 judgment built while the user slept (no LLM key)
+
+**Done**
+- `/ship F07` on the user's instruction to decide everything and skip the model runs: no question brief was answered; decisions 163 to 176 are the session's and may be overruled by number.
+- Migration V11 (kinds `feature_work_complexity`, `review_comment`; settings `evidence.complexity_tiers`, `evidence.review_comment_types`); prompts `feature-work-complexity/v1` and `review-comments/v1`; jobs `feature-work-judgment` and `review-comment-judgment`; `ModelJobGuard` (the three model jobs never run at once). 12 tasks in 3 batches, a confidence fix and 7 review-fix commits on `feature/f07`. Nothing new on screens (decision 175).
+- Pull request: see the F07 row of the status table and `notes.md`.
+
+**Checks still open (waiting for the user)**
+- The LLM key in `.env`, then the job sequence and SQL checks in `docs/features/F07-stage-2-judgment/notes.md`, "Verification" (they include F06's open checks).
+- Read decisions 163 to 176 and overrule any by number.
+- From F05: the 20 Feature work groups. From F04: the 19 identity proposals.
+
+**Next**
+- `/clear`, then `/ship F08` (its blind labels can be made once F07 has judged on real data; building it can start now).
+
+**Blocked or needed from the user**
+- The LLM keys (Groq, optionally Gemini).
+
 ## 22 Nov 2026: F06 JudgmentModel, PR digest and the digest-based builders shipped
 
 **Done**
