@@ -60,6 +60,12 @@ class JpaRawRecordStore implements RawRecordStore {
 
     @Override
     @Transactional(readOnly = true)
+    public Optional<RawRecord> findById(long id) {
+        return rawRecords.findById(id);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public List<RawRecord> findVersions(String dataSourceKey, String recordKind, String externalId) {
         requireText(recordKind, "recordKind");
         requireText(externalId, "externalId");

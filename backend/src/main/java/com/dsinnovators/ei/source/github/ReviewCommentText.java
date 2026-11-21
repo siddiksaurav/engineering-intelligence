@@ -2,6 +2,7 @@ package com.dsinnovators.ei.source.github;
 
 import com.dsinnovators.ei.source.RawRecord;
 import java.time.Instant;
+import java.time.format.DateTimeParseException;
 import java.util.OptionalLong;
 import tools.jackson.databind.JsonNode;
 
@@ -25,6 +26,10 @@ public record ReviewCommentText(
         String diffHunk,
         OptionalLong repliedToDatabaseId) {
 
+    /**
+     * @throws IllegalStateException when the record has no readable {@code createdAt}; the message names
+     *     the record by its id and external id
+     */
     static ReviewCommentText of(RawRecord record) {
         JsonNode payload = record.getPayload();
         JsonNode repliedTo = payload.path("replyTo").path("databaseId");
@@ -33,9 +38,21 @@ public record ReviewCommentText(
                 payload.path("databaseId").asLong(),
                 payload.path("url").asString(),
                 payload.path("path").asString(),
-                Instant.parse(payload.path("createdAt").asString()),
+                createdAtOf(record),
                 payload.path("body").asString(""),
                 payload.path("diffHunk").asString(""),
                 repliedTo.isNumber() ? OptionalLong.of(repliedTo.asLong()) : OptionalLong.empty());
+    }
+
+    private static Instant createdAtOf(RawRecord record) {
+        String createdAt = record.getPayload().path("createdAt").asString("");
+        try {
+            return Instant.parse(createdAt);
+        } catch (DateTimeParseException unreadable) {
+            throw new IllegalStateException(
+                    "The review comment record " + record.getId() + " (external id " + record.getExternalId()
+                            + ") has no readable createdAt, was '" + createdAt + "'",
+                    unreadable);
+        }
     }
 }

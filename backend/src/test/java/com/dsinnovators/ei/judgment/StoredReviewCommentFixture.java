@@ -65,12 +65,17 @@ final class StoredReviewCommentFixture {
                 .put("number", pullRequestNumber)
                 .putObject("repository")
                 .put("nameWithOwner", REPOSITORY);
-        rawRecords.store(
-                "github",
-                "review_comment",
-                REPOSITORY + "#" + pullRequestNumber + "/review_comment/" + databaseId,
-                url,
-                payload);
+        rawRecords.store("github", "review_comment", String.valueOf(databaseId), url, payload);
+    }
+
+    /** Stores a comment record that has no creation time, so it cannot be read, and its item row. */
+    void unreadableComment(long databaseId, int pullRequestNumber) {
+        String url = commentUrl(pullRequestNumber, databaseId);
+        ObjectNode payload = JsonNodeFactory.instance.objectNode();
+        payload.put("databaseId", databaseId);
+        payload.put("url", url);
+        rawRecords.store("github", "review_comment", String.valueOf(databaseId), url, payload);
+        item(databaseId, pullRequestNumber);
     }
 
     /** Stores the comment and its Review comment written item row. */
@@ -112,8 +117,7 @@ final class StoredReviewCommentFixture {
                         + "\"},\"comment\":{\"databaseId\":" + databaseId + "}}"),
                 List.of(
                         new EvidenceItemSource(
-                                rawRecordId("review_comment", pullRequestExternalId + "/review_comment/" + databaseId),
-                                SourceRole.REVIEW_COMMENT),
+                                rawRecordId("review_comment", String.valueOf(databaseId)), SourceRole.REVIEW_COMMENT),
                         new EvidenceItemSource(
                                 rawRecordId("pull_request", pullRequestExternalId), SourceRole.PULL_REQUEST))));
     }

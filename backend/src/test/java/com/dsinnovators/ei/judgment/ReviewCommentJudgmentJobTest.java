@@ -258,15 +258,31 @@ class ReviewCommentJudgmentJobTest extends DatabaseTest {
     }
 
     @Test
-    void failsTheRunNamingAPullRequestWhoseCommentWasEditedAfterTheItemWasBuilt() {
+    void judgesAnEditedCommentOnTheVersionItsItemWasBuiltOn() throws Exception {
         stored.commentRecord(1, 7, "2026-07-03T09:00:00Z", "Why a second query? Edited.", null);
-        model.thenAnswers(FakeJudgmentModel.aReviewComments("C-3", "correctness"));
+        answerTheThreeComments();
+
+        run();
+
+        String input = model.requests().get(0).input();
+        assertTrue(input.contains("Why a second query?\n"), input);
+        assertFalse(input.contains("Edited"), input);
+        assertEquals(3, reviewCommentJudgments());
+        assertNull(counts.get("chunks_failed"));
+    }
+
+    @Test
+    void anUnreadableCommentFailsOnlyItsPullRequestNamingIt() {
+        stored.unreadableComment(10, 8);
+        model.thenAnswers(FakeJudgmentModel.aReviewComments("C-1", "question", "C-2", "style"));
 
         JudgmentJobFailedException failed = assertThrows(JudgmentJobFailedException.class, this::run);
 
-        assertTrue(failed.getMessage().contains("opf/openproject#7"), failed.getMessage());
-        assertEquals(1, reviewCommentJudgments());
+        assertTrue(failed.getMessage().contains("opf/openproject#8"), failed.getMessage());
+        assertFalse(failed.getMessage().contains("opf/openproject#7"), failed.getMessage());
+        assertEquals(2, reviewCommentJudgments());
         assertEquals(1L, counts.get("chunks_failed"));
+        assertEquals(1L, counts.get("chunks"));
     }
 
     @Test

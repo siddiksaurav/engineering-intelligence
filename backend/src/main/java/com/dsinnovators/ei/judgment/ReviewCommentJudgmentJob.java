@@ -15,9 +15,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -117,14 +115,10 @@ class ReviewCommentJudgmentJob implements Job {
 
     private List<ReviewCommentChunks.Chunk> chunksOf(
             Map<String, List<ReviewCommentToJudge>> itemsByPullRequest, List<String> failed) {
-        Map<Long, ReviewCommentText> textsByRecordId = storedReviewComments.texts().stream()
-                .collect(Collectors.toMap(ReviewCommentText::rawRecordId, Function.identity()));
-        Map<Long, ReviewCommentText> textsByDatabaseId = textsByRecordId.values().stream()
-                .collect(Collectors.toMap(ReviewCommentText::databaseId, Function.identity()));
         List<ReviewCommentChunks.Chunk> chunks = new ArrayList<>();
         itemsByPullRequest.forEach((externalId, items) -> {
             try {
-                chunks.addAll(chunksOfPullRequest(externalId, items, textsByRecordId, textsByDatabaseId));
+                chunks.addAll(chunksOfPullRequest(externalId, items));
             } catch (RuntimeException failure) {
                 LOG.error("The review comments of {} could not be read", externalId, failure);
                 failed.add(externalId);
@@ -133,23 +127,18 @@ class ReviewCommentJudgmentJob implements Job {
         return chunks;
     }
 
-    private List<ReviewCommentChunks.Chunk> chunksOfPullRequest(
-            String externalId,
-            List<ReviewCommentToJudge> items,
-            Map<Long, ReviewCommentText> textsByRecordId,
-            Map<Long, ReviewCommentText> textsByDatabaseId) {
+    private List<ReviewCommentChunks.Chunk> chunksOfPullRequest(String externalId, List<ReviewCommentToJudge> items) {
         RawRecord pullRequest = storedPullRequests
                 .findByExternalId(externalId)
                 .orElseThrow(() -> new IllegalStateException("Pull request " + externalId + " is not stored"));
         List<ReviewCommentChunks.CommentPart> comments = new ArrayList<>();
         for (ReviewCommentToJudge item : items) {
-            ReviewCommentText text = Optional.ofNullable(textsByRecordId.get(item.commentRecordId()))
-                    .orElseThrow(() -> new IllegalStateException("The item " + item.key()
-                            + " rests on the comment record " + item.commentRecordId()
-                            + ", which is not the latest stored version; run evidence-build again"));
+            // The version the item was built from, so an edit made since changes nothing here until
+            // evidence-build gives the comment a new item row.
+            ReviewCommentText text = storedReviewComments.textOfRecord(item.commentRecordId());
             Optional<String> repliedBody = text.repliedToDatabaseId().stream()
-                    .mapToObj(textsByDatabaseId::get)
-                    .filter(Objects::nonNull)
+                    .mapToObj(storedReviewComments::latestTextOf)
+                    .flatMap(Optional::stream)
                     .map(ReviewCommentText::body)
                     .findFirst();
             comments.add(new ReviewCommentChunks.CommentPart(item, text, repliedBody));

@@ -11,6 +11,8 @@ interface RawRecordRepository extends Repository<RawRecord, Long> {
 
     RawRecord save(RawRecord record);
 
+    Optional<RawRecord> findById(Long id);
+
     @Query("""
             select r from RawRecord r
             where r.dataSource = :dataSource and r.recordKind = :recordKind and r.externalId = :externalId

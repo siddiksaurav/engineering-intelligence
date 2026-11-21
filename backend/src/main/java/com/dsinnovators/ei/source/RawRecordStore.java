@@ -18,6 +18,9 @@ public interface RawRecordStore {
 
     Optional<RawRecord> findLatest(String dataSourceKey, String recordKind, String externalId);
 
+    /** The exact version of a record that has this id, whether or not it is the latest. */
+    Optional<RawRecord> findById(long id);
+
     /** All versions of one record, oldest first. */
     List<RawRecord> findVersions(String dataSourceKey, String recordKind, String externalId);
 
