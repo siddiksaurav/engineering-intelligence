@@ -10,6 +10,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.node.ArrayNode;
 import tools.jackson.databind.node.ObjectNode;
 
@@ -170,5 +171,29 @@ class FeatureWorkAnswerTest {
     @Test
     void refusesAnAnswerThatIsNotAnObject() {
         assertThrows(InvalidAnswerException.class, () -> FeatureWorkAnswer.fromAnswer(CanonicalJson.parse("[]")));
+    }
+
+    @Test
+    void storesTheAnswerAndWhatTheSystemSetAsTheValueOfAJudgment() {
+        JsonNode value = read(validAnswer()).toValue(true, List.of("opf/openproject#9"));
+
+        assertEquals("feature", value.path("workType").asString());
+        assertEquals("medium", value.path("complexity").asString());
+        assertEquals("schema_change", value.path("rubric").path("dataChange").asString());
+        assertEquals("none", value.path("rubric").path("integration").asString());
+        assertEquals(
+                "meeting", value.path("rubric").path("modulesTouched").get(0).asString());
+        assertTrue(value.path("rubric").path("knownPattern").asBoolean());
+        assertEquals(2, value.path("facts").size());
+        assertEquals("PR-24204", value.path("facts").get(0).path("source").asString());
+        assertEquals(
+                "adds a migration", value.path("facts").get(0).path("quote").asString());
+        assertEquals(
+                "Two modules and one schema change make this Medium.",
+                value.path("reason").asString());
+        assertEquals(0.8, value.path("confidence").asDouble());
+        assertTrue(value.path("judgedOnPartialInput").asBoolean());
+        assertEquals(
+                "opf/openproject#9", value.path("leftOutPullRequests").get(0).asString());
     }
 }

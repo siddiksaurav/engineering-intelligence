@@ -86,7 +86,6 @@ record JudgmentProperties(
         return new DigestLimits(maxBodyCharacters, maxDiffCharacters);
     }
 
-    // F07: used by the Feature work input builder (a later task of F07).
     FeatureWorkLimits featureWorkLimits() {
         return new FeatureWorkLimits(maxDescriptionCharacters, maxFeatureWorkCharacters);
     }

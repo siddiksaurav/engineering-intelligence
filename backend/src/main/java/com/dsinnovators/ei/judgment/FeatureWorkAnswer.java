@@ -3,11 +3,13 @@ package com.dsinnovators.ei.judgment;
 import java.util.ArrayList;
 import java.util.List;
 import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.ObjectNode;
 
 /**
  * The Stage 2 answer for one Feature work item (F07 design, "The answer"), read and checked. The tier
- * is not part of it: it is read from the complexity table (spec 6.2). Used by the Feature work judge,
- * a later task of F07.
+ * is not part of it: it is read from the complexity table (spec 6.2).
  *
  * @param workType the one work type of the item, separate from the work types of its pull requests
  * @param facts the observations the complexity rests on, at least one
@@ -76,6 +78,39 @@ record FeatureWorkAnswer(
                 factsOf(answer),
                 AnswerFields.textOf(answer, "reason"),
                 confidenceOf(answer));
+    }
+
+    /**
+     * The answer as the JSON object stored in {@code judgment.value}, with what the system knows about the input.
+     *
+     * @param leftOutPullRequests the external ids of the pull requests left out for size
+     */
+    JsonNode toValue(boolean judgedOnPartialInput, List<String> leftOutPullRequests) {
+        ObjectNode value = JsonNodeFactory.instance.objectNode();
+        value.put("workType", workType.wireName());
+        value.put("complexity", complexity.wireName());
+        ObjectNode rubricNode = value.putObject("rubric");
+        ArrayNode modules = rubricNode.putArray("modulesTouched");
+        rubric.modulesTouched().forEach(modules::add);
+        rubricNode.put("dataChange", rubric.dataChange().wireName());
+        rubricNode.put("integration", rubric.integration().wireName());
+        rubricNode.put("requirementsUnclear", rubric.requirementsUnclear());
+        rubricNode.put("knownPattern", rubric.knownPattern());
+        rubricNode.put("acrossSystems", rubric.acrossSystems());
+        rubricNode.put("newArchitecture", rubric.newArchitecture());
+        rubricNode.put("clientCriticalWithoutEarlierExample", rubric.clientCriticalWithoutEarlierExample());
+        ArrayNode factNodes = value.putArray("facts");
+        facts.forEach(fact -> factNodes
+                .addObject()
+                .put("fact", fact.text())
+                .put("quote", fact.quote())
+                .put("source", fact.source()));
+        value.put("reason", reason);
+        value.put("confidence", confidence);
+        value.put("judgedOnPartialInput", judgedOnPartialInput);
+        ArrayNode leftOut = value.putArray("leftOutPullRequests");
+        leftOutPullRequests.forEach(leftOut::add);
+        return value;
     }
 
     private static Rubric rubricOf(JsonNode rubric) {
