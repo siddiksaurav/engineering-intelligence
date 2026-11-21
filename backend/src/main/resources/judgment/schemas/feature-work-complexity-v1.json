@@ -1,0 +1,65 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["workType", "complexity", "rubric", "facts", "reason", "confidence"],
+  "properties": {
+    "workType": {
+      "type": "string",
+      "enum": [
+        "feature",
+        "enhancement",
+        "fix",
+        "maintenance",
+        "research",
+        "technical_task",
+        "operational_support",
+        "refactor",
+        "test",
+        "docs",
+        "infra",
+        "performance",
+        "security"
+      ]
+    },
+    "complexity": { "type": "string", "enum": ["low", "medium", "high", "very_high"] },
+    "rubric": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "modulesTouched",
+        "dataChange",
+        "integration",
+        "requirementsUnclear",
+        "knownPattern",
+        "acrossSystems",
+        "newArchitecture",
+        "clientCriticalWithoutEarlierExample"
+      ],
+      "properties": {
+        "modulesTouched": { "type": "array", "items": { "type": "string" } },
+        "dataChange": { "type": "string", "enum": ["none", "schema_change", "production_data_migration"] },
+        "integration": { "type": "string", "enum": ["none", "existing_integration", "new_integration"] },
+        "requirementsUnclear": { "type": "boolean" },
+        "knownPattern": { "type": "boolean" },
+        "acrossSystems": { "type": "boolean" },
+        "newArchitecture": { "type": "boolean" },
+        "clientCriticalWithoutEarlierExample": { "type": "boolean" }
+      }
+    },
+    "facts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["fact", "quote", "source"],
+        "properties": {
+          "fact": { "type": "string" },
+          "quote": { "type": "string" },
+          "source": { "type": "string" }
+        }
+      }
+    },
+    "reason": { "type": "string" },
+    "confidence": { "type": "number" }
+  }
+}

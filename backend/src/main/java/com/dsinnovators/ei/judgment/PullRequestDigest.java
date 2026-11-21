@@ -1,7 +1,6 @@
 package com.dsinnovators.ei.judgment;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -128,33 +127,33 @@ public record PullRequestDigest(
      * Reads and checks the model's answer.
      *
      * @param judgedOnPartialCode set by the system from the input, never by the model
-     * @throws InvalidDigestException naming the field and the value when the answer breaks the schema
+     * @throws InvalidAnswerException naming the field and the value when the answer breaks the schema
      */
     public static PullRequestDigest fromAnswer(JsonNode answer, boolean judgedOnPartialCode) {
         if (!answer.isObject()) {
-            throw new InvalidDigestException("The answer must be a JSON object, was " + answer.getNodeType());
+            throw new InvalidAnswerException("The answer must be a JSON object, was " + answer.getNodeType());
         }
-        WorkType workType = enumOf(WorkType.class, answer, "workType");
+        WorkType workType = AnswerFields.enumOf(WorkType.class, answer, "workType");
         WorkTypeTier tier = tierOf(answer.path("workTypeTier"));
         if (workType.needsTier() && tier.tier().isEmpty()) {
-            throw new InvalidDigestException("The field workTypeTier needs a tier T1 to T3 for the work type "
+            throw new InvalidAnswerException("The field workTypeTier needs a tier T1 to T3 for the work type "
                     + workType.wireName() + ", was " + NOT_APPLICABLE);
         }
         return new PullRequestDigest(
                 workType,
-                textsOf(answer, "modulesTouched"),
-                flagOf(answer, "schemaOrDataMigration"),
-                flagOf(answer, "newIntegration"),
-                textOf(answer, "natureOfChange"),
-                flagOf(answer, "testsIncluded"),
-                enumOf(TestKind.class, answer, "testKind"),
+                AnswerFields.textsOf(answer, "modulesTouched"),
+                AnswerFields.flagOf(answer, "schemaOrDataMigration"),
+                AnswerFields.flagOf(answer, "newIntegration"),
+                AnswerFields.textOf(answer, "natureOfChange"),
+                AnswerFields.flagOf(answer, "testsIncluded"),
+                AnswerFields.enumOf(TestKind.class, answer, "testKind"),
                 tier,
-                enumOf(SecurityKind.class, answer, "securityKind"),
-                enumOf(InfraKind.class, answer, "infraKind"),
-                enumOf(InfraScope.class, answer, "infraScope"),
-                flagOf(answer, "dependencyChanges"),
-                enumOf(DocumentationScope.class, answer, "documentationScope"),
-                textOf(answer, "reason"),
+                AnswerFields.enumOf(SecurityKind.class, answer, "securityKind"),
+                AnswerFields.enumOf(InfraKind.class, answer, "infraKind"),
+                AnswerFields.enumOf(InfraScope.class, answer, "infraScope"),
+                AnswerFields.flagOf(answer, "dependencyChanges"),
+                AnswerFields.enumOf(DocumentationScope.class, answer, "documentationScope"),
+                AnswerFields.textOf(answer, "reason"),
                 factsOf(answer),
                 judgedOnPartialCode);
     }
@@ -185,52 +184,9 @@ public record PullRequestDigest(
         return value;
     }
 
-    private static <E extends Enum<E> & WireNamed> E enumOf(Class<E> type, JsonNode answer, String field) {
-        JsonNode node = required(answer, field);
-        return Arrays.stream(type.getEnumConstants())
-                .filter(constant -> node.isString() && constant.wireName().equals(node.asString()))
-                .findFirst()
-                .orElseThrow(() -> new InvalidDigestException("The field " + field + " must be one of "
-                        + Arrays.stream(type.getEnumConstants())
-                                .map(WireNamed::wireName)
-                                .toList() + ", was " + node));
-    }
-
-    private static boolean flagOf(JsonNode answer, String field) {
-        JsonNode node = required(answer, field);
-        if (!node.isBoolean()) {
-            throw new InvalidDigestException("The field " + field + " must be true or false, was " + node);
-        }
-        return node.booleanValue();
-    }
-
-    private static String textOf(JsonNode answer, String field) {
-        JsonNode node = required(answer, field);
-        if (!node.isString() || node.asString().isBlank()) {
-            throw new InvalidDigestException("The field " + field + " must be a text that is not blank, was " + node);
-        }
-        return node.asString();
-    }
-
-    private static List<String> textsOf(JsonNode answer, String field) {
-        JsonNode node = required(answer, field);
-        if (!node.isArray()) {
-            throw new InvalidDigestException("The field " + field + " must be a list of texts, was " + node);
-        }
-        List<String> texts = new ArrayList<>();
-        for (JsonNode item : node.values()) {
-            if (!item.isString() || item.asString().isBlank()) {
-                throw new InvalidDigestException(
-                        "The field " + field + " must hold texts that are not blank, had " + item);
-            }
-            texts.add(item.asString());
-        }
-        return List.copyOf(texts);
-    }
-
     private static WorkTypeTier tierOf(JsonNode node) {
         if (!node.isObject()) {
-            throw new InvalidDigestException("The field workTypeTier must be an object, was " + node);
+            throw new InvalidAnswerException("The field workTypeTier must be an object, was " + node);
         }
         String tier = node.path("tier").asString();
         String reason = node.path("reason").asString();
@@ -238,32 +194,25 @@ public record PullRequestDigest(
             return new WorkTypeTier(Optional.empty(), reason);
         }
         if (!List.of("T1", "T2", "T3").contains(tier)) {
-            throw new InvalidDigestException(
+            throw new InvalidAnswerException(
                     "The field workTypeTier.tier must be T1, T2, T3 or " + NOT_APPLICABLE + ", was " + tier);
         }
         if (reason.isBlank()) {
-            throw new InvalidDigestException("The field workTypeTier.reason must not be blank for the tier " + tier);
+            throw new InvalidAnswerException("The field workTypeTier.reason must not be blank for the tier " + tier);
         }
         return new WorkTypeTier(Optional.of(tier), reason);
     }
 
     private static List<Fact> factsOf(JsonNode answer) {
-        JsonNode node = required(answer, "facts");
+        JsonNode node = AnswerFields.required(answer, "facts");
         if (!node.isArray() || node.isEmpty()) {
-            throw new InvalidDigestException("The field facts must be a list of at least one fact, was " + node);
+            throw new InvalidAnswerException("The field facts must be a list of at least one fact, was " + node);
         }
         List<Fact> facts = new ArrayList<>();
         for (JsonNode fact : node.values()) {
             JsonNode path = fact.path("filePath");
-            facts.add(new Fact(textOf(fact, "fact"), path.isString() ? path.asString() : ""));
+            facts.add(new Fact(AnswerFields.textOf(fact, "fact"), path.isString() ? path.asString() : ""));
         }
         return List.copyOf(facts);
-    }
-
-    private static JsonNode required(JsonNode answer, String field) {
-        if (!answer.has(field)) {
-            throw new InvalidDigestException("The field " + field + " is missing from the answer");
-        }
-        return answer.get(field);
     }
 }
