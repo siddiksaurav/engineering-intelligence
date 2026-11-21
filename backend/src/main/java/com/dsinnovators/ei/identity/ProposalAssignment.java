@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
  * <p>The pairs of person and candidate are taken strongest first, by supporting items and then by
  * status changes. A pair is assigned when its person has nothing yet and its user is not taken. Among
  * pairs of equal strength, a person with two of them is ambiguous and gets nothing, and a user wanted
- * by two persons goes to neither of them from that pair.
+ * by two persons goes to nobody in the run (decision 99), not even to a weaker person.
  */
 final class ProposalAssignment {
 
@@ -83,6 +83,7 @@ final class ProposalAssignment {
                 .toList();
         Set<Long> contestedUsers =
                 repeated(unambiguous, claim -> claim.candidate().userId());
+        takenUsers.addAll(contestedUsers);
         unambiguous.stream()
                 .filter(claim -> !contestedUsers.contains(claim.candidate().userId()))
                 .forEach(this::assign);

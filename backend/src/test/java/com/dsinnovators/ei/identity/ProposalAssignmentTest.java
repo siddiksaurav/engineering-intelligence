@@ -43,6 +43,17 @@ class ProposalAssignmentTest {
     }
 
     @Test
+    void aUserTwoEquallyStrongPersonsWantGoesToNobodyNotEvenAWeakerPerson() {
+        long carla = 3L;
+        Map<Long, List<Candidate>> candidates = Map.of(
+                ANNA, List.of(candidate(USER_A, 3, 0), candidate(USER_B, 1, 0)),
+                BORIS, List.of(candidate(USER_A, 3, 0)),
+                carla, List.of(candidate(USER_A, 1, 0)));
+
+        assertEquals(Map.of(ANNA, USER_B), assignedUsers(candidates));
+    }
+
+    @Test
     void theMostSupportingItemsWinsForOnePerson() {
         assertEquals(
                 Map.of(ANNA, USER_B),
