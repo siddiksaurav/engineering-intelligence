@@ -223,6 +223,30 @@ class PullRequestDigestJobTest extends DatabaseTest {
     }
 
     @Test
+    void asksAgainOnceWhenTheAnswerCannotBeRead() throws Exception {
+        storePullRequestWithDiff(1, "2026-07-02T08:00:00Z");
+        model.thenFails(new UnreadableAnswerException("Provider fake sent the answer that is not JSON"));
+
+        run();
+
+        assertEquals(2, model.calls());
+        assertEquals(1L, counts.get("digests_written"));
+        assertNull(counts.get("pull_requests_failed"));
+    }
+
+    @Test
+    void failsThePullRequestWhenTheAnswerCannotBeReadTwice() {
+        storePullRequestWithDiff(1, "2026-07-02T08:00:00Z");
+        model.thenFails(new UnreadableAnswerException("Provider fake cut off the answer at the token limit"))
+                .thenFails(new UnreadableAnswerException("Provider fake cut off the answer at the token limit"));
+
+        assertThrows(PullRequestDigestFailedException.class, this::run);
+
+        assertEquals(2, model.calls());
+        assertEquals(1L, counts.get("pull_requests_failed"));
+    }
+
+    @Test
     void failsThePullRequestAfterTwoBadAnswersAndGoesOn() {
         storePullRequestWithDiff(1, "2026-07-02T08:00:00Z");
         storePullRequestWithDiff(2, "2026-07-03T08:00:00Z");

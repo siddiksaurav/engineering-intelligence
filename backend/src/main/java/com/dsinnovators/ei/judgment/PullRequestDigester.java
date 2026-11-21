@@ -54,6 +54,7 @@ class PullRequestDigester {
      *
      * @throws IllegalStateException when no diff record is stored for the pull request
      * @throws InvalidDigestException when the answer breaks the schema twice
+     * @throws UnreadableAnswerException when the answer cannot be read twice
      * @throws ModelLimitReachedException when every provider is at its limit
      */
     void digest(RawRecord pullRequest, Quarter quarter, JobCounts counts) {
@@ -99,7 +100,7 @@ class PullRequestDigester {
         }
     }
 
-    /** Asks the model; an answer that breaks the schema is asked for once more (decision 135). */
+    /** Asks the model; an answer that breaks the schema or cannot be read is asked for once more (decision 135). */
     private Answered judge(DigestInput input, JobCounts counts) {
         ModelRequest request = new ModelRequest(
                 PROMPT_VERSION,
@@ -109,7 +110,7 @@ class PullRequestDigester {
                 promptLibrary.schema(PROMPT_VERSION));
         try {
             return ask(request, input.judgedOnPartialCode(), counts);
-        } catch (InvalidDigestException firstRefusal) {
+        } catch (InvalidDigestException | UnreadableAnswerException firstRefusal) {
             LOG.warn("The model's answer was refused, asking once more: {}", firstRefusal.getMessage());
             return ask(request, input.judgedOnPartialCode(), counts);
         }

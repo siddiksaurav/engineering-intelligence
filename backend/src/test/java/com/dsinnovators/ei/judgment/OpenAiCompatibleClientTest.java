@@ -286,7 +286,8 @@ class OpenAiCompatibleClientTest {
                 .expect(requestTo(CHAT_COMPLETIONS))
                 .andRespond(withSuccess(completion("m", "not json at all", 1, 1), MediaType.APPLICATION_JSON));
 
-        ModelCallException thrown = assertThrows(ModelCallException.class, () -> fixture.client.judge(request()));
+        UnreadableAnswerException thrown =
+                assertThrows(UnreadableAnswerException.class, () -> fixture.client.judge(request()));
 
         assertTrue(thrown.getMessage().contains("not JSON"));
     }
@@ -298,7 +299,8 @@ class OpenAiCompatibleClientTest {
                 .andRespond(withSuccess(
                         completion("m", ANSWER, 1, 1).replace("\"stop\"", "\"length\""), MediaType.APPLICATION_JSON));
 
-        ModelCallException thrown = assertThrows(ModelCallException.class, () -> fixture.client.judge(request()));
+        UnreadableAnswerException thrown =
+                assertThrows(UnreadableAnswerException.class, () -> fixture.client.judge(request()));
 
         assertTrue(thrown.getMessage().contains("cut off"));
     }
@@ -309,6 +311,6 @@ class OpenAiCompatibleClientTest {
                 .expect(requestTo(CHAT_COMPLETIONS))
                 .andRespond(withSuccess("{\"model\":\"m\",\"choices\":[]}", MediaType.APPLICATION_JSON));
 
-        assertThrows(ModelCallException.class, () -> fixture.client.judge(request()));
+        assertThrows(UnreadableAnswerException.class, () -> fixture.client.judge(request()));
     }
 }

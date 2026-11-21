@@ -124,11 +124,12 @@ final class OpenAiCompatibleClient implements JudgmentModel {
         JsonNode completion = parse(body, "its reply");
         JsonNode choice = completion.path("choices").path(0);
         if ("length".equals(choice.path("finish_reason").asString())) {
-            throw new ModelCallException("Provider " + provider.name() + " cut off the answer at the token limit");
+            throw new UnreadableAnswerException(
+                    "Provider " + provider.name() + " cut off the answer at the token limit");
         }
         JsonNode content = choice.path("message").path("content");
         if (!content.isString()) {
-            throw new ModelCallException("Provider " + provider.name() + " answered without a message");
+            throw new UnreadableAnswerException("Provider " + provider.name() + " answered without a message");
         }
         JsonNode usage = completion.path("usage");
         return new ModelAnswer(
@@ -142,7 +143,7 @@ final class OpenAiCompatibleClient implements JudgmentModel {
         try {
             return CanonicalJson.parse(text);
         } catch (JacksonException notJson) {
-            throw new ModelCallException(
+            throw new UnreadableAnswerException(
                     "Provider " + provider.name() + " sent " + what + " that is not JSON", notJson);
         }
     }
