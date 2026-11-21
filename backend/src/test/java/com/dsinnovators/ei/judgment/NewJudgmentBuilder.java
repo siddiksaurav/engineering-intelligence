@@ -38,6 +38,11 @@ final class NewJudgmentBuilder {
         return this;
     }
 
+    NewJudgmentBuilder value(JsonNode value) {
+        this.value = value;
+        return this;
+    }
+
     NewJudgmentBuilder tier(String tier) {
         this.tier = tier;
         return this;

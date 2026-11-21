@@ -4,11 +4,16 @@ import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
 import java.util.Locale;
 
-/** The kinds of evidence item F05 builds. The database holds the lower-case name. */
+/** The kinds of evidence item F05 and F06 build. The database holds the lower-case name. */
 public enum EvidenceType {
     FEATURE_WORK,
     BUG_FIX,
-    REVIEW_COMMENT_WRITTEN;
+    REVIEW_COMMENT_WRITTEN,
+    TEST_CHANGE,
+    REFACTOR_PERFORMANCE,
+    SECURITY,
+    INFRA_RELEASE,
+    DOCUMENTATION;
 
     /** The name stored in {@code evidence_item.evidence_type}. */
     public String databaseName() {

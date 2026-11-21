@@ -39,7 +39,7 @@ record EvidenceItemResponse(
         return switch (type) {
             case FEATURE_WORK -> fields.required("feature").required("title").stringValue();
             case BUG_FIX -> fields.required("bug").required("title").stringValue();
-            case REVIEW_COMMENT_WRITTEN ->
+            case REVIEW_COMMENT_WRITTEN, TEST_CHANGE, REFACTOR_PERFORMANCE, SECURITY, INFRA_RELEASE, DOCUMENTATION ->
                 fields.required("pullRequest").required("title").stringValue();
         };
     }
@@ -61,6 +61,8 @@ record EvidenceItemResponse(
                         fields.required("comment").required("url").stringValue()));
                 links.add(pullRequestLink(fields.required("pullRequest")));
             }
+            case TEST_CHANGE, REFACTOR_PERFORMANCE, SECURITY, INFRA_RELEASE, DOCUMENTATION ->
+                links.add(pullRequestLink(fields.required("pullRequest")));
         }
         return links;
     }
