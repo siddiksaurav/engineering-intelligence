@@ -1,5 +1,6 @@
 package com.dsinnovators.ei.identity;
 
+import com.fasterxml.jackson.annotation.JsonValue;
 import java.time.Instant;
 
 /**
@@ -15,7 +16,19 @@ public record EvidenceEntry(long workPackage, String url, Signal signal, Instant
 
     /** What ties an OpenProject user to a work item. */
     public enum Signal {
-        DEVELOPERS,
-        STATUS_CHANGE
+        DEVELOPERS("developers"),
+        STATUS_CHANGE("status_change");
+
+        private final String storedName;
+
+        Signal(String storedName) {
+            this.storedName = storedName;
+        }
+
+        /** The name stored in the {@code evidence} column of {@code identity_proposal}. */
+        @JsonValue
+        String storedName() {
+            return storedName;
+        }
     }
 }

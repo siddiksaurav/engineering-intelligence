@@ -79,9 +79,9 @@ class ProposalWriterTest extends DatabaseTest {
         writer.write(personId, Optional.of(candidate(KABIRU, "Kabiru Mwenja", 2)));
 
         assertEquals(
-                "[{\"at\": null, \"url\": \"https://community.openproject.org/wp/100\", \"signal\": \"DEVELOPERS\","
+                "[{\"at\": null, \"url\": \"https://community.openproject.org/wp/100\", \"signal\": \"developers\","
                         + " \"workPackage\": 100}, {\"at\": \"2026-07-02T10:00:00Z\", \"url\":"
-                        + " \"https://community.openproject.org/wp/100\", \"signal\": \"STATUS_CHANGE\","
+                        + " \"https://community.openproject.org/wp/100\", \"signal\": \"status_change\","
                         + " \"workPackage\": 100}]",
                 proposals().get(0).get("evidence"));
     }
