@@ -37,6 +37,7 @@ class SchemaTest extends DatabaseTest {
         assertEquals(
                 List.of(
                         "data_source",
+                        "identity_proposal",
                         "job_run",
                         "person",
                         "person_identity",

@@ -42,7 +42,7 @@ public abstract class DatabaseTest {
                     jdbc.queryForList("select key, valid_from_quarter, value::text as value, description from setting");
         }
         jdbc.execute(
-                "truncate raw_record, setting, person_identity, person, project, job_run, pull_request_work_item restart identity cascade");
+                "truncate raw_record, setting, identity_proposal, person_identity, person, project, job_run, pull_request_work_item restart identity cascade");
         for (Map<String, Object> setting : seededSettings) {
             jdbc.update(
                     "insert into setting (key, valid_from_quarter, value, description) values (?, ?, ?::jsonb, ?)",
