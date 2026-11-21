@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.IntFunction;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import tools.jackson.databind.node.ArrayNode;
@@ -33,9 +34,6 @@ record FeatureWorkInput(
         List<String> leftOutPullRequests,
         Map<String, String> sourceLinks,
         String itemSourceUrl) {
-
-    /** Below this a cut saves less than the line that names it. */
-    private static final int SMALLEST_USEFUL_CAP = 100;
 
     private static final String RULE = "This is Feature work. The tracker type decides that; the work type is yours.";
 
@@ -150,24 +148,34 @@ record FeatureWorkInput(
          * alone do not fit, the newest ones are left out. The oldest pull request always stays.
          */
         Composition fit(int budget) {
-            int taskCap =
+            int total = pullRequests.size();
+            int fullTaskCap =
                     Math.min(maxDescriptionCharacters, longest(tasks.stream().map(WorkPackageText::description)));
-            int featureCap = Math.min(maxDescriptionCharacters, longestFeatureText());
-            int kept = pullRequests.size();
+            int fullFeatureCap = Math.min(maxDescriptionCharacters, longestFeatureText());
+            int taskCap = shrunk(fullTaskCap, budget, cap -> compose(cap, fullFeatureCap, total));
+            int featureCap = shrunk(fullFeatureCap, budget, cap -> compose(taskCap, cap, total));
+            int kept = total;
             String text = compose(taskCap, featureCap, kept);
-            while (text.length() > budget && taskCap / 2 >= SMALLEST_USEFUL_CAP) {
-                taskCap /= 2;
-                text = compose(taskCap, featureCap, kept);
-            }
-            while (text.length() > budget && featureCap / 2 >= SMALLEST_USEFUL_CAP) {
-                featureCap /= 2;
-                text = compose(taskCap, featureCap, kept);
-            }
             while (text.length() > budget && kept > 1) {
                 kept--;
                 text = compose(taskCap, featureCap, kept);
             }
             return new Composition(text, kept);
+        }
+
+        /** Halves the cap while the text is over the budget and a halved cap still makes it shorter. */
+        private static int shrunk(int cap, int budget, IntFunction<String> textWithCap) {
+            int current = cap;
+            String text = textWithCap.apply(current);
+            while (text.length() > budget && current > 0) {
+                String shorter = textWithCap.apply(current / 2);
+                if (shorter.length() >= text.length()) {
+                    break;
+                }
+                current /= 2;
+                text = shorter;
+            }
+            return current;
         }
 
         private int longestFeatureText() {

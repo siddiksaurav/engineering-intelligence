@@ -39,6 +39,7 @@ class PullRequestDigestJob implements Job {
     private final BotAccounts botAccounts;
     private final PullRequestDigester digester;
     private final ProviderChain providerChain;
+    private final ModelJobGuard modelJobGuard;
     private final Clock clock;
 
     PullRequestDigestJob(
@@ -46,11 +47,13 @@ class PullRequestDigestJob implements Job {
             BotAccounts botAccounts,
             PullRequestDigester digester,
             ProviderChain providerChain,
+            ModelJobGuard modelJobGuard,
             Clock clock) {
         this.storedPullRequests = storedPullRequests;
         this.botAccounts = botAccounts;
         this.digester = digester;
         this.providerChain = providerChain;
+        this.modelJobGuard = modelJobGuard;
         this.clock = clock;
     }
 
@@ -65,16 +68,22 @@ class PullRequestDigestJob implements Job {
     }
 
     /**
-     * Fails at once when no provider has a key. A pull request that fails on its own, with no diff
+     * Fails at once when no provider has a key or another model job runs. A pull request that fails on its own, with no diff
      * stored or an answer that breaks the schema twice, is counted and the run goes on; the run then
      * fails at the end, naming the first twenty.
      */
     @Override
     public void run(JobArguments arguments, JobCounts counts) {
-        providerChain.startRun();
-        if (providerChain.providerNames().isEmpty()) {
-            throw new IllegalStateException("No model provider has a key. Set LLM_PROVIDER_1_API_KEY in .env");
+        ModelJobGuard.Run hold = modelJobGuard.enter(name());
+        try {
+            runGuarded(arguments, counts);
+        } finally {
+            hold.close();
         }
+    }
+
+    private void runGuarded(JobArguments arguments, JobCounts counts) {
+        providerChain.startRunRequiringAProvider();
         Optional<Set<Integer>> numbers = selectedNumbers(arguments);
         Quarter quarter = Quarter.of(LocalDate.now(clock));
         List<RawRecord> selected = storedPullRequests.all().stream()
@@ -89,7 +98,7 @@ class PullRequestDigestJob implements Job {
         try {
             digestAll(humans, quarter, counts, failed);
         } finally {
-            reportModelUse(counts);
+            providerChain.reportUseTo(counts);
         }
         if (!failed.isEmpty()) {
             counts.add("pull_requests_failed", failed.size());
@@ -138,11 +147,6 @@ class PullRequestDigestJob implements Job {
                 .sorted()
                 .map(number -> "#" + number + " (not stored)")
                 .toList();
-    }
-
-    private void reportModelUse(JobCounts counts) {
-        providerChain.callsPerProvider().forEach((provider, calls) -> counts.add("calls_" + provider, calls));
-        counts.add("rate_limit_wait_seconds", providerChain.waited().toSeconds());
     }
 
     private static Optional<Set<Integer>> selectedNumbers(JobArguments arguments) {

@@ -63,6 +63,7 @@ class PullRequestDigestJobTest extends DatabaseTest {
     private final JobCounts jobCounts = (name, amount) -> counts.merge(name, amount, Long::sum);
     private final FakeJudgmentModel model = new FakeJudgmentModel();
     private final WaitMeter waitMeter = new WaitMeter(duration -> {});
+    private final ModelJobGuard guard = new ModelJobGuard();
     private PullRequestDigestJob job;
 
     @BeforeEach
@@ -73,7 +74,7 @@ class PullRequestDigestJobTest extends DatabaseTest {
     private PullRequestDigestJob jobOn(ProviderChain chain) {
         PullRequestDigester digester =
                 new PullRequestDigester(storedDiffs, diffFileFilter, promptLibrary, chain, judgmentStore, properties);
-        return new PullRequestDigestJob(storedPullRequests, botAccounts, digester, chain, clock);
+        return new PullRequestDigestJob(storedPullRequests, botAccounts, digester, chain, guard, clock);
     }
 
     private void storePullRequest(int number, String mergedAt, String title) {
@@ -158,6 +159,24 @@ class PullRequestDigestJobTest extends DatabaseTest {
         assertEquals(
                 "https://github.com/opf/openproject/pull/1",
                 digest.getFacts().getFirst().link());
+    }
+
+    @Test
+    void failsAtOnceWhenAnotherModelJobRunsAndReleasesTheGuardWhenItEnds() throws Exception {
+        storePullRequestWithDiff(1, "2026-07-02T08:00:00Z");
+        ModelJobGuard.Run judging = guard.enter("feature-work-judgment");
+        try {
+            IllegalStateException refused = assertThrows(IllegalStateException.class, this::run);
+
+            assertTrue(refused.getMessage().contains("feature-work-judgment"), refused.getMessage());
+            assertEquals(0, model.calls());
+        } finally {
+            judging.close();
+        }
+
+        run();
+
+        guard.enter("feature-work-judgment").close();
     }
 
     @Test
@@ -253,6 +272,7 @@ class PullRequestDigestJobTest extends DatabaseTest {
                 botAccounts,
                 digester,
                 new ProviderChain(List.of(new ProviderChain.Provider("fake", model)), waitMeter),
+                guard,
                 dayClock);
     }
 
