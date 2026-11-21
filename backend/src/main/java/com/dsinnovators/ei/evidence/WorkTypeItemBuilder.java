@@ -81,14 +81,17 @@ class WorkTypeItemBuilder {
             CurrentDigest digest = linked.digest().get();
             switch (digest.digest().workType()) {
                 case FEATURE, ENHANCEMENT -> addFeatureWork(linked, digest, standalone.get());
-                case FIX ->
-                    addItem(
-                            EvidenceType.BUG_FIX,
-                            "bug_fix:pull_request:",
-                            linked,
-                            digest,
-                            standalone.get(),
-                            diff -> ItemFields.ofPullRequestWithoutWorkItem(linked.pullRequest()));
+                case FIX -> {
+                    if (!linksABug(linked)) {
+                        addItem(
+                                EvidenceType.BUG_FIX,
+                                "bug_fix:pull_request:",
+                                linked,
+                                digest,
+                                standalone.get(),
+                                diff -> ItemFields.ofPullRequestWithoutWorkItem(linked.pullRequest()));
+                    }
+                }
                 case REFACTOR, PERFORMANCE ->
                     addItem(EvidenceType.REFACTOR_PERFORMANCE, linked, digest, standalone.get(), diff -> {
                         ObjectNode fields = ItemFields.ofPullRequest(linked.pullRequest(), standalone.get());
@@ -128,6 +131,11 @@ class WorkTypeItemBuilder {
                     // The spec has no evidence type for these work types: the pull request keeps its work type only.
                 }
             }
+        }
+
+        /** A pull request that links a Bug never gets a Bug fix without a work item: its Bug fix is F05's. */
+        private boolean linksABug(LinkedPullRequest linked) {
+            return workItems.linkedFacts(linked.workItems()).stream().anyMatch(WorkPackageFacts::isBug);
         }
 
         BuildResult result() {

@@ -236,6 +236,32 @@ class WorkTypeItemBuilderTest extends DatabaseTest {
     }
 
     @Test
+    void aFixPullRequestThatLinksABugAndAStandaloneItemGivesNoBugFixHere() {
+        records.workPackage(102, "Bug", null, 5, DONE_STATUS, DONE_AT);
+        records.workPackage(200, "Task", null, 5);
+        adaMergesPullRequest(1, StoredDigestsFixture.answer("fix", "none"));
+        records.link(1, 102);
+        records.link(1, 200);
+
+        assertEquals(List.of(), builtKeys());
+    }
+
+    @Test
+    void aRefactorSecurityOrInfraPullRequestThatLinksOnlyABugGivesNothing() {
+        records.workPackage(102, "Bug", null, 5, DONE_STATUS, DONE_AT);
+        adaMergesPullRequest(1, refactor());
+        adaMergesPullRequest(
+                2, StoredDigestsFixture.withTier(StoredDigestsFixture.answer("security", "none"), "T2", "Fix"));
+        adaMergesPullRequest(
+                3, StoredDigestsFixture.withTier(StoredDigestsFixture.answer("infra", "none"), "T2", "Pipeline"));
+        for (int number = 1; number <= 3; number++) {
+            records.link(number, 102);
+        }
+
+        assertEquals(List.of(), builtKeys());
+    }
+
+    @Test
     void aFixPullRequestWithAStandaloneLinkIsABugFixWithNoWorkItem() {
         records.workPackage(200, "Task", null, 5);
         adaMergesPullRequest(1, StoredDigestsFixture.answer("fix", "none"));
