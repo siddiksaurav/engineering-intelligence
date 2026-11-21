@@ -381,3 +381,17 @@ The question brief, as shown to the user on 22 Nov 2026. Decisions 127 to 143 we
 - 141. A PR that links a Bug keeps its Bug fix; its other links follow the rules; no Refactor, Security or Infra item from a Bug link alone.
 - 142. Tests use a fake model and a mock server; no test calls Groq.
 - 143. The digest reader (`PullRequestDigests`) lives in `judgment`; only `judgment` sees `JudgmentModel`.
+
+### Follow-up after the user's first answer (22 Nov 2026)
+
+The user answered Q1: several free keys, switching to the next when one is limited; look for free alternatives; process as few PRs as the PoC needs ("the idea is to prove AI can judge, not to process huge data"). Q2 to Q11 not yet answered.
+
+Found on 22 Nov 2026:
+- Groq's AI policy forbids exceeding the published limits by registering several accounts, and its Terms of Use forbid circumventing the free-tier limits (console.groq.com/docs/legal/ai-policy, groq.com/terms-of-use). Limits are per organization. Several Groq keys to get around the limit are therefore not used.
+- Free alternatives, each reachable through an OpenAI-compatible API: Google Gemini API free tier (base URL `https://generativelanguage.googleapis.com/v1beta/openai/`, JSON schema output; the free limits are shown only in AI Studio after login; free-tier prompts may be used by Google, acceptable for public data); OpenRouter `:free` models (20 requests per minute, 50 per day, 1,000 per day after buying 10 credits); Cerebras has no permanent free tier (5 dollars of trial credit for 30 days, needs a card; `gpt-oss-120b` 1 million tokens per day on the trial). Mistral's tier page was not readable; GitHub Models not verified.
+- Using different providers one after the other, each within its own limits, is allowed. Each judgment stores the model that gave it.
+
+Follow-up questions:
+- F1. Which PRs to digest. A: only what the demo needs: the PRs of the Feature work items (35 items, about 50 PRs in the stored two weeks) plus every PR of one or two developers chosen for the profile, about 60 to 80 PRs. B: all 172 human PRs of the two weeks already stored; no July run. C: July as planned (about 360 PRs). Recommended A.
+- F2. When a free limit is hit. A: fall back to the next provider in a list (Groq, then Gemini), each within its own limits. B: one provider, the run stops and continues the next day. Recommended A.
+- F3. Q2 to Q11: as recommended?
