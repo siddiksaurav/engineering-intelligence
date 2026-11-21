@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.dsinnovators.ei.DatabaseTest;
 import com.dsinnovators.ei.JobEndpointClient;
 import com.dsinnovators.ei.identity.Persons;
+import com.dsinnovators.ei.judgment.JudgmentStore;
 import com.dsinnovators.ei.source.RawRecordStore;
 import java.net.http.HttpResponse;
 import java.util.List;
@@ -31,6 +32,9 @@ class EvidenceBuildJobTest extends DatabaseTest {
 
     @Autowired
     private Persons persons;
+
+    @Autowired
+    private JudgmentStore judgments;
 
     private JobEndpointClient jobs;
     private StoredRecordsFixture records;
@@ -161,6 +165,72 @@ class EvidenceBuildJobTest extends DatabaseTest {
                 currentKeys().contains("review_comment_written:900"),
                 currentKeys().toString());
         assertEquals(0, run.get("counts").path("items_withdrawn").asLong(0L));
+    }
+
+    private List<String> currentTiers() {
+        return jdbc.queryForList("""
+                select i.item_key || '=' || j.tier from judgment j
+                join evidence_item i on i.id = j.evidence_item_id
+                where j.kind = 'item_tier'
+                  and not exists (select 1 from judgment s where s.supersedes_id = j.id)
+                  and not exists (select 1 from evidence_item n where n.supersedes_id = i.id)
+                order by i.item_key
+                """, String.class);
+    }
+
+    @Test
+    void writesATierJudgmentForANewTestChange() throws Exception {
+        StoredDigestsFixture digests = new StoredDigestsFixture(jdbc, judgments);
+        records.diff(2, "spec/models/work_package_spec.rb");
+        long digestId = digests.digest(2, StoredDigestsFixture.answer("fix", "regression"))
+                .getId();
+
+        JsonNode counts = runJob().get("counts");
+
+        assertEquals(1, counts.get("test_change_created").longValue());
+        assertEquals(1, counts.get("item_tiers_written").longValue());
+        assertEquals(1, counts.get("pull_requests_without_digest").longValue());
+        assertEquals(List.of("test_change:opf/openproject#2=T2"), currentTiers());
+        assertEquals(
+                digestId,
+                jdbc.queryForObject("select based_on_judgment_id from judgment where kind = 'item_tier'", Long.class));
+    }
+
+    @Test
+    void aSecondRunWritesNoSecondTierJudgmentAndANewDigestWritesANewOne() throws Exception {
+        StoredDigestsFixture digests = new StoredDigestsFixture(jdbc, judgments);
+        records.diff(2, "spec/models/work_package_spec.rb");
+        digests.digest(2, StoredDigestsFixture.answer("fix", "unit"));
+        runJob();
+
+        JsonNode unchanged = runJob().get("counts");
+
+        assertEquals(0, unchanged.path("item_tiers_written").asLong(0L));
+        assertEquals(1, jdbc.queryForObject("select count(*) from judgment where kind = 'item_tier'", Integer.class));
+
+        digests.digest(2, StoredDigestsFixture.answer("fix", "ci_gate"));
+        JsonNode changed = runJob().get("counts");
+
+        assertEquals(1, changed.get("test_change_superseded").longValue());
+        assertEquals(1, changed.get("item_tiers_written").longValue());
+        assertEquals(List.of("test_change:opf/openproject#2=T3"), currentTiers());
+    }
+
+    @Test
+    void aRefactorPullRequestWithNoWorkItemGetsItsItemAndItsTier() throws Exception {
+        StoredDigestsFixture digests = new StoredDigestsFixture(jdbc, judgments);
+        records.pullRequest(7, "ada", "User", 1, "2026-07-06T08:00:00Z");
+        records.diff(7, "app/list.rb");
+        digests.digest(
+                7,
+                StoredDigestsFixture.withTier(
+                        StoredDigestsFixture.answer("refactor", "none"), "T2", "A small refactor"));
+
+        JsonNode run = runJob();
+
+        assertEquals("succeeded", run.get("status").stringValue());
+        assertEquals(1, run.get("counts").get("refactor_performance_created").longValue());
+        assertEquals(List.of("refactor_performance:opf/openproject#7=T2"), currentTiers());
     }
 
     @Test
