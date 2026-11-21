@@ -48,6 +48,29 @@ final class StoredRecordsFixture {
                         + "}"));
     }
 
+    /** An inline review comment on a stored pull request, as F02 stores it. */
+    void reviewComment(
+            long databaseId,
+            int pullRequestNumber,
+            String login,
+            String typename,
+            long authorDatabaseId,
+            boolean reply) {
+        String author = "{\"login\":\"" + login + "\",\"__typename\":\"" + typename + "\",\"databaseId\":"
+                + authorDatabaseId + "}";
+        String url = "https://github.com/" + REPOSITORY + "/pull/" + pullRequestNumber + "#discussion_r" + databaseId;
+        rawRecords.store(
+                "github",
+                "review_comment",
+                REPOSITORY + "#" + pullRequestNumber + "/review_comment/" + databaseId,
+                url,
+                CanonicalJson.parse("{\"databaseId\":" + databaseId + ",\"url\":\"" + url
+                        + "\",\"path\":\"app/models/work_package.rb\",\"createdAt\":\"2026-06-20T10:00:00Z\","
+                        + "\"replyTo\":" + (reply ? "{\"databaseId\":1}" : "null") + ",\"pullRequest\":{\"number\":"
+                        + pullRequestNumber + ",\"repository\":{\"nameWithOwner\":\"" + REPOSITORY
+                        + "\"}},\"author\":" + author + "}"));
+    }
+
     /** The project row of an OpenProject project; returns its table id. */
     long project(long externalId) {
         return jdbc.queryForObject(

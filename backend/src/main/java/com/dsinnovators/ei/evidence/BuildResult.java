@@ -8,11 +8,16 @@ import java.util.List;
  * them and fail at its end naming the failed ones.
  *
  * @param failures one text per failed item: its key, then the reason
+ * @param botRecordsSkipped how many records of bots the builder left out
  */
-record BuildResult(List<BuiltItem> items, List<String> failures) {
+record BuildResult(List<BuiltItem> items, List<String> failures, int botRecordsSkipped) {
 
     BuildResult {
         items = List.copyOf(items);
         failures = List.copyOf(failures);
+    }
+
+    BuildResult(List<BuiltItem> items, List<String> failures) {
+        this(items, failures, 0);
     }
 }

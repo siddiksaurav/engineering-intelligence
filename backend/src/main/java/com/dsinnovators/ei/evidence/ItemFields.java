@@ -31,14 +31,17 @@ final class ItemFields {
 
     static ArrayNode pullRequests(Collection<PullRequestFacts> pullRequests) {
         ArrayNode nodes = JSON.arrayNode();
-        for (PullRequestFacts pullRequest : pullRequests) {
-            ObjectNode node = nodes.addObject();
-            node.put("externalId", pullRequest.externalId());
-            node.put("number", pullRequest.number());
-            node.put("title", pullRequest.title());
-            node.put("url", pullRequest.url());
-            node.put("mergedAt", pullRequest.mergedAt().toString());
-        }
+        pullRequests.forEach(pullRequest -> nodes.add(pullRequest(pullRequest)));
         return nodes;
+    }
+
+    static ObjectNode pullRequest(PullRequestFacts pullRequest) {
+        ObjectNode node = JSON.objectNode();
+        node.put("externalId", pullRequest.externalId());
+        node.put("number", pullRequest.number());
+        node.put("title", pullRequest.title());
+        node.put("url", pullRequest.url());
+        node.put("mergedAt", pullRequest.mergedAt().toString());
+        return node;
     }
 }
