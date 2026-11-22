@@ -407,7 +407,7 @@ Update this table when a feature changes state. States: not started, in design, 
 | F09 | Full-window run (one month) | deferred to the end (decision 178) | | |
 | F10 | Analytics and hygiene | done | `docs/features/F10-analytics/design.md` | `docs/features/F10-analytics/plan.md` |
 | F11 | Scoring | done | `docs/features/F11-scoring/design.md` | `docs/features/F11-scoring/plan.md` |
-| F12 | Profile page | not started | | |
+| F12 | Profile page | in design | | |
 | F13 | Accuracy measurement | dropped (decision 80) | | |
 
 ## 8. Glossary
