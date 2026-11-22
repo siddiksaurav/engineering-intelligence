@@ -244,6 +244,12 @@ describe("ProfilePage", () => {
     expect(html.match(/To score/g)).toHaveLength(1);
   });
 
+  it("separates the score from the working tier in the text", async () => {
+    answeringWith(scores("L2", [dimension("design", DESIGN, "T2", 1)]));
+
+    expect(await render({ quarter: "2026-Q3" })).toContain("1</strong> of 2, <span");
+  });
+
   it("shows no working tier for a dimension without one", async () => {
     answeringWith(scores("L2", [dimension("design", DESIGN, null, 0)]));
 

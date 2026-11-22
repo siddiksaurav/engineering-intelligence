@@ -25,7 +25,7 @@ export function DimensionCard({
         {badge && <span className={`${styles.badge} ${styles[badge]}`}>{BADGE_WORDS[badge]}</span>}
       </header>
       <p className={styles.score}>
-        <strong>{dimension.score}</strong> of 2
+        <strong>{dimension.score}</strong> of 2,{" "}
         <span className={styles.workingTier}>
           {dimension.workingTier ? `works at ${dimension.workingTier}` : "no working tier"}
         </span>
