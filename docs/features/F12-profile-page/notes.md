@@ -9,6 +9,7 @@
 - Next-step wording: a gate-held score reads "To score N: G1 within X points of the repository" (N the score before gates; X `passWithinPoints` for 2, `farMissBeyondPoints` for 1); a type with no wording at the needed tier (Infra at T1) is skipped; fractions 1/2, 1/3, 1/4 in words, others "n/d".
 - `notJudgedYet` counts PRs from work classification's not-judged slice, `testingContribution.withoutDigest` and every gate's `pullRequestsWithoutDigest`; items from the not-judged slices, both review `notJudgedYet` counts and the trails. A repeated URL parameter is invalid.
 - This machine has no nvm (`~/.nvm/nvm.sh` missing): web checks ran on the system Node 22.22.1; `.nvmrc` and CI use 24.14.1.
+- Batch 3: the item summaries are fetched in task 9, not 8 (nothing used them before). The missing `DEFAULT_QUARTER` notice is decided in the page. The gates panel takes the gates of the first dimension that has any: only Engineering standards has gates (decision 202), so this is decision 240 without naming the key. Trail item lists use their own fold (`TrailItems`) to show tier and weight. The item page adds `JudgmentView.tsx`; an `item_tier` value is listed key by key ("Test kind: integration").
 
 ## Verification
 
