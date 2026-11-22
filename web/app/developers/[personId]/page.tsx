@@ -23,9 +23,14 @@ export default async function DeveloperPage({ params }: { params: Promise<{ pers
   return (
     <main>
       <header className={developers.header}>
-        <Link href="/developers" className={developers.back}>
-          Developers
-        </Link>
+        <nav className={developers.headerLinks}>
+          <Link href="/developers" className={developers.back}>
+            Developers
+          </Link>
+          <Link href={`/developers/${personId}/profile`} className={developers.back}>
+            Profile
+          </Link>
+        </nav>
         <h1>{result.status === "ok" ? result.data.person.displayName : "Developer"}</h1>
       </header>
       <div className={developers.content}>

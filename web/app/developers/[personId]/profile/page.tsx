@@ -104,7 +104,7 @@ function ProfileHeader({ analytics, scores }: { analytics: Analytics; scores: Di
   const { personId, displayName } = analytics.person;
   return (
     <header className={developers.header}>
-      <nav className={styles.headerLinks}>
+      <nav className={developers.headerLinks}>
         <Link href="/developers" className={developers.back}>
           Developers
         </Link>

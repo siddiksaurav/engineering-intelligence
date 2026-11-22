@@ -51,6 +51,17 @@ describe("DevelopersPage", () => {
     }
   });
 
+  it("each developer links to their profile", async () => {
+    vi.mocked(fetchDevelopers).mockResolvedValue({
+      status: "ok",
+      data: [{ personId: 7, displayName: "ada", counts: NO_ITEMS }],
+    });
+
+    const html = renderToStaticMarkup(await DevelopersPage());
+
+    expect(html).toMatch(/<a[^>]*href="\/developers\/7\/profile"[^>]*>ada<\/a>/);
+  });
+
   it("says there are no developers when none is stored", async () => {
     vi.mocked(fetchDevelopers).mockResolvedValue({ status: "ok", data: [] });
 
