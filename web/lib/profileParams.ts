@@ -43,7 +43,8 @@ function valueOf(parameter: string | string[] | undefined): string | undefined {
 }
 
 /**
- * The pull requests without a digest and the items not judged yet on the page, each counted once (decision 253).
+ * The person's pull requests without a digest and items not judged yet, each counted once (decision 253). The
+ * repository's unjudged Feature work is left out; its bar shows it.
  * The page shows the notice when either is above zero.
  */
 export function notJudgedYet(analytics: Analytics, scores: DimensionScores): { pullRequests: number; items: number } {
@@ -55,7 +56,7 @@ export function notJudgedYet(analytics: Analytics, scores: DimensionScores): { p
     ),
   ]);
   const items = new Set<number>([
-    ...[analytics.workComplexity.person, analytics.workComplexity.repository].flatMap(notJudgedIds),
+    ...notJudgedIds(analytics.workComplexity.person),
     ...notJudgedIds(analytics.testingContribution.featureAndFixPullRequests.testedByTier),
     ...notJudgedIds(analytics.testingContribution.bugFixPullRequests.testedByTier),
     ...analytics.reviewParticipation.comments.notJudgedYet.evidenceItemIds,

@@ -332,8 +332,85 @@ describe("ProfilePage", () => {
     );
 
     expect(await render({ quarter: "2026-Q3" })).toContain(
-      "2 PRs and 1 items are not judged yet; the numbers will change",
+      "2 PRs and 1 item are not judged yet; the numbers will change",
     );
+  });
+
+  it("uses the singular for one pull request and for one item in the notice", async () => {
+    answeringWith(
+      scores("L2", [dimension("design", DESIGN, "T2", 1)]),
+      analytics({
+        workClassification: { total: 1, slices: [{ name: "not_judged_yet", count: count([11]), share: 1 }] },
+        reviewParticipation: {
+          pullRequestsReviewed: count(),
+          authorsReviewed: count(),
+          comments: { ...BREAKDOWN, notJudgedYet: count([], [5]) },
+          substantivePerPullRequestReviewed: null,
+        },
+      }),
+    );
+
+    expect(await render({ quarter: "2026-Q3" })).toContain("1 PR and 1 item are not judged yet");
+  });
+
+  it("does not count the repository's unjudged Feature work in the notice", async () => {
+    answeringWith(
+      scores("L2", [dimension("design", DESIGN, "T2", 1)]),
+      analytics({
+        workComplexity: {
+          person: EMPTY_DISTRIBUTION,
+          repository: { total: 2, slices: [{ name: "not_judged_yet", count: count([], [5, 6]), share: 1 }] },
+        },
+      }),
+    );
+
+    expect(await render({ quarter: "2026-Q3" })).not.toContain("are not judged yet");
+  });
+
+  it("shows the header, the notice, the dimension cards, the gates panel and then the analytics", async () => {
+    const engineering = withTrail(dimension("engineering", ENGINEERING, "T2", 1), {}, [gate("G1")]);
+    answeringWith(
+      scores("L2", [dimension("design", DESIGN, "T2", 1), engineering]),
+      analytics({
+        workClassification: { total: 1, slices: [{ name: "not_judged_yet", count: count([11]), share: 1 }] },
+      }),
+    );
+
+    const html = await render({ quarter: "2026-Q3" });
+
+    const positions = ["<h1", "are not judged yet", DESIGN, ENGINEERING, "Quality gates", "Work classification"].map(
+      (text) => html.indexOf(text),
+    );
+    expect(positions).not.toContain(-1);
+    expect(positions).toEqual([...positions].sort((first, second) => first - second));
+  });
+
+  it("logs the item ids the batch answer left out and names them by number", async () => {
+    const warning = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const design = withTrail(dimension("design", DESIGN, "T2", 1), {
+      evidenceTypes: [typeTrail({ counted: [trailItem(41), trailItem(42), trailItem(43)] })],
+    });
+    answeringWith(scores("L2", [design]), analytics(), [summary(41)]);
+
+    const html = await render({ quarter: "2026-Q3" });
+
+    expect(warning).toHaveBeenCalledOnce();
+    expect(warning.mock.calls[0][0]).toContain("42, 43");
+    expect(html).toContain("item #42");
+    warning.mockRestore();
+  });
+
+  it("logs nothing when every item has its summary", async () => {
+    const warning = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const design = withTrail(dimension("design", DESIGN, "T2", 1), {
+      evidenceTypes: [typeTrail({ counted: [trailItem(41)] })],
+    });
+    answeringWith(scores("L2", [design]), analytics(), [summary(41)]);
+
+    await render({ quarter: "2026-Q3" });
+
+    expect(warning).not.toHaveBeenCalled();
+    warning.mockRestore();
   });
 
   it("shows no notice when everything is judged", async () => {
@@ -585,7 +662,7 @@ describe("ProfilePage", () => {
       "20%",
       "80%",
       "Not judged yet: 6",
-      "PRs with findings: 7",
+      "Own PRs merged: 7",
       "Defect: 2",
       "100%",
       "T3: 2",

@@ -222,7 +222,8 @@ describe("notJudgedYet", () => {
       ]),
     );
 
-    expect(result).toEqual({ pullRequests: 4, items: 8 });
+    // Item 7 is not judged yet only in the repository's complexity bar, so it is not the person's.
+    expect(result).toEqual({ pullRequests: 4, items: 7 });
   });
 
   it("is zero for nothing unjudged, and works before a scoring run", () => {

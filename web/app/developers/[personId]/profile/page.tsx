@@ -52,11 +52,28 @@ export default async function ProfilePage({
   if (analytics.status === "down" || scores.status === "down") {
     return <Shell title="Profile" notice="backend down" />;
   }
-  const summaries = await fetchItemSummaries(backendUrl, itemIdsOnPage(analytics.data, scores.data));
+  const itemIds = itemIdsOnPage(analytics.data, scores.data);
+  const summaries = await fetchItemSummaries(backendUrl, itemIds);
   const summariesById: SummariesById = new Map(
     (summaries.status === "ok" ? summaries.data : []).map((summary) => [summary.id, summary]),
   );
+  warnAboutMissingSummaries(itemIds, summaries.status === "ok" ? summariesById : null);
   return <Profile analytics={analytics.data} scores={scores.data} summariesById={summariesById} />;
+}
+
+/** An id the batch call did not answer is left out of the lists and named here; the page still shows it as "item #id". */
+function warnAboutMissingSummaries(itemIds: number[], summariesById: SummariesById | null): void {
+  if (summariesById === null) {
+    return;
+  }
+  const missing = itemIds.filter((itemId) => !summariesById.has(itemId));
+  if (missing.length > 0) {
+    console.warn(`The evidence item batch answer has no item ${missing.join(", ")}`);
+  }
+}
+
+function plural(count: number, noun: string): string {
+  return `${count} ${noun}${count === 1 ? "" : "s"}`;
 }
 
 function Profile({
@@ -76,10 +93,10 @@ function Profile({
       <div className={developers.content}>
         {(unjudged.pullRequests > 0 || unjudged.items > 0) && (
           <p className={styles.warning}>
-            {unjudged.pullRequests} PRs and {unjudged.items} items are not judged yet; the numbers will change.
+            {plural(unjudged.pullRequests, "PR")} and {plural(unjudged.items, "item")} are not judged yet; the numbers
+            will change.
           </p>
         )}
-        <AnalyticsSection analytics={analytics} summariesById={summariesById} />
         {scores.scored ? (
           <>
             {scores.dimensions.map((dimension) => (
@@ -95,6 +112,7 @@ function Profile({
         ) : (
           <NoScores quarter={scores.quarter} />
         )}
+        <AnalyticsSection analytics={analytics} summariesById={summariesById} />
       </div>
     </main>
   );

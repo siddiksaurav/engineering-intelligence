@@ -46,7 +46,7 @@ export function AnalyticsSection({ analytics, summariesById }: { analytics: Anal
       </article>
       <article className={styles.panel}>
         <h2 className={styles.panelTitle}>Review findings received</h2>
-        <Drill label="PRs with findings" count={reviewFindingsReceived.pullRequests} summariesById={summariesById} />
+        <Drill label="Own PRs merged" count={reviewFindingsReceived.pullRequests} summariesById={summariesById} />
         <PerPullRequest label="Substantive comments per PR" value={reviewFindingsReceived.substantivePerPullRequest} />
         <CommentBreakdown breakdown={reviewFindingsReceived.comments} summariesById={summariesById} />
       </article>
