@@ -37,6 +37,10 @@ class SchemaTest extends DatabaseTest {
         assertEquals(
                 List.of(
                         "data_source",
+                        "dimension",
+                        "dimension_evidence_type",
+                        "dimension_gate",
+                        "dimension_score",
                         "evidence_item",
                         "evidence_item_link",
                         "evidence_item_source",

@@ -3,14 +3,14 @@ package com.dsinnovators.ei.analytics;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 /** Inserts the rows the analytics read, with the columns the tests do not care about filled in. */
-final class AnalyticsRows {
+public final class AnalyticsRows {
 
-    static final String REPOSITORY = "opf/openproject";
+    public static final String REPOSITORY = "opf/openproject";
 
     private final JdbcTemplate jdbc;
     private int inserted;
 
-    AnalyticsRows(JdbcTemplate jdbc) {
+    public AnalyticsRows(JdbcTemplate jdbc) {
         this.jdbc = jdbc;
     }
 
@@ -20,7 +20,7 @@ final class AnalyticsRows {
     }
 
     /** A person whose GitHub account has this database id. */
-    long person(long accountId, String login) {
+    public long person(long accountId, String login) {
         long personId =
                 jdbc.queryForObject("insert into person (display_name) values (?) returning id", Long.class, login);
         jdbc.update("""
@@ -31,16 +31,17 @@ final class AnalyticsRows {
     }
 
     /** One stored version of a pull request written by a user account. */
-    void pullRequest(int number, int version, long accountId, String login, String mergedAt) {
+    public void pullRequest(int number, int version, long accountId, String login, String mergedAt) {
         pullRequestOfType(number, version, accountId, login, "User", mergedAt);
     }
 
     /** One stored version of a pull request whose author account GitHub types as given. */
-    void pullRequestOfType(int number, int version, long accountId, String login, String typename, String mergedAt) {
+    public void pullRequestOfType(
+            int number, int version, long accountId, String login, String typename, String mergedAt) {
         storePullRequest(number, version, mergedAt, author(accountId, login, typename));
     }
 
-    void botPullRequest(int number, long accountId, String login, String mergedAt) {
+    public void botPullRequest(int number, long accountId, String login, String mergedAt) {
         storePullRequest(number, 1, mergedAt, author(accountId, login, "Bot"));
     }
 
@@ -62,7 +63,7 @@ final class AnalyticsRows {
                 "{\"number\":" + number + ",\"mergedAt\":\"" + mergedAt + "\",\"author\":" + author + "}");
     }
 
-    void link(int pullRequestNumber, String state) {
+    public void link(int pullRequestNumber, String state) {
         int reference = nextNumber();
         Integer workPackageId = state.equals("resolved") ? reference : null;
         jdbc.update("""
@@ -72,7 +73,7 @@ final class AnalyticsRows {
     }
 
     /** A digest on the latest stored version of the pull request; returns the judgment id. */
-    long digest(int pullRequestNumber, String workType, Long supersedesId) {
+    public long digest(int pullRequestNumber, String workType, Long supersedesId) {
         long recordId = jdbc.queryForObject(
                 "select max(id) from raw_record where record_kind = 'pull_request' and external_id = ?",
                 Long.class,
@@ -87,13 +88,13 @@ final class AnalyticsRows {
     }
 
     /** A current item built from the given pull requests; returns its id. */
-    long item(
+    public long item(
             String type, long personId, String occurredOn, boolean withdrawn, Long supersedesId, int... pullRequests) {
         return itemWithFields(type, null, personId, occurredOn, "{}", withdrawn, supersedesId, pullRequests);
     }
 
     /** A current Test change item of the pull request, keyed as the evidence builder keys it. */
-    long testChange(long personId, int pullRequestNumber, String occurredOn) {
+    public long testChange(long personId, int pullRequestNumber, String occurredOn) {
         return itemWithFields(
                 "test_change",
                 "test_change:" + REPOSITORY + "#" + pullRequestNumber,
@@ -106,7 +107,7 @@ final class AnalyticsRows {
     }
 
     /** A current Review comment written item on the pull request; the author is null for a bot's pull request. */
-    long reviewComment(long reviewerPersonId, int pullRequestNumber, Long authorPersonId, String occurredOn) {
+    public long reviewComment(long reviewerPersonId, int pullRequestNumber, Long authorPersonId, String occurredOn) {
         String fields = "{\"pullRequest\":{\"externalId\":\"" + REPOSITORY + "#" + pullRequestNumber + "\",\"number\":"
                 + pullRequestNumber + "},\"pullRequestAuthorPersonId\":" + authorPersonId + "}";
         return itemWithFields(
@@ -150,7 +151,7 @@ final class AnalyticsRows {
     }
 
     /** One stored review of a pull request by a user account. */
-    void review(int pullRequestNumber, long accountId, String login, String state) {
+    public void review(int pullRequestNumber, long accountId, String login, String state) {
         inserted++;
         jdbc.update(
                 """
@@ -166,7 +167,7 @@ final class AnalyticsRows {
     }
 
     /** A Review comment judgment of an item; the tier is null when the comment is not substantive. */
-    long commentJudgment(long itemId, String commentType, boolean substantive, String tier, Long supersedesId) {
+    public long commentJudgment(long itemId, String commentType, boolean substantive, String tier, Long supersedesId) {
         return judgment(
                 "review_comment",
                 "evidence_item_id",
@@ -177,12 +178,12 @@ final class AnalyticsRows {
     }
 
     /** The tier of a Test change item; returns the judgment id. */
-    long itemTier(long itemId, String tier) {
+    public long itemTier(long itemId, String tier) {
         return judgment("item_tier", "evidence_item_id", itemId, "{}", tier, null);
     }
 
     /** A Feature work complexity judgment of an item; returns the judgment id. */
-    long complexity(long itemId, String complexity, String tier, Long supersedesId) {
+    public long complexity(long itemId, String complexity, String tier, Long supersedesId) {
         return judgment(
                 "feature_work_complexity",
                 "evidence_item_id",

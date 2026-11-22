@@ -2,6 +2,24 @@
 
 One entry per working session, newest at the top. Each entry says what was done, what is next and what is blocked. Read the top entry first.
 
+## 22 Nov 2026: F11 Scoring shipped
+
+**Done**
+- `/ship F11`: question brief answered "OK, all recommended" (decisions 218 to 229); decisions 201 to 217 by the session. 10 tasks in 4 batches and 2 review fixes on `feature/f11`.
+- Migration V12 (`dimension`, `dimension_evidence_type`, `dimension_gate`, `dimension_score`, seven `scoring.*` settings); package `scoring` (presence and working tier, gates G1 and G2, G4 "gate unverified", score against a selected level, trail); job `dimension-scoring` (`quarter`); `GET /api/developers/{personId}/dimension-scores?quarter=&level=`. Backend and web suites green.
+- Real data: on a throwaway copy of the Compose database (the user asked not to wait for the model runs; the copy is deleted), run 61 scored 26 persons, 156 rows; person 11 checked with separate SQL and worked out by hand (`docs/features/F11-scoring/notes.md`, "Verification"). The Compose database itself has no scores yet.
+- Pull request: see the F11 row of the status table and `notes.md`.
+
+**Checks still open (waiting for the user)**
+- After the model runs finish: restart the backend on `main`, run `dimension-scoring` for 2026-Q3 on the Compose database and look at a few trails.
+- From F10: developer 9's analytics against SQL once the judgments are complete. From F06 and F07: the SQL checks of their `notes.md`. From F05: the 20 Feature work groups. From F04: the 19 identity proposals.
+
+**Next**
+- `/clear`, then `/ship F12`.
+
+**Blocked or needed from the user**
+- Nothing for F12 to start.
+
 ## 22 Nov 2026: F10 analytics and the hygiene number shipped
 
 **Done**
