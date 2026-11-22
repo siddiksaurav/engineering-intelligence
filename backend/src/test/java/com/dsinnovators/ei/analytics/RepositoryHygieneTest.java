@@ -38,6 +38,16 @@ class RepositoryHygieneTest extends DatabaseTest {
     }
 
     @Test
+    void countsAnAuthorGitHubDoesNotTypeAsBotAsHuman() {
+        AnalyticsRows rows = new AnalyticsRows(jdbc);
+        rows.pullRequestOfType(1, 1, 11, "ada", "Mannequin", "2026-07-02T10:00:00Z");
+        rows.pullRequestOfType(2, 1, 12, "some-org", "Organization", "2026-07-03T10:00:00Z");
+        rows.botPullRequest(3, 14, "dependabot", "2026-07-05T10:00:00Z");
+
+        assertEquals(List.of(1, 2), hygiene.of(QUARTER).notLinked().pullRequestNumbers());
+    }
+
+    @Test
     void hasNoShareWhenNoHumanPullRequestWasMergedInTheQuarter() {
         RepositoryHygiene.Result result = hygiene.of(QUARTER);
 

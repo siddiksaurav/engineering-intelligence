@@ -21,6 +21,8 @@ final class AnalyticsSql {
             )""";
 
     // The merge day is the UTC date of mergedAt, as everywhere else (decisions 121, 150).
+    // The human rule is that of BotAccounts.isBot: an author is human unless typed Bot or on the bot list;
+    // a pull request without an author (a deleted account) is not human.
     // The person is null for a pull request of a bot or of a deleted account.
     private static final String MERGED_PULL_REQUEST = """
             merged_pull_request as (
@@ -28,8 +30,9 @@ final class AnalyticsSql {
                        latest.external_id,
                        (latest.payload ->> 'number')::int as number,
                        identity.person_id,
-                       (coalesce(latest.payload #>> '{author,__typename}', '') = 'User'
-                        and coalesce(latest.payload #>> '{author,login}', '')
+                       (latest.payload #>> '{author,login}' is not null
+                        and coalesce(latest.payload #>> '{author,__typename}', '') <> 'Bot'
+                        and (latest.payload #>> '{author,login}')
                             not in (select jsonb_array_elements_text(cast(:botLogins as jsonb)))) as human_author
                 from latest_pull_request latest
                 left join person_identity identity
@@ -46,7 +49,7 @@ final class AnalyticsSql {
                 where human_author
             )""";
 
-    private static final String CURRENT_ITEM = """
+    static final String CURRENT_ITEM = """
             current_item as (
                 select item.*
                 from evidence_item item

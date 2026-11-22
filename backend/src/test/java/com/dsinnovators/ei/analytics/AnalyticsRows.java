@@ -32,7 +32,12 @@ final class AnalyticsRows {
 
     /** One stored version of a pull request written by a user account. */
     void pullRequest(int number, int version, long accountId, String login, String mergedAt) {
-        storePullRequest(number, version, mergedAt, author(accountId, login, "User"));
+        pullRequestOfType(number, version, accountId, login, "User", mergedAt);
+    }
+
+    /** One stored version of a pull request whose author account GitHub types as given. */
+    void pullRequestOfType(int number, int version, long accountId, String login, String typename, String mergedAt) {
+        storePullRequest(number, version, mergedAt, author(accountId, login, typename));
     }
 
     void botPullRequest(int number, long accountId, String login, String mergedAt) {
