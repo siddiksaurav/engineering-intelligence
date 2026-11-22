@@ -265,6 +265,17 @@ describe("ProfilePage", () => {
     expect(html).toContain('href="/developers"');
   });
 
+  it("marks the selected level with a class of its own", async () => {
+    answeringWith(scores("L2", [dimension("design", DESIGN, "T2", 1)]));
+
+    const html = await render({ quarter: "2026-Q3", level: "L2" });
+
+    const classOf = (level: string) => html.match(new RegExp(`class="([^"]*)"[^>]*>${level}</a>`))?.[1];
+    expect(classOf("L2")).toBeDefined();
+    expect(classOf("L2")).not.toEqual(classOf("L1"));
+    expect(classOf("L1")).toEqual(classOf("L3"));
+  });
+
   it("says no PRs for a hygiene share that is null", async () => {
     answeringWith(
       scores("L2", []),

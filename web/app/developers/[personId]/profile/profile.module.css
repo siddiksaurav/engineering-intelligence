@@ -22,7 +22,8 @@
   color: #fff;
 }
 
-.levelSelected {
+/* Two classes: the header's `.header a` rule (white text) would win over one. */
+.levels .levelSelected {
   background: #fff;
   color: var(--sky-900);
 }
