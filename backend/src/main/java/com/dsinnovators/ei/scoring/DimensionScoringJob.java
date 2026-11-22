@@ -77,17 +77,21 @@ class DimensionScoringJob implements Job {
     @Override
     public void run(JobArguments arguments, JobCounts counts) {
         Quarter quarter = quarter(arguments);
-        snapshot.executeWithoutResult(status -> {
+        ScoringOutcome outcome = snapshot.execute(status -> {
             // The database allows one running run per job, so the running run is this one.
             long runId = jdbc.sql(RUNNING_RUN_ID)
                     .param("jobName", NAME)
                     .query(Long.class)
                     .single();
             Map<Long, List<DimensionScoreResult>> results = score(quarter);
-            counts.add("persons", results.size());
-            counts.add("scores_written", store.insert(runId, quarter, clock.instant(), results));
+            return new ScoringOutcome(results.size(), store.insert(runId, quarter, clock.instant(), results));
         });
+        // Counted after the commit, so a failed run never reports rows it did not keep.
+        counts.add("persons", outcome.persons());
+        counts.add("scores_written", outcome.scoresWritten());
     }
+
+    private record ScoringOutcome(int persons, int scoresWritten) {}
 
     private Map<Long, List<DimensionScoreResult>> score(Quarter quarter) {
         ScoringSettings settings = settingsReader.in(quarter);

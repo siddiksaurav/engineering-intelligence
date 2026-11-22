@@ -171,6 +171,34 @@ class DimensionScoringJobTest extends DatabaseTest {
     }
 
     @Test
+    void aRunThatFailsAfterSomeInsertsWritesNoRowsAndNoCount() throws Exception {
+        jdbc.execute("""
+                create function fail_after_first_score() returns trigger as $$
+                begin
+                    if exists (select 1 from dimension_score) then
+                        raise exception 'second score refused';
+                    end if;
+                    return new;
+                end $$ language plpgsql
+                """);
+        jdbc.execute("""
+                create trigger fail_after_first_score before insert on dimension_score
+                for each row execute function fail_after_first_score()
+                """);
+        try {
+            JsonNode run = run(QUARTER_ARGUMENTS);
+
+            assertEquals("failed", run.get("status").stringValue());
+            assertTrue(run.get("errorMessage").stringValue().contains("second score refused"));
+            assertEquals(0, count("select count(*) from dimension_score"));
+            assertNull(run.get("counts").get("scores_written"));
+        } finally {
+            jdbc.execute("drop trigger fail_after_first_score on dimension_score");
+            jdbc.execute("drop function fail_after_first_score()");
+        }
+    }
+
+    @Test
     void aMissingOrWrongQuarterIsRefusedAndNothingIsRecorded() throws Exception {
         HttpResponse<String> missing = jobs.start("dimension-scoring", "{}");
         HttpResponse<String> wrong = jobs.start("dimension-scoring", "{\"quarter\":\"2026-Q5\"}");
