@@ -6,13 +6,18 @@ import {
   type Analytics,
   type Count,
   type Distribution,
+  type EvidenceTypeTrail,
+  type GateResult,
+  type TrailItem,
   type DimensionScore,
   type DimensionScores,
   type Level,
   type Tier,
 } from "@/lib/profile";
+import { fetchItemSummaries, type ItemSummary } from "@/lib/items";
 import ProfilePage from "./page";
 
+vi.mock("@/lib/items", () => ({ fetchItemSummaries: vi.fn() }));
 vi.mock("@/lib/profile", () => ({ fetchAnalytics: vi.fn(), fetchDimensionScores: vi.fn() }));
 
 const PERSON = { personId: 7, displayName: "ada" };
@@ -101,6 +106,79 @@ function scores(level: Level, dimensions: DimensionScore[], scored = true): Dime
   };
 }
 
+function trailItem(id: number, overrides: Partial<TrailItem> = {}): TrailItem {
+  return {
+    evidenceItemId: id,
+    itemKey: `item-${id}`,
+    evidenceType: "feature_work",
+    tier: "T2",
+    complexity: "medium",
+    weight: 2,
+    pullRequestNumbers: [100 + id],
+    sourceUrl: `https://github.com/opf/openproject/pull/${100 + id}`,
+    ...overrides,
+  };
+}
+
+function summary(id: number, overrides: Partial<ItemSummary> = {}): ItemSummary {
+  return {
+    id,
+    type: "feature_work",
+    date: "2026-07-03",
+    quarter: "2026-Q3",
+    title: `Item title ${id}`,
+    sourceUrl: "https://github.com/opf/openproject/pull/101",
+    links: [],
+    person: PERSON,
+    tier: "T2",
+    current: true,
+    currentItemId: id,
+    ...overrides,
+  };
+}
+
+function typeTrail(overrides: Partial<EvidenceTypeTrail> = {}): EvidenceTypeTrail {
+  return {
+    evidenceType: "feature_work",
+    rule: "SHARE",
+    counted: [],
+    notJudgedYet: [],
+    notSubstantive: [],
+    notReadAtLevel: [],
+    presence: [],
+    ...overrides,
+  };
+}
+
+function withTrail(
+  base: DimensionScore,
+  trail: Partial<DimensionScore["trail"]>,
+  gates: GateResult[] = [],
+): DimensionScore {
+  return { ...base, gates, trail: { ...base.trail, ...trail, gates } };
+}
+
+function gate(name: GateResult["gate"], overrides: Partial<GateResult> = {}): GateResult {
+  return {
+    gate: name,
+    outcome: "PASS",
+    unverifiedReason: null,
+    personTestedPullRequests: [201, 202],
+    personPullRequests: [201, 202, 203],
+    repositoryTestedPullRequests: [301],
+    repositoryPullRequests: [301, 302],
+    personSharePercent: 66.7,
+    repositorySharePercent: 50,
+    differencePoints: -16.7,
+    developersInGroup: [1, 2, 3, 4],
+    minimumDevelopers: 3,
+    limits: { passWithinPoints: 10, farMissBeyondPoints: 25 },
+    pullRequestsWithoutDigest: [],
+    note: null,
+    ...overrides,
+  };
+}
+
 const DESIGN = "Design and architecture";
 const ENGINEERING = "Engineering standards";
 
@@ -113,15 +191,21 @@ async function render(
   );
 }
 
-function answeringWith(levelScores: DimensionScores, profileAnalytics: Analytics = analytics()): void {
+function answeringWith(
+  levelScores: DimensionScores,
+  profileAnalytics: Analytics = analytics(),
+  summaries: ItemSummary[] = [],
+): void {
   vi.mocked(fetchAnalytics).mockResolvedValue({ status: "ok", data: profileAnalytics });
   vi.mocked(fetchDimensionScores).mockResolvedValue({ status: "ok", data: levelScores });
+  vi.mocked(fetchItemSummaries).mockResolvedValue({ status: "ok", data: summaries });
 }
 
 describe("ProfilePage", () => {
   afterEach(() => {
     vi.mocked(fetchAnalytics).mockReset();
     vi.mocked(fetchDimensionScores).mockReset();
+    vi.mocked(fetchItemSummaries).mockReset();
     vi.unstubAllEnvs();
   });
 
@@ -132,6 +216,7 @@ describe("ProfilePage", () => {
       L3: scores("L3", [dimension("design", DESIGN, "T2", 0), dimension("engineering", ENGINEERING, null, 0)]),
     };
     vi.mocked(fetchAnalytics).mockResolvedValue({ status: "ok", data: analytics() });
+    vi.mocked(fetchItemSummaries).mockResolvedValue({ status: "ok", data: [] });
     vi.mocked(fetchDimensionScores).mockImplementation(async (_url, _id, _quarter, level) => ({
       status: "ok",
       data: atLevel[level],
@@ -244,6 +329,111 @@ describe("ProfilePage", () => {
     answeringWith(scores("L2", [dimension("design", DESIGN, "T2", 1)]));
 
     expect(await render({ quarter: "2026-Q3" })).not.toContain("not judged yet");
+  });
+
+  it("a trail item opens to its item page and its pull request on GitHub", async () => {
+    const design = withTrail(dimension("design", DESIGN, "T2", 1), {
+      evidenceTypes: [typeTrail({ counted: [trailItem(41)] })],
+    });
+    answeringWith(scores("L2", [design]), analytics(), [summary(41, { title: "Single sign-on" })]);
+
+    const html = await render({ quarter: "2026-Q3" });
+
+    expect(html).toContain("<details");
+    expect(html).toContain("Trail");
+    expect(html).toContain('href="/items/41"');
+    expect(html).toContain("Single sign-on");
+    expect(html).toContain('href="https://github.com/opf/openproject/pull/141"');
+    expect(html).toContain("weight 2");
+  });
+
+  it("asks for the summaries of the items on the page, once", async () => {
+    const design = withTrail(dimension("design", DESIGN, "T2", 1), {
+      evidenceTypes: [typeTrail({ counted: [trailItem(41), trailItem(42)] })],
+    });
+    answeringWith(scores("L2", [design]), analytics());
+
+    await render({ quarter: "2026-Q3" });
+
+    expect(fetchItemSummaries).toHaveBeenCalledWith(undefined, [41, 42]);
+  });
+
+  it("names an item without a summary by its number and still links to it", async () => {
+    const design = withTrail(dimension("design", DESIGN, "T2", 1), {
+      evidenceTypes: [typeTrail({ counted: [trailItem(41)] })],
+    });
+    vi.mocked(fetchAnalytics).mockResolvedValue({ status: "ok", data: analytics() });
+    vi.mocked(fetchDimensionScores).mockResolvedValue({ status: "ok", data: scores("L2", [design]) });
+    vi.mocked(fetchItemSummaries).mockResolvedValue({ status: "down" });
+
+    const html = await render({ quarter: "2026-Q3" });
+
+    expect(html).toContain("item #41");
+    expect(html).toContain('href="/items/41"');
+  });
+
+  it("shows the presence rows, the groups of items, the level three rule and the notes in the trail", async () => {
+    const design = withTrail(dimension("design", DESIGN, "T2", 1), {
+      evidenceTypes: [
+        typeTrail({
+          counted: [trailItem(41)],
+          notJudgedYet: [trailItem(42, { tier: null, weight: null })],
+          notSubstantive: [trailItem(43)],
+          notReadAtLevel: [trailItem(44)],
+          presence: [
+            { tier: "T1", atOrAbove: 5, total: 9, presence: true },
+            { tier: "T2", atOrAbove: 2, total: 9, presence: false },
+            { tier: "T3", atOrAbove: 0, total: 9, presence: false },
+          ],
+        }),
+      ],
+      levelThreeRule: { t3Items: 1, t3ItemsNeeded: 2, met: false },
+      countedNotTiered: [trailItem(45, { tier: null })],
+      notes: ["Bug fix is never Feature work"],
+    });
+    answeringWith(scores("L2", [design]), analytics());
+
+    const html = await render({ quarter: "2026-Q3" });
+
+    expect(html).toContain("T1: 5 of 9 at or above, needs 1/3: yes");
+    expect(html).toContain("T2: 2 of 9 at or above, needs 1/3: no");
+    expect(html).toContain("Not judged yet: 1");
+    expect(html).toContain("Not substantive: 1");
+    expect(html).toContain("Not read at this level: 1");
+    expect(html).toContain("Counted, not tiered: 1");
+    expect(html).toContain("1 of 2 T3 items needed");
+    expect(html).toContain("Bug fix is never Feature work");
+    for (const id of [41, 42, 43, 44, 45]) {
+      expect(html).toContain(`href="/items/${id}"`);
+    }
+  });
+
+  it("shows the gates panel once, with the shares, the limits and the PR lists that open", async () => {
+    const engineering = withTrail(dimension("engineering", ENGINEERING, "T2", 1), {}, [
+      gate("G1", { outcome: "CLOSE_MISS" }),
+      gate("G2"),
+      gate("G4", { outcome: "UNVERIFIED", unverifiedReason: "NOT_CALCULATED" }),
+    ]);
+    answeringWith(scores("L2", [dimension("design", DESIGN, "T2", 1), engineering]), analytics());
+
+    const html = await render({ quarter: "2026-Q3" });
+
+    expect(html.match(/Quality gates/g)).toHaveLength(1);
+    expect(html).toContain("G1");
+    expect(html).toContain("close miss");
+    expect(html).toContain("G2");
+    expect(html).toContain("66.7%");
+    expect(html).toContain("4 developers");
+    expect(html).toContain('href="https://github.com/opf/openproject/pull/201"');
+    expect(html).toContain('href="https://github.com/opf/openproject/pull/301"');
+    expect(html).toContain("G4");
+    expect(html).toContain("gate unverified");
+  });
+
+  it("shows no gates panel when no dimension has gates", async () => {
+    answeringWith(scores("L2", [dimension("design", DESIGN, "T2", 1)]), analytics());
+
+    expect(await render({ quarter: "2026-Q3" })).not.toContain("Quality gates");
   });
 
   it("says the backend is down when either call fails", async () => {

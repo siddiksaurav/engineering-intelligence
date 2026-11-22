@@ -1,10 +1,13 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { type Analytics, type DimensionScores, fetchAnalytics, fetchDimensionScores, type Level } from "@/lib/profile";
-import { notJudgedYet, profileParams } from "@/lib/profileParams";
+import { fetchItemSummaries } from "@/lib/items";
+import { itemIdsOnPage, notJudgedYet, profileParams } from "@/lib/profileParams";
 import { percent } from "@/lib/profileText";
 import developers from "../../developers.module.css";
 import { DimensionCard } from "./DimensionCard";
+import { GatesPanel } from "./GatesPanel";
+import type { SummariesById } from "./ItemReferences";
 import styles from "./profile.module.css";
 
 // Read on every request, on the server. The browser never calls the backend.
@@ -48,11 +51,24 @@ export default async function ProfilePage({
   if (analytics.status === "down" || scores.status === "down") {
     return <Shell title="Profile" notice="backend down" />;
   }
-  return <Profile analytics={analytics.data} scores={scores.data} />;
+  const summaries = await fetchItemSummaries(backendUrl, itemIdsOnPage(analytics.data, scores.data));
+  const summariesById: SummariesById = new Map(
+    (summaries.status === "ok" ? summaries.data : []).map((summary) => [summary.id, summary]),
+  );
+  return <Profile analytics={analytics.data} scores={scores.data} summariesById={summariesById} />;
 }
 
-function Profile({ analytics, scores }: { analytics: Analytics; scores: DimensionScores }) {
+function Profile({
+  analytics,
+  scores,
+  summariesById,
+}: {
+  analytics: Analytics;
+  scores: DimensionScores;
+  summariesById: SummariesById;
+}) {
   const unjudged = notJudgedYet(analytics, scores);
+  const gates = scores.dimensions.find((dimension) => dimension.gates.length > 0)?.gates ?? [];
   return (
     <main>
       <ProfileHeader analytics={analytics} scores={scores} />
@@ -63,9 +79,17 @@ function Profile({ analytics, scores }: { analytics: Analytics; scores: Dimensio
           </p>
         )}
         {scores.scored ? (
-          scores.dimensions.map((dimension) => (
-            <DimensionCard key={dimension.key} dimension={dimension} level={scores.level} />
-          ))
+          <>
+            {scores.dimensions.map((dimension) => (
+              <DimensionCard
+                key={dimension.key}
+                dimension={dimension}
+                level={scores.level}
+                summariesById={summariesById}
+              />
+            ))}
+            {gates.length > 0 && <GatesPanel gates={gates} summariesById={summariesById} />}
+          </>
         ) : (
           <NoScores quarter={scores.quarter} />
         )}

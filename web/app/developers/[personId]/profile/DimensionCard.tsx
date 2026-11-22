@@ -1,11 +1,21 @@
 import type { DimensionScore, Level } from "@/lib/profile";
 import { badgeOf, nextStepLine, whyLine } from "@/lib/profileText";
+import { type SummariesById } from "./ItemReferences";
+import { Trail } from "./Trail";
 import styles from "./profile.module.css";
 
 const BADGE_WORDS = { strength: "Strength", gap: "Gap" } as const;
 
-/** One dimension at the selected level: its score, working tier, why line, next step and strength or gap badge. */
-export function DimensionCard({ dimension, level }: { dimension: DimensionScore; level: Level }) {
+/** One dimension at the selected level: its score, working tier, why line, next step, strength or gap badge and folded trail. */
+export function DimensionCard({
+  dimension,
+  level,
+  summariesById,
+}: {
+  dimension: DimensionScore;
+  level: Level;
+  summariesById: SummariesById;
+}) {
   const badge = badgeOf(dimension);
   const nextStep = nextStepLine(dimension, level);
   return (
@@ -22,6 +32,7 @@ export function DimensionCard({ dimension, level }: { dimension: DimensionScore;
       </p>
       <p>{whyLine(dimension, level)}</p>
       {nextStep && <p className={styles.nextStep}>{nextStep}</p>}
+      <Trail trail={dimension.trail} summariesById={summariesById} />
     </article>
   );
 }
