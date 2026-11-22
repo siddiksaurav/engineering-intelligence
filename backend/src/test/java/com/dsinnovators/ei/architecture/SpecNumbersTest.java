@@ -9,7 +9,6 @@ import com.tngtech.archunit.lang.ArchCondition;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Set;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -61,7 +60,6 @@ class SpecNumbersTest {
     }
 
     @Test
-    @Disabled("F11 creates the scoring package; enable this test in F11")
     void theScoringPackageHoldsNoNumberConstant() {
         holdsNoNumberConstant("scoring");
     }
