@@ -6,7 +6,9 @@ import java.sql.Array;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Component;
 import tools.jackson.databind.json.JsonMapper;
@@ -31,6 +33,15 @@ class AnalyticsQuery {
                 .param("firstDay", quarter.firstDay())
                 .param("lastDay", quarter.lastDay())
                 .param("botLogins", jsonMapper.writeValueAsString(botAccounts.loginsOfBots(quarter)));
+    }
+
+    /** The counts of the rows, by the text in {@code bucketColumn}, in the order of the rows. */
+    static Map<String, Count> countsByBucket(JdbcClient.StatementSpec statement, String bucketColumn) {
+        Map<String, Count> countsByBucket = new LinkedHashMap<>();
+        statement
+                .query((row, rowNumber) -> countsByBucket.put(row.getString(bucketColumn), countOf(row)))
+                .list();
+        return countsByBucket;
     }
 
     /** The count in the columns {@code count}, {@code item_ids} and {@code pull_request_numbers} of the current row. */
