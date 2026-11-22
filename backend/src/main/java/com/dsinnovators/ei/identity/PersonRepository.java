@@ -10,5 +10,7 @@ interface PersonRepository extends Repository<Person, Long> {
 
     Optional<Person> findById(long id);
 
+    List<Person> findAllById(Iterable<Long> ids);
+
     List<Person> findAllByOrderByDisplayNameAscIdAsc();
 }

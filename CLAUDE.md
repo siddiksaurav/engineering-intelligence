@@ -139,6 +139,7 @@ curl -s -X POST localhost:8080/api/jobs/dimension-scoring/runs \
                                                              score every developer of the quarter at L1, L2 and L3 (after the model jobs; run again after new judgments)
 curl -s "localhost:8080/api/developers/9/dimension-scores?quarter=2026-Q3&level=L2"
                                                              the two dimension scores of developer 9 at L2, with gates and trail (F11)
+curl -s "localhost:8080/api/evidence-items/42"               one evidence item with its current AI judgment (F12); ?ids=1,2,3 on /api/evidence-items for several
 docker compose exec postgres psql -U ei -d ei -c "select confirm_identity_proposal(7);"
                                                              confirm proposal 7 (list them in identity_proposal)
 docker compose exec postgres psql -U ei -d ei -c "select reject_identity_proposal(7);"
@@ -152,6 +153,7 @@ docker compose exec postgres psql -U ei -d ei -c "select reject_identity_proposa
 - Tests run with the profile `test` and never read `.env`. They never call GitHub; `GitHubApiFixture` gives a client on a mock server.
 - Health: `curl -s localhost:8080/actuator/health`. The web page at `localhost:3000` shows "backend up" or "backend down".
 - Evidence list: `localhost:3000/developers` (after `evidence-build`).
+- Profile: `localhost:3000/developers/9/profile` (quarter from `DEFAULT_QUARTER` in `.env`, level L2; `?quarter=&level=` change them). Item page: `localhost:3000/items/42`.
 - Never start a second backend against the Compose database while a job runs: startup marks every running run as interrupted.
 - A test that needs the database extends `com.dsinnovators.ei.DatabaseTest`.
 - Do not put quotes around values in `.env`: the backend would read them as part of the value.

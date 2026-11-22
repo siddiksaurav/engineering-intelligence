@@ -76,13 +76,13 @@ describe("evidence client", () => {
     it("says the backend is down when it answers an error, and logs the status", async () => {
       expect(await fetchEvidenceItems(BACKEND_URL, 7, answering(500, "{}"))).toEqual({ status: "down" });
       expect(warn).toHaveBeenCalledWith(
-        "Evidence request failed: HTTP 500 from http://localhost:8080/api/developers/7/evidence-items",
+        "Backend request failed: HTTP 500 from http://localhost:8080/api/developers/7/evidence-items",
       );
     });
 
     it("says the backend is down when the connection fails", async () => {
       expect(await fetchEvidenceItems(BACKEND_URL, 7, failing())).toEqual({ status: "down" });
-      expect(warn).toHaveBeenCalledWith("Evidence request failed: fetch failed");
+      expect(warn).toHaveBeenCalledWith("Backend request failed: fetch failed");
     });
 
     it("says the backend is down when the answer is not JSON", async () => {

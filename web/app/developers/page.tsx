@@ -25,10 +25,13 @@ export default async function DevelopersPage() {
           <ul className={styles.developerList}>
             {result.data.map((developer) => (
               <li key={developer.personId}>
-                <Link href={`/developers/${developer.personId}`} className={styles.developerCard}>
-                  <span className={styles.developerName}>{developer.displayName}</span>
+                <div className={styles.developerCard}>
+                  <Link href={`/developers/${developer.personId}/profile`} className={styles.developerName}>
+                    {developer.displayName}
+                  </Link>
                   <CountBadges counts={developer.counts} />
-                </Link>
+                  <Link href={`/developers/${developer.personId}`}>Evidence list</Link>
+                </div>
               </li>
             ))}
           </ul>

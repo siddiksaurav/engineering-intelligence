@@ -5,12 +5,13 @@ import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-/** Turns the refusals of the developer endpoints into problem details that say what was wrong. */
+/** Turns the refusals of the developer and evidence item endpoints into problem details that say what was wrong. */
 @RestControllerAdvice(
         assignableTypes = {
             DeveloperController.class,
             DeveloperAnalyticsController.class,
-            DeveloperDimensionScoresController.class
+            DeveloperDimensionScoresController.class,
+            EvidenceItemController.class
         })
 class DeveloperExceptionHandler {
 
@@ -27,5 +28,15 @@ class DeveloperExceptionHandler {
     @ExceptionHandler(InvalidLevelException.class)
     ProblemDetail wrongLevel(InvalidLevelException refused) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, refused.getMessage());
+    }
+
+    @ExceptionHandler(InvalidEvidenceItemIdsException.class)
+    ProblemDetail wrongEvidenceItemIds(InvalidEvidenceItemIdsException refused) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, refused.getMessage());
+    }
+
+    @ExceptionHandler(EvidenceItemNotFoundException.class)
+    ProblemDetail unknownEvidenceItem(EvidenceItemNotFoundException refused) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, refused.getMessage());
     }
 }

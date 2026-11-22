@@ -165,6 +165,12 @@ describe("DeveloperPage", () => {
     expect(html).toContain("No evidence items");
   });
 
+  it("links to the profile of the developer", async () => {
+    vi.mocked(fetchEvidenceItems).mockResolvedValue({ status: "ok", data: answering([FEATURE]) });
+
+    expect(await render()).toContain('href="/developers/7/profile"');
+  });
+
   it("says the backend is down when it cannot be read", async () => {
     vi.mocked(fetchEvidenceItems).mockResolvedValue({ status: "down" });
 

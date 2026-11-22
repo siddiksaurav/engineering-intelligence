@@ -2,6 +2,24 @@
 
 One entry per working session, newest at the top. Each entry says what was done, what is next and what is blocked. Read the top entry first.
 
+## 22 Nov 2026: F12 Profile page shipped
+
+**Done**
+- `/ship F12`: question brief answered "OK, all recommended" (decisions 244 to 257); decisions 233 to 243 by the session, 258 to 260 from the review and the browser check. 11 tasks in 4 batches and 6 review-fix commits on `feature/f12`.
+- Backend: `GET /api/evidence-items?ids=` and `GET /api/evidence-items/{id}` (item with its current AI judgment). Web: profile page `/developers/{id}/profile` (level control, two dimension cards with why and next-step lines, folded trail, gates panel, five analytics as CSS bars, hygiene; every number opens to its items and PRs), read-only item page `/items/{id}`, links from the developer and evidence lists. No migration.
+- Real data, on a throwaway copy of the Compose database (deleted): click path from a score to PR #23912 on GitHub; L2 to L3 changes the scores with the why line; every number equals the API for persons 11, 9 and 1 at L1, L2 and L3 (`docs/features/F12-profile-page/notes.md`, "Verification").
+- Pull request: see the F12 row of the status table and `notes.md`.
+
+**Checks still open (waiting for the user)**
+- On the Compose database: restart the backend on `main` (migrates to V12), let the model runs finish, run `dimension-scoring` for 2026-Q3, open `localhost:3000/developers` and a profile. Add `DEFAULT_QUARTER=2026-Q3` to `.env`.
+- From F11, F10, F06, F07, F05, F04: the checks listed in their `notes.md`.
+
+**Next**
+- `/clear`, then `/ship F08` (blind check and the item page's source panel and labels), then F09 (decision 178).
+
+**Blocked or needed from the user**
+- Nothing for F08 to start. Its blind labels need the judgments of the model runs.
+
 ## 22 Nov 2026: F11 Scoring shipped
 
 **Done**

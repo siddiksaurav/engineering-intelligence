@@ -1,0 +1,237 @@
+.headerLine {
+  margin: 4px 0 12px;
+}
+
+.levels {
+  display: flex;
+  gap: 8px;
+}
+
+.level,
+.levelSelected {
+  min-width: 56px;
+  padding: 6px 16px;
+  border-radius: 999px;
+  border: 2px solid #fff;
+  text-align: center;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.level {
+  color: #fff;
+}
+
+/* Two classes: the header's `.header a` rule (white text) would win over one. */
+.levels .levelSelected {
+  background: #fff;
+  color: var(--sky-900);
+}
+
+.warning {
+  background: var(--sky-100);
+  border: 2px solid var(--sky-500);
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-weight: 600;
+}
+
+.warning h2 {
+  margin: 0 0 4px;
+  font-size: 1.1rem;
+}
+
+.card {
+  --accent: var(--sky-500);
+  background: #fff;
+  border: 2px solid var(--sky-200);
+  border-left: 8px solid var(--accent);
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+}
+
+.score0 {
+  --accent: var(--bug-fix);
+}
+
+.score1 {
+  --accent: var(--sky-500);
+}
+
+.score2 {
+  --accent: var(--review-comment-written);
+}
+
+.card p {
+  margin: 8px 0;
+}
+
+.cardHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.cardHeader h2 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: var(--sky-700);
+}
+
+.badge {
+  border-radius: 999px;
+  padding: 2px 12px;
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.strength {
+  background: var(--review-comment-written);
+}
+
+.gap {
+  background: var(--bug-fix);
+}
+
+.score strong {
+  font-size: 1.8rem;
+  color: var(--accent);
+}
+
+.workingTier {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.nextStep {
+  color: var(--muted);
+}
+
+.drill {
+  margin: 4px 0;
+}
+
+.drill summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--sky-700);
+}
+
+.drillEmpty {
+  margin: 4px 0;
+  color: var(--muted);
+}
+
+.drillList {
+  margin: 4px 0;
+  padding-left: 20px;
+}
+
+.drillPullRequests {
+  margin: 4px 0;
+}
+
+.pullRequest {
+  margin-right: 8px;
+}
+
+.itemKind {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.trail {
+  margin-top: 12px;
+  border-top: 2px solid var(--sky-100);
+  padding-top: 8px;
+}
+
+.trail > summary {
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--sky-700);
+}
+
+.typeTrail h3,
+.gate h3 {
+  margin: 12px 0 4px;
+  font-size: 1rem;
+}
+
+.panelTitle {
+  margin: 0 0 8px;
+  font-size: 1.2rem;
+  color: var(--sky-700);
+}
+
+.analytics {
+  display: grid;
+  gap: 16px;
+}
+
+.panel {
+  background: #fff;
+  border: 2px solid var(--sky-200);
+  border-radius: 12px;
+  padding: 12px 16px;
+}
+
+.panel h4 {
+  margin: 12px 0 4px;
+  font-size: 1rem;
+}
+
+.sideBySide {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+.perPullRequest {
+  margin: 4px 0;
+}
+
+.barRow {
+  margin: 4px 0;
+}
+
+.barLine {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.barTrack {
+  flex: 1;
+  height: 10px;
+  background: var(--sky-100);
+  border-radius: 0 5px 5px 0;
+}
+
+.barFill {
+  width: var(--bar-width);
+  height: 100%;
+  min-width: 2px;
+  background: var(--bar-color);
+  border-radius: 0 5px 5px 0;
+}
+
+.barRow + .barRow {
+  margin-top: 6px;
+}
+
+.barValue {
+  min-width: 56px;
+  text-align: right;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.superseded {
+  color: var(--muted);
+  font-style: italic;
+}
