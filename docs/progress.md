@@ -2,6 +2,20 @@
 
 One entry per working session, newest at the top. Each entry says what was done, what is next and what is blocked. Read the top entry first.
 
+## 22 Nov 2026: Groq key in, model jobs running in the background, F08 and F09 deferred
+
+**Done**
+- The Groq key is in `.env`. A one-PR digest worked (run 12).
+- The model jobs run in the background on the running backend, one after the other (decision 174): `pull-request-digest`, `evidence-build`, `feature-work-judgment`, `review-comment-judgment`, repeated every 30 minutes while the free quota leaves work for later (at most 12 rounds). The first round started with run 13. Check progress with `select id, job_name, status, counts from job_run order by id desc limit 8;`.
+- Gemini is off: the `backend` entry in `.claude/launch.json` blanks `LLM_PROVIDER_2_API_KEY`, and `LLM_PROVIDER_2_MODEL` is empty in `.env` (an empty line overrides the default of decision 177).
+- F08 and F09 deferred to after F12 (decision 178).
+
+**Next**
+- `/ship F10` on the two-week window. Its code and tests need no model; its real-data check needs the judgments of one developer, which the background runs are producing.
+
+**Blocked or needed from the user**
+- Nothing for F10 to start. The F06 and F07 SQL checks follow once the background runs finish.
+
 ## 22 Nov 2026: F07 Stage 2 judgment built while the user slept (no LLM key)
 
 **Done**
