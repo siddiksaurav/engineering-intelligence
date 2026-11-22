@@ -120,6 +120,7 @@ These are left out on purpose (`poc-plan.md` 3.1). No feature builds them. If a 
 | F11 | Scoring | F10 | Two dimension scores per developer, with gates G1 and G2 and the trail |
 | F12 | Profile page | F11 | One page per developer where every number opens down to a PR |
 | F13 | Accuracy measurement (dropped, decision 80) | F12 | An accuracy page with the measures of `poc-plan.md` section 4 |
+| F14 | Interface redesign with charts | F12 | An overview dashboard, a developer roster with scores and a profile with charts, in one design system |
 
 Each block below gives a new session enough to start the deep dive. "Open questions" are the points the deep dive must answer; they are not decided here.
 
@@ -381,6 +382,20 @@ Every count is split by tier (spec 7).
 
 **Open questions.** Whether it is built at all; you decide after F12. The targets are proposals and are set before labeling starts.
 
+---
+
+### F14 Interface redesign with charts
+
+**Goal.** The web pages look and read like a product that can be shown to management: one design system, a team overview, charts in place of rows of text.
+
+**Builds.** A shared shell (app bar, page header) and design tokens; an overview dashboard at `/` (evidence by type, scores and working tiers of the team, the developers with the most evidence); the developer list as a roster with the two dimension scores per developer; the profile with a score and working-tier figure per dimension, a chart per quality gate and charts for the five analytics and the hygiene number; the evidence list and the item page in the same system. No backend change: every number comes from the endpoints of F05, F10, F11 and F12. Every number still opens to its items and PRs.
+
+**Read first.** `docs/features/F12-profile-page/design.md` (what the profile shows and why). Decisions 233 to 260. The `frontend-design` and `dataviz` skills.
+
+**Done when.** The five pages render in the new design on desktop and phone width with real data. The numbers on the profile still equal the API values of F10 and F11 and still open down to a PR on GitHub. The palette of the charts passes the colour-blind check of the `dataviz` skill. Web format check, lint, type check, tests and build are green.
+
+**Open questions.** None; the user asked for the redesign to be built without a question brief (decision 261).
+
 ## 6. Order
 
 The features are built in number order; each depends on those in the "Depends on" column. A feature starts when the user asks for it. Two overlaps are allowed to save time (decision 81):
@@ -409,6 +424,7 @@ Update this table when a feature changes state. States: not started, in design, 
 | F11 | Scoring | done | `docs/features/F11-scoring/design.md` | `docs/features/F11-scoring/plan.md` |
 | F12 | Profile page | done | `docs/features/F12-profile-page/design.md` | `docs/features/F12-profile-page/plan.md` |
 | F13 | Accuracy measurement | dropped (decision 80) | | |
+| F14 | Interface redesign with charts | in progress | `docs/features/F14-interface-redesign/design.md` | `docs/features/F14-interface-redesign/plan.md` |
 
 ## 8. Glossary
 
