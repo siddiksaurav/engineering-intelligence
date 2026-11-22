@@ -6,7 +6,12 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 /** Turns the refusals of the developer endpoints into problem details that say what was wrong. */
-@RestControllerAdvice(assignableTypes = {DeveloperController.class, DeveloperAnalyticsController.class})
+@RestControllerAdvice(
+        assignableTypes = {
+            DeveloperController.class,
+            DeveloperAnalyticsController.class,
+            DeveloperDimensionScoresController.class
+        })
 class DeveloperExceptionHandler {
 
     @ExceptionHandler(DeveloperNotFoundException.class)
@@ -16,6 +21,11 @@ class DeveloperExceptionHandler {
 
     @ExceptionHandler(InvalidQuarterException.class)
     ProblemDetail wrongQuarter(InvalidQuarterException refused) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, refused.getMessage());
+    }
+
+    @ExceptionHandler(InvalidLevelException.class)
+    ProblemDetail wrongLevel(InvalidLevelException refused) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, refused.getMessage());
     }
 }
