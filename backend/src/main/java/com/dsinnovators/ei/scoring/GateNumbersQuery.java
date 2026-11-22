@@ -11,6 +11,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -114,7 +115,7 @@ public class GateNumbersQuery {
                 .toList();
         Set<Integer> repositoryPullRequests = new TreeSet<>();
         Set<Integer> repositoryTested = new TreeSet<>();
-        Map<Long, Integer> pullRequestsByDeveloper = new LinkedHashMap<>();
+        Map<Long, Integer> pullRequestsByDeveloper = new TreeMap<>();
         for (PullRequestRow row : rows) {
             if (row.withoutDigest()) {
                 continue;
@@ -132,13 +133,17 @@ public class GateNumbersQuery {
                         .sorted()
                         .toList(),
                 ofPerson.stream().map(PullRequestRow::number).sorted().toList(),
-                repositoryTested.size(),
-                repositoryPullRequests.size(),
-                (int) pullRequestsByDeveloper.values().stream()
-                        .filter(count -> count >= minimumPullRequests)
-                        .count(),
+                List.copyOf(repositoryTested),
+                List.copyOf(repositoryPullRequests),
+                pullRequestsByDeveloper.entrySet().stream()
+                        .filter(entry -> entry.getValue() >= minimumPullRequests)
+                        .map(Map.Entry::getKey)
+                        .toList(),
                 rows.stream()
                         .filter(row -> row.personId() == personId && row.withoutDigest())
-                        .count());
+                        .map(PullRequestRow::number)
+                        .distinct()
+                        .sorted()
+                        .toList());
     }
 }

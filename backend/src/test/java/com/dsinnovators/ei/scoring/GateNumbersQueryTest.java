@@ -60,14 +60,14 @@ class GateNumbersQueryTest extends DatabaseTest {
         GateNumbers adaG1 = numbers.get(ada).get(Gate.G1);
         assertEquals(List.of(1), adaG1.personTestedPullRequests());
         assertEquals(List.of(1, 2), adaG1.personPullRequests());
-        assertEquals(1, adaG1.pullRequestsWithoutDigest());
-        assertEquals(2, adaG1.repositoryTested());
-        assertEquals(5, adaG1.repositoryTotal());
-        assertEquals(3, adaG1.developersInGroup());
+        assertEquals(List.of(5), adaG1.pullRequestsWithoutDigest());
+        assertEquals(List.of(1, 6), adaG1.repositoryTestedPullRequests());
+        assertEquals(List.of(1, 2, 6, 7, 8), adaG1.repositoryPullRequests());
+        assertEquals(List.of(ada, grace, linus), adaG1.developersInGroup());
         GateNumbers graceG1 = numbers.get(grace).get(Gate.G1);
         assertEquals(List.of(6), graceG1.personTestedPullRequests());
         assertEquals(List.of(6, 7), graceG1.personPullRequests());
-        assertEquals(0, graceG1.pullRequestsWithoutDigest());
+        assertEquals(List.of(), graceG1.pullRequestsWithoutDigest());
     }
 
     @Test
@@ -92,10 +92,10 @@ class GateNumbersQueryTest extends DatabaseTest {
         GateNumbers adaG2 = numbers.get(ada).get(Gate.G2);
         assertEquals(List.of(1), adaG2.personTestedPullRequests());
         assertEquals(List.of(1, 2, 3), adaG2.personPullRequests());
-        assertEquals(0, adaG2.pullRequestsWithoutDigest());
-        assertEquals(2, adaG2.repositoryTested());
-        assertEquals(4, adaG2.repositoryTotal());
-        assertEquals(2, adaG2.developersInGroup());
+        assertEquals(List.of(), adaG2.pullRequestsWithoutDigest());
+        assertEquals(List.of(1, 5), adaG2.repositoryTestedPullRequests());
+        assertEquals(List.of(1, 2, 3, 5), adaG2.repositoryPullRequests());
+        assertEquals(List.of(ada, grace), adaG2.developersInGroup());
         GateNumbers linusG2 = numbers.get(linus).get(Gate.G2);
         assertEquals(List.of(), linusG2.personPullRequests());
         assertEquals(List.of(), linusG2.personTestedPullRequests());
@@ -121,7 +121,8 @@ class GateNumbersQueryTest extends DatabaseTest {
 
         Map<Long, Map<Gate, GateNumbers>> numbers = gateNumbersQuery.of(QUARTER, strict, List.of(ada, grace));
 
-        assertEquals(1, numbers.get(ada).get(Gate.G1).developersInGroup());
+        assertEquals(List.of(ada), numbers.get(ada).get(Gate.G1).developersInGroup());
         assertEquals(4, numbers.get(grace).get(Gate.G1).repositoryTotal());
+        assertEquals(List.of(1, 2, 3, 4), numbers.get(grace).get(Gate.G1).repositoryPullRequests());
     }
 }

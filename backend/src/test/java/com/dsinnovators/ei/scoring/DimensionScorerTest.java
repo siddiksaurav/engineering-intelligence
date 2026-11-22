@@ -15,6 +15,7 @@ import com.dsinnovators.ei.evidence.EvidenceType;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
+import java.util.stream.LongStream;
 import org.junit.jupiter.api.Test;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
@@ -167,9 +168,9 @@ class DimensionScorerTest {
         return new GateNumbers(
                 IntStream.range(0, personTested).boxed().toList(),
                 IntStream.range(0, personTotal).boxed().toList(),
-                repositoryTested,
-                repositoryTotal,
-                developers,
-                0);
+                IntStream.range(0, (int) repositoryTested).boxed().toList(),
+                IntStream.range(0, (int) repositoryTotal).boxed().toList(),
+                LongStream.range(0, developers).boxed().toList(),
+                List.of());
     }
 }

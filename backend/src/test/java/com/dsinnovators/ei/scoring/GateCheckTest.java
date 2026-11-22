@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.util.List;
 import java.util.stream.IntStream;
+import java.util.stream.LongStream;
 import org.junit.jupiter.api.Test;
 
 class GateCheckTest {
@@ -87,7 +88,12 @@ class GateCheckTest {
     private static GateNumbers numbers(
             int personTested, int personTotal, long repositoryTested, long repositoryTotal, int developers) {
         return new GateNumbers(
-                numbersUpTo(personTested), numbersUpTo(personTotal), repositoryTested, repositoryTotal, developers, 0);
+                numbersUpTo(personTested),
+                numbersUpTo(personTotal),
+                numbersUpTo((int) repositoryTested),
+                numbersUpTo((int) repositoryTotal),
+                LongStream.range(0, developers).boxed().toList(),
+                List.of());
     }
 
     private static List<Integer> numbersUpTo(int count) {

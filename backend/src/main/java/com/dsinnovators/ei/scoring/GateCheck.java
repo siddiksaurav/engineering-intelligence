@@ -22,7 +22,7 @@ public final class GateCheck {
     }
 
     private UnverifiedReason unverifiedReason(GateNumbers numbers) {
-        if (numbers.developersInGroup() < settings.gateMinimumDevelopers()) {
+        if (numbers.developersInGroup().size() < settings.gateMinimumDevelopers()) {
             return UnverifiedReason.TOO_FEW_DEVELOPERS;
         }
         if (numbers.personTotal() == 0) {
@@ -65,8 +65,8 @@ public final class GateCheck {
                 reason,
                 numbers.personTestedPullRequests(),
                 numbers.personPullRequests(),
-                numbers.repositoryTested(),
-                numbers.repositoryTotal(),
+                numbers.repositoryTestedPullRequests(),
+                numbers.repositoryPullRequests(),
                 personShare,
                 repositoryShare,
                 difference,
