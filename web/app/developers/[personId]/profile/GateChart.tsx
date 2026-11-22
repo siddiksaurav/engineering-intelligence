@@ -10,11 +10,12 @@ type Zone = { name: "pass" | "close"; from: number; to: number };
 /**
  * A gate as a bullet chart on a track from 0 to 100 percent: a line at the repository's share, a dot at the
  * person's, and the zones a person's share passes or closely misses in, shaded from the limits of the gate.
- * Nothing is drawn when a share is missing; the gate's words say why.
+ * Nothing is drawn for an unverified gate or when a share is missing: zones and a dot would read as an outcome the
+ * gate does not have. The gate's words say why.
  */
 export function GateChart({ gate }: { gate: GateResult }) {
   const { personSharePercent: person, repositorySharePercent: repository } = gate;
-  if (person === null || repository === null) {
+  if (gate.outcome === "UNVERIFIED" || person === null || repository === null) {
     return null;
   }
   return (

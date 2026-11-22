@@ -424,7 +424,7 @@ Update this table when a feature changes state. States: not started, in design, 
 | F11 | Scoring | done | `docs/features/F11-scoring/design.md` | `docs/features/F11-scoring/plan.md` |
 | F12 | Profile page | done | `docs/features/F12-profile-page/design.md` | `docs/features/F12-profile-page/plan.md` |
 | F13 | Accuracy measurement | dropped (decision 80) | | |
-| F14 | Interface redesign with charts | in progress | `docs/features/F14-interface-redesign/design.md` | `docs/features/F14-interface-redesign/plan.md` |
+| F14 | Interface redesign with charts | done | `docs/features/F14-interface-redesign/design.md` | `docs/features/F14-interface-redesign/plan.md` |
 
 ## 8. Glossary
 

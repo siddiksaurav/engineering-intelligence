@@ -9,7 +9,7 @@ import type { SummariesById } from "./ItemReferences";
 import styles from "./profile.module.css";
 
 /** A snake case name in plain words: "very_high" becomes "Very high"; a work type uses its screen title. */
-export function plainName(name: string): string {
+function plainName(name: string): string {
   const words = name.replaceAll("_", " ");
   return typeTitle(name) ?? words.charAt(0).toUpperCase() + words.slice(1);
 }

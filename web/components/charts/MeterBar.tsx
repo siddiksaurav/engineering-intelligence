@@ -1,4 +1,3 @@
-import type { CSSProperties } from "react";
 import { percent } from "@/lib/profileText";
 import styles from "./charts.module.css";
 
@@ -25,9 +24,7 @@ export function MeterBar({
       aria-valuenow={whole}
       title={`${label}: ${count}, ${percent(share)}`}
     >
-      {share > 0 && (
-        <div className={styles.meterFill} style={{ width: `${share * 100}%`, background: color } as CSSProperties} />
-      )}
+      {share > 0 && <div className={styles.meterFill} style={{ width: `${share * 100}%`, background: color }} />}
     </div>
   );
 }

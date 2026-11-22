@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import styles from "./Page.module.css";
 
-export type Crumb = { href: string; label: string };
+type Crumb = { href: string; label: string };
 
 /**
  * The band at the top of a page: where the page sits (crumbs), what it is (title), and what belongs to the whole

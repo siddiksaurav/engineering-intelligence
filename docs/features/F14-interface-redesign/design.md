@@ -105,7 +105,7 @@ Chosen by the job of the data (`dataviz`, "Choosing a form"):
 | --- | --- |
 | Hygiene share; tested share | Ring meter with the percent in the middle, `role="meter"` |
 | Work classification (up to 14 classes); comment types (10) | Ranked rows: name and count that open, a thin bar in one azure, the percent |
-| Work complexity, person and repository | Two segmented bars on one axis, one legend, the rows that open under each |
+| Work complexity, person and repository | Two segmented bars of the same length side by side, the rows that open under each |
 | Comments by tier; tested by tier | One segmented bar in the blue ramp, the rows that open under it |
 | A gate | A bullet chart: a 0 to 100 track, the pass zone and the close-miss zone shaded from the limits of the gate, a line at the repository's share, a dot at the person's share, both labelled |
 | A dimension score | The numeral "n of 2" with two pips, next to the tier steps |
@@ -126,9 +126,9 @@ A share that is null shows "no PRs" and no meter (decision 234 holds). No chart 
 
 **Profile.** Order unchanged (decision 259): header, notice, dimension cards, gates, analytics. The header band carries the name, the quarter, the level control and four figures from the analytics (hygiene, own PRs merged, PRs reviewed, substantive comments written). The dimension cards are two columns, the gates three, the analytics two.
 
-**Evidence list.** The header band with the counts per type as a segmented bar and a legend whose entries jump to the sections; each section a titled group of cards with a type swatch; tier chips in the blue ramp.
+**Evidence list.** A summary card under the header band with the counts per type as a segmented bar and a list whose entries jump to the sections; a type with no items has no section; each type that has items a titled group of cards with a type swatch; tier chips in the blue ramp.
 
-**Item page.** The header band with type, date, quarter and author; a judgment card with the tier chip, the values as a definition list, the reason, the facts as linked rows, the provenance in mono.
+**Item page.** The header band with type, date, quarter and author; a judgment card with the tier chip, the values next to it, the reason, the facts as linked rows, the provenance in mono.
 
 **Uses.** `fetchDevelopers`, `fetchEvidenceItems`, `fetchAnalytics`, `fetchDimensionScores`, `fetchItemSummaries`, `fetchItem`, `checkBackend`; `profileText.ts`, `profileParams.ts`, `tierTable.ts`, `EVIDENCE_SECTIONS`.
 
@@ -137,14 +137,14 @@ A share that is null shows "no PRs" and no meter (decision 234 holds). No chart 
 ## Edge cases
 
 - Backend down: every page says "backend down" in a notice inside the shell.
-- No developers; a developer with no items: the empty state names it; a bar with a total of 0 is not drawn.
+- No developers; a developer with no items: the empty state names it; a bar with a total of 0 is an empty track, and the roster draws none for a developer with no items.
 - No `DEFAULT_QUARTER`: the overview and the roster show evidence only and say that scores need the quarter; the profile keeps its notice.
 - Not scored yet: the profile keeps "No scores for {quarter} yet"; roster rows say "not scored".
 - A scores call that fails for one developer: that developer is "not scored"; the others are shown.
 - A share that is null: "no PRs", no meter.
 - A dimension with no working tier: the steps are all empty and the text says "no working tier".
 - A gate that is unverified: no chart, the words "gate unverified" and the reason.
-- A gate share above the repository's: the dot sits right of the line; the label says "above".
+- A gate share above the repository's: the dot sits right of the line; the sentence under the chart says "above".
 - Long titles and long developer names wrap; nothing scrolls sideways at 375 px.
 - A segment narrower than its text has no text on it; the row under the bar carries the value.
 

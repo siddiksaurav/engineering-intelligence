@@ -57,6 +57,12 @@ describe("GateChart", () => {
     expect(renderToStaticMarkup(<GateChart gate={gate({ personSharePercent: null })} />)).toBe("");
   });
 
+  it("draws nothing for an unverified gate, also when it has shares", () => {
+    const tooFew = gate({ outcome: "UNVERIFIED", unverifiedReason: "TOO_FEW_DEVELOPERS" });
+
+    expect(renderToStaticMarkup(<GateChart gate={tooFew} />)).toBe("");
+  });
+
   it("keeps a label inside the chart when its mark is at an end", () => {
     const html = renderToStaticMarkup(
       <GateChart gate={gate({ personSharePercent: 100, repositorySharePercent: 4 })} />,

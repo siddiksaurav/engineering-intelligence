@@ -1,7 +1,7 @@
 import type { EvidenceType, TypeCounts } from "./evidence";
 
 /** A type of evidence item as the pages name it, in the order they show it. */
-export type EvidenceSection = {
+type EvidenceSection = {
   type: EvidenceType;
   countKey: keyof TypeCounts;
   title: string;

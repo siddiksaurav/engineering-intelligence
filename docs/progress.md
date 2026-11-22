@@ -2,6 +2,26 @@
 
 One entry per working session, newest at the top. Each entry says what was done, what is next and what is blocked. Read the top entry first.
 
+## 23 Nov 2026: F14 Interface redesign with charts shipped
+
+**Done**
+- The user asked for the web pages to be redesigned with charts, built and merged without a question brief (decision 261). F14 was added to the master plan; decisions 262 to 270 are the session's. Branch `feature/f14`.
+- Review of the old pages: ten findings in `docs/features/F14-interface-redesign/design.md` ("Review of the pages before F14").
+- Web only, no backend change, no number changed. Design tokens and three self-hosted typefaces; a shared shell (`web/components/`); `/` is an overview dashboard of the team; `/developers` is a roster with the two scores per developer; the profile has a score and tier-steps figure per dimension, a chart per gate and charts for the analytics; the evidence list and the item page use the same system. Phone width works.
+- Verified on the real data of the Compose database (`notes.md`, "Verification"): 77 values of developer 9's profile against the two API answers, the click path to GitHub, the level change, the palette check. Web format check, lint, type check, 219 tests and build green.
+- Pull request: see the F14 row of the status table and `notes.md`.
+
+**Checks still open (waiting for the user)**
+- Add `DEFAULT_QUARTER=2026-Q3` to `.env`; without it the overview and the roster show no scores (they say so). The `web` preview of `.claude/launch.json` already sets it.
+- Look at the pages: `localhost:3000`, `/developers`, `/developers/9/profile`.
+- The checks of the F12 entry below still stand.
+
+**Next**
+- `/clear`, then `/ship F08` (blind check and the item page's source panel and labels), then F09 (decision 178).
+
+**Blocked or needed from the user**
+- Nothing.
+
 ## 22 Nov 2026: F12 Profile page shipped
 
 **Done**
