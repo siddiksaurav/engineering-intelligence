@@ -436,6 +436,201 @@ describe("ProfilePage", () => {
     expect(await render({ quarter: "2026-Q3" })).not.toContain("Quality gates");
   });
 
+  it("every analytics number on the page equals the API value", async () => {
+    const slices = (total: number, parts: [string, number][]): Distribution => ({
+      total,
+      slices: parts.map(([name, size]) => ({
+        name,
+        count: count(
+          [],
+          Array.from({ length: size }, (_, index) => 900 + index),
+        ),
+        share: total === 0 ? null : size / total,
+      })),
+    });
+    const breakdown = (
+      substantive: number,
+      types: [string, number][],
+      tiers: [string, number][],
+      unjudged: number,
+    ) => ({
+      substantive: count(
+        [],
+        Array.from({ length: substantive }, (_, index) => 800 + index),
+      ),
+      byCommentType: slices(
+        types.reduce((sum, [, size]) => sum + size, 0),
+        types,
+      ),
+      byTier: slices(
+        tiers.reduce((sum, [, size]) => sum + size, 0),
+        tiers,
+      ),
+      notJudgedYet: count(
+        [],
+        Array.from({ length: unjudged }, (_, index) => 700 + index),
+      ),
+    });
+    const full = analytics({
+      workClassification: slices(7, [
+        ["feature_work", 3],
+        ["bug_fix", 2],
+        ["test_change", 1],
+        ["not_judged_yet", 1],
+      ]),
+      workComplexity: {
+        person: slices(8, [
+          ["low", 1],
+          ["medium", 2],
+          ["high", 3],
+          ["very_high", 1],
+          ["not_judged_yet", 1],
+        ]),
+        repository: slices(9, [
+          ["low", 4],
+          ["medium", 2],
+          ["high", 1],
+          ["very_high", 1],
+          ["not_judged_yet", 1],
+        ]),
+      },
+      reviewParticipation: {
+        pullRequestsReviewed: count([501, 502, 503, 504, 505]),
+        authorsReviewed: count([], [601, 602, 603, 604]),
+        comments: breakdown(
+          5,
+          [
+            ["suggestion", 3],
+            ["question", 2],
+          ],
+          [
+            ["T1", 1],
+            ["T2", 4],
+          ],
+          6,
+        ),
+        substantivePerPullRequestReviewed: 1.25,
+      },
+      reviewFindingsReceived: {
+        pullRequests: count([511, 512, 513, 514, 515, 516, 517]),
+        comments: breakdown(2, [["defect", 2]], [["T3", 2]], 7),
+        substantivePerPullRequest: 0.5,
+      },
+      testingContribution: {
+        featureAndFixPullRequests: {
+          total: 8,
+          tested: count([521, 522, 523, 524, 525]),
+          untested: count([531, 532, 533]),
+          share: 5 / 8,
+          testedByTier: slices(5, [
+            ["T1", 3],
+            ["T2", 2],
+          ]),
+        },
+        withoutDigest: count([541, 542, 543, 544, 545, 546, 547, 548]),
+        bugFixPullRequests: {
+          total: 3,
+          tested: count([551, 552]),
+          untested: count([561]),
+          share: 2 / 3,
+          testedByTier: slices(2, [["T1", 2]]),
+        },
+      },
+      hygiene: {
+        total: 11,
+        linked: count([571, 572, 573, 574, 575, 576, 577, 578, 579]),
+        notLinked: count([581, 582]),
+        share: 9 / 11,
+      },
+    });
+    answeringWith(scores("L2", [dimension("design", DESIGN, "T2", 1)]), full);
+
+    const html = await render({ quarter: "2026-Q3" });
+
+    for (const text of [
+      "Feature work: 3",
+      "Bug fix: 2",
+      "Test change: 1",
+      "43%",
+      "29%",
+      "14%",
+      "Low: 1",
+      "Very high: 1",
+      "Not judged yet: 1",
+      "Low: 4",
+      "44%",
+      "22%",
+      "11%",
+      "PRs reviewed: 5",
+      "Authors reviewed: 4",
+      "1.25",
+      "Substantive comments: 5",
+      "Suggestion: 3",
+      "Question: 2",
+      "60%",
+      "40%",
+      "T1: 1",
+      "T2: 4",
+      "20%",
+      "80%",
+      "Not judged yet: 6",
+      "PRs with findings: 7",
+      "Defect: 2",
+      "100%",
+      "T3: 2",
+      "Not judged yet: 7",
+      "0.5",
+      "Tested: 5",
+      "63%",
+      "T1: 3",
+      "T2: 2",
+      "Not tested: 3",
+      "PRs without digest: 8",
+      "Bug fix PRs tested: 2",
+      "67%",
+      "T1: 2",
+      "Linked to a work item: 9",
+      "82%",
+      "Not linked: 2",
+      "18%",
+    ]) {
+      expect(html).toContain(text);
+    }
+    const classification = html.slice(html.indexOf("Work classification"), html.indexOf("Work complexity"));
+    const percents = [...classification.matchAll(/>(\d+)%</g)].map((match) => Number(match[1]));
+    expect(percents.reduce((sum, value) => sum + value, 0)).toBe(100);
+  });
+
+  it("opens the items and pull requests behind an analytics number, the repository's too", async () => {
+    const withPullRequests = count([801, 802]);
+    answeringWith(
+      scores("L2", []),
+      analytics({
+        workComplexity: {
+          person: EMPTY_DISTRIBUTION,
+          repository: { total: 2, slices: [{ name: "low", count: withPullRequests, share: 1 }] },
+        },
+      }),
+    );
+
+    const html = await render({ quarter: "2026-Q3" });
+
+    expect(html).toContain('href="https://github.com/opf/openproject/pull/801"');
+  });
+
+  it("says no PRs and draws no bar for a share that is null", async () => {
+    answeringWith(
+      scores("L2", []),
+      analytics({ hygiene: { total: 0, linked: count(), notLinked: count(), share: null } }),
+    );
+
+    const html = await render({ quarter: "2026-Q3" });
+
+    expect(html).toContain("Tested: 0");
+    expect(html.match(/no PRs/g)?.length).toBeGreaterThanOrEqual(2);
+    expect(html).not.toContain('role="meter"');
+  });
+
   it("says the backend is down when either call fails", async () => {
     vi.mocked(fetchAnalytics).mockResolvedValue({ status: "down" });
     vi.mocked(fetchDimensionScores).mockResolvedValue({ status: "ok", data: scores("L2", []) });

@@ -5,6 +5,7 @@ import { fetchItemSummaries } from "@/lib/items";
 import { itemIdsOnPage, notJudgedYet, profileParams } from "@/lib/profileParams";
 import { percent } from "@/lib/profileText";
 import developers from "../../developers.module.css";
+import { AnalyticsSection } from "./AnalyticsSection";
 import { DimensionCard } from "./DimensionCard";
 import { GatesPanel } from "./GatesPanel";
 import type { SummariesById } from "./ItemReferences";
@@ -78,6 +79,7 @@ function Profile({
             {unjudged.pullRequests} PRs and {unjudged.items} items are not judged yet; the numbers will change.
           </p>
         )}
+        <AnalyticsSection analytics={analytics} summariesById={summariesById} />
         {scores.scored ? (
           <>
             {scores.dimensions.map((dimension) => (
