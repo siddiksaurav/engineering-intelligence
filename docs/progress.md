@@ -2,6 +2,24 @@
 
 One entry per working session, newest at the top. Each entry says what was done, what is next and what is blocked. Read the top entry first.
 
+## 22 Nov 2026: F10 analytics and the hygiene number shipped
+
+**Done**
+- `/ship F10`: question brief answered "OK" (decisions 189 to 200); decisions 179 to 188 by the session. 7 tasks in 3 batches and the review fixes on `feature/f10`, built in a worktree beside the repository so the running model jobs were not disturbed.
+- Package `analytics` (one SQL query per analytic, nothing stored) and `GET /api/developers/{personId}/analytics?quarter=`. Backend 910 tests green.
+- Real data, developer 9: every API number equals a separate SQL count (`docs/features/F10-analytics/notes.md`, "Verification"). Most numbers are still "not judged yet": the model jobs keep running in the background.
+- Pull request: see the F10 row of the status table and `notes.md`.
+
+**Checks still open (waiting for the user)**
+- When the background model runs finish: restart the backend on `main` and compare developer 9's analytics with the SQL again (notes, "Verification").
+- From F06 and F07: the SQL checks of their `notes.md`. From F05: the 20 Feature work groups. From F04: the 19 identity proposals.
+
+**Next**
+- `/clear`, then `/ship F11`.
+
+**Blocked or needed from the user**
+- Nothing for F11 to start.
+
 ## 22 Nov 2026: Groq key in, model jobs running in the background, F08 and F09 deferred
 
 **Done**

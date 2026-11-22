@@ -21,3 +21,25 @@ One review round (decision 75). Blocking: three filters without a test (person f
 - `ReviewCommentBreakdown.of` sorts tiers in a `TreeMap`, which fails on a null tier; `ReviewCommentTypes` guarantees a tier for every substantive type today.
 - `.claude/launch.json` entry `backend` (committed with decision 177's change) hard-codes a `JAVA_HOME` and blanks `LLM_PROVIDER_2_API_KEY`, which turns off the Gemini fallback for whoever uses it. Kept as the user's local start setting; the user decides.
 - The repeatable-read test checks the annotation only, not snapshot behaviour under concurrent writes.
+
+## Verification (22 Nov 2026)
+
+- Backend: full `./mvnw verify` green after the review fixes: 910 tests, 0 failures, 1 skipped (F11). No web change in F10; the web checks run in CI.
+- "Done when" 2 (work-type shares add up to 100%): `WorkClassificationTest` green; on real data the shares of developer 9 sum to 1.0.
+- "Done when" 3 (a PR with no evidence item shows in Work classification): `WorkClassificationTest` green; on real data 19 PRs of developer 9 without a digest show as `not_judged_yet`.
+- "Done when" 1 (for one developer each number equals a separate SQL count). The F10 backend was started on port 8081 against a copy of the Compose database (`ei_f10`, dropped afterwards), because a backend start marks running job runs as interrupted and the model jobs were running on the main database. Developer 9 (oliverguenther), 2026-Q3. API value / separate SQL (`f10-check.sql`, written apart from the analytics code):
+  - Hygiene: 172 PRs, 133 linked, 77.3% / 172, 133.
+  - Work classification: enhancement 1, fix 5, not judged yet 19, total 25 / the same.
+  - Work complexity: person 1 not judged yet; repository 34 not judged yet / the same.
+  - Review participation: 30 PRs reviewed, 9 authors, 0 substantive, 11 not judged yet / the same.
+  - Review findings received: 25 PRs, 0 substantive, 13 not judged yet / the same.
+  - Testing contribution: 6 feature-and-fix PRs, 0 tested, 19 without digest; Bug fix PRs 12, 0 tested / the same.
+  - 404 for an unknown person, 400 for `2026-Q5` and for a missing quarter.
+- At the time only 51 judgments existed (digests of the first background round, decision 178); no Stage 2 judgment and no Test change item yet (`evidence-build` had not run after the digests). The complexity, comment-type and tested numbers are therefore still all "not judged yet" or 0. **Waiting for the user:** once the background rounds finish, call `curl -s "localhost:8080/api/developers/9/analytics?quarter=2026-Q3"` (after the backend is restarted on `main` with F10) and compare with the same SQL.
+
+## What a later feature should know
+
+- Endpoint: `GET /api/developers/{personId}/analytics?quarter=2026-Q3`. Shape: `person`, `quarter`, `workClassification` (`Distribution`), `workComplexity.{person,repository}` (`Distribution`, bars low, medium, high, very_high, not_judged_yet), `reviewParticipation`, `reviewFindingsReceived`, `testingContribution`, `hygiene`. Every count is `{count, evidenceItemIds, pullRequestNumbers}`; shares are unrounded or null.
+- The review-comment mix and tier split hold judged comments only; show `notJudgedYet` next to them (Follow-ups).
+- Gate shares of F11 are not here: G1 counts feature or enhancement PRs; F11 writes its own query, reusing `AnalyticsSql` where it fits.
+- Never start a second backend against the Compose database while a job runs: startup marks every running run as interrupted (`JobRunLog`).
