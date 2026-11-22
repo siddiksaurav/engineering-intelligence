@@ -1,9 +1,14 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { fetchDevelopers } from "@/lib/evidence";
+import { fetchTeamScores } from "@/lib/team";
 import DevelopersPage from "./page";
 
 vi.mock("@/lib/evidence", () => ({ fetchDevelopers: vi.fn() }));
+vi.mock("@/lib/team", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/team")>()),
+  fetchTeamScores: vi.fn(),
+}));
 
 const NO_ITEMS = {
   featureWork: 0,
@@ -19,7 +24,62 @@ const NO_ITEMS = {
 describe("DevelopersPage", () => {
   afterEach(() => {
     vi.mocked(fetchDevelopers).mockReset();
+    vi.mocked(fetchTeamScores).mockReset();
     vi.unstubAllEnvs();
+  });
+
+  it("shows each developer's score and working tier per dimension at L2, and not scored without them", async () => {
+    vi.stubEnv("DEFAULT_QUARTER", "2026-Q3");
+    vi.mocked(fetchDevelopers).mockResolvedValue({
+      status: "ok",
+      data: [
+        { personId: 7, displayName: "ada", counts: { ...NO_ITEMS, featureWork: 2 } },
+        { personId: 8, displayName: "grace", counts: NO_ITEMS },
+      ],
+    });
+    vi.mocked(fetchTeamScores).mockResolvedValue(
+      new Map([
+        [
+          7,
+          [
+            { key: "coding", name: "Coding and code quality", score: 2, workingTier: "T3" },
+            { key: "standards", name: "Engineering standards", score: 0, workingTier: null },
+          ],
+        ],
+      ]),
+    );
+
+    const html = renderToStaticMarkup(await DevelopersPage());
+
+    expect(fetchTeamScores).toHaveBeenCalledWith(undefined, [7, 8], "2026-Q3", "L2");
+    const ada = html.slice(html.indexOf(">ada<"), html.indexOf(">grace<"));
+    expect(ada).toContain("Coding and code quality");
+    expect(ada).toMatch(/<strong[^>]*>2<\/strong> of 2/);
+    expect(ada).toContain('aria-label="Works at T3"');
+    expect(ada).toMatch(/<strong[^>]*>0<\/strong> of 2/);
+    expect(ada).toContain("no working tier");
+    expect(html.slice(html.indexOf(">grace<"))).toContain("not scored");
+  });
+
+  it("shows the total of a developer's evidence items", async () => {
+    vi.mocked(fetchDevelopers).mockResolvedValue({
+      status: "ok",
+      data: [{ personId: 7, displayName: "ada", counts: { ...NO_ITEMS, featureWork: 2, security: 4 } }],
+    });
+
+    expect(renderToStaticMarkup(await DevelopersPage())).toMatch(/>6<\/strong> items/);
+  });
+
+  it("asks for no scores and says why when DEFAULT_QUARTER is not set", async () => {
+    vi.mocked(fetchDevelopers).mockResolvedValue({
+      status: "ok",
+      data: [{ personId: 7, displayName: "ada", counts: NO_ITEMS }],
+    });
+
+    const html = renderToStaticMarkup(await DevelopersPage());
+
+    expect(fetchTeamScores).not.toHaveBeenCalled();
+    expect(html).toContain("DEFAULT_QUARTER");
   });
 
   it("lists each developer with a count per type and a link to the page", async () => {

@@ -1,18 +1,24 @@
+import { Panel } from "@/components/Panel";
 import type { GateResult } from "@/lib/profile";
 import { gateWords } from "@/lib/profileText";
 import { Drill, ofPullRequests } from "./Drill";
+import { GateChart } from "./GateChart";
 import type { SummariesById } from "./ItemReferences";
 import styles from "./profile.module.css";
 
 /** The quality gates of the Engineering standards dimension, once on the page (decision 240). */
 export function GatesPanel({ gates, summariesById }: { gates: GateResult[]; summariesById: SummariesById }) {
   return (
-    <section className={styles.card}>
-      <h2 className={styles.panelTitle}>Quality gates</h2>
-      {gates.map((gate) => (
-        <Gate key={gate.gate} gate={gate} summariesById={summariesById} />
-      ))}
-    </section>
+    <Panel
+      title="Quality gates"
+      note="The person's share against the repository's. The green zone passes, the amber zone is a close miss."
+    >
+      <div className={styles.gates}>
+        {gates.map((gate) => (
+          <Gate key={gate.gate} gate={gate} summariesById={summariesById} />
+        ))}
+      </div>
+    </Panel>
   );
 }
 
@@ -26,14 +32,16 @@ function Gate({ gate, summariesById }: { gate: GateResult; summariesById: Summar
     ["PRs without a digest", gate.pullRequestsWithoutDigest],
   ];
   return (
-    <div className={styles.gate}>
-      <h3>
-        {gate.gate}: {gate.outcome === "UNVERIFIED" ? "gate unverified" : outcome}
+    <article className={styles.gate} data-outcome={gate.outcome}>
+      <h3 className={styles.gateHead}>
+        <span className={styles.gateName}>{gate.gate}</span>
+        <span className={styles.gateOutcome}>{gate.outcome === "UNVERIFIED" ? "gate unverified" : outcome}</span>
       </h3>
-      <p>{detail}</p>
+      <GateChart gate={gate} />
+      <p className={styles.gateDetail}>{detail}</p>
       {gate.outcome !== "UNVERIFIED" && (
         <>
-          <p>
+          <p className={styles.gateDetail}>
             {gate.developersInGroup.length} developers in the comparison group, at least {gate.minimumDevelopers}{" "}
             needed.
           </p>
@@ -42,6 +50,6 @@ function Gate({ gate, summariesById }: { gate: GateResult; summariesById: Summar
           ))}
         </>
       )}
-    </div>
+    </article>
   );
 }

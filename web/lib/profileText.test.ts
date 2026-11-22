@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { DimensionScore, EvidenceTypeTrail, GateOutcome, GateResult, Level, Tier, TierPresence } from "./profile";
-import { badgeOf, gateWords, nextStepLine, percent, whyLine } from "./profileText";
+import { badgeOf, expectedTier, gateWords, nextStepLine, percent, whyLine } from "./profileText";
 
 function presence(...present: Tier[]): TierPresence[] {
   return (["T1", "T2", "T3"] as const).map((tier) => ({
@@ -90,6 +90,12 @@ function dimension(options: Options = {}): DimensionScore {
     },
   };
 }
+
+describe("expectedTier", () => {
+  it("is T1 at L1, T2 at L2 and T3 at L3", () => {
+    expect((["L1", "L2", "L3"] as const).map(expectedTier)).toEqual(["T1", "T2", "T3"]);
+  });
+});
 
 describe("percent", () => {
   it("rounds a share to a whole percent", () => {

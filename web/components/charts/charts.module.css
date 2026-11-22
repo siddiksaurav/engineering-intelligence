@@ -1,0 +1,104 @@
+.segmented {
+  display: flex;
+  gap: 2px;
+  width: 100%;
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--sky-100);
+}
+
+.thin {
+  height: 8px;
+}
+
+.regular {
+  height: 16px;
+}
+
+.segment {
+  flex-basis: 0;
+  min-width: 3px;
+  transform-origin: left;
+  animation: grow 600ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.segment:hover {
+  filter: brightness(1.12);
+}
+
+.ring {
+  position: relative;
+  width: 112px;
+  height: 112px;
+  flex: none;
+  display: grid;
+  place-items: center;
+}
+
+.ring svg {
+  position: absolute;
+  inset: 0;
+}
+
+.ringTrack,
+.ringArc {
+  fill: none;
+  stroke-width: 10;
+}
+
+.ringTrack {
+  stroke: var(--sky-100);
+}
+
+.ringArc {
+  stroke: var(--azure-600);
+  stroke-linecap: round;
+  animation: sweep 800ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.ringValue {
+  position: relative;
+  font-family: var(--font-display);
+  font-size: 1.55rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.ringEmpty {
+  border: 10px solid var(--sky-100);
+  border-radius: 50%;
+}
+
+.ringEmpty .ringValue {
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--ink-3);
+}
+
+.meterTrack {
+  height: 8px;
+  background: var(--sky-100);
+  border-radius: 0 4px 4px 0;
+  overflow: hidden;
+}
+
+.meterFill {
+  height: 100%;
+  min-width: 2px;
+  border-radius: 0 4px 4px 0;
+  transform-origin: left;
+  animation: grow 600ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+@keyframes grow {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+@keyframes sweep {
+  from {
+    stroke-dasharray: 0 100;
+  }
+}

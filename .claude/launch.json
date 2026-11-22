@@ -4,7 +4,7 @@
     {
       "name": "web",
       "runtimeExecutable": "bash",
-      "runtimeArgs": ["-c", "BACKEND_URL=http://localhost:8080 NEXT_TELEMETRY_DISABLED=1 npm --prefix web run dev"],
+      "runtimeArgs": ["-c", "BACKEND_URL=http://localhost:8080 DEFAULT_QUARTER=2026-Q3 NEXT_TELEMETRY_DISABLED=1 npm --prefix web run dev"],
       "port": 3000
     },
     {

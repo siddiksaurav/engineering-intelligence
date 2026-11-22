@@ -737,6 +737,99 @@ describe("ProfilePage", () => {
     expect(html).not.toContain('role="meter"');
   });
 
+  it("shows four figures of the analytics in the header", async () => {
+    answeringWith(
+      scores("L2", []),
+      analytics({
+        reviewParticipation: {
+          pullRequestsReviewed: count([1, 2, 3, 4, 5]),
+          authorsReviewed: count(),
+          comments: { ...BREAKDOWN, substantive: count([], [41, 42, 43]) },
+          substantivePerPullRequestReviewed: null,
+        },
+        reviewFindingsReceived: {
+          pullRequests: count([11, 12, 13, 14, 15, 16, 17]),
+          comments: BREAKDOWN,
+          substantivePerPullRequest: null,
+        },
+      }),
+    );
+
+    const html = await render({ quarter: "2026-Q3" });
+
+    const figure = (label: string) => html.match(new RegExp(`>([^<]*)</span><span[^>]*>${label}<`))?.[1];
+    expect(figure("Repository hygiene: pull requests linked to a work item")).toBe("63%");
+    expect(figure("Own pull requests merged")).toBe("7");
+    expect(figure("Pull requests reviewed")).toBe("5");
+    expect(figure("Substantive comments written")).toBe("3");
+  });
+
+  it("draws the tier steps of a dimension with the step the level expects, and a pip per score point", async () => {
+    answeringWith(scores("L3", [dimension("design", DESIGN, "T2", 1)]));
+
+    const html = await render({ quarter: "2026-Q3", level: "L3" });
+
+    expect(html).toContain('aria-label="Works at T2; L3 expects T3"');
+    expect(html.match(/data-reached="true"/g)).toHaveLength(1);
+    expect(html.match(/data-filled="true"/g)).toHaveLength(2);
+  });
+
+  it("draws ordered distributions as one segmented bar and class lists as a bar per row", async () => {
+    const complexity: Distribution = {
+      total: 4,
+      slices: [
+        { name: "low", count: count([], [1, 2, 3]), share: 0.75 },
+        { name: "high", count: count([], [4]), share: 0.25 },
+      ],
+    };
+    const workTypes: Distribution = {
+      total: 4,
+      slices: [
+        { name: "fix", count: count([21, 22, 23]), share: 0.75 },
+        { name: "enhancement", count: count([24]), share: 0.25 },
+      ],
+    };
+    answeringWith(
+      scores("L2", []),
+      analytics({
+        workClassification: workTypes,
+        workComplexity: { person: complexity, repository: EMPTY_DISTRIBUTION },
+      }),
+    );
+
+    const html = await render({ quarter: "2026-Q3" });
+
+    expect(html).toContain('aria-label="Person: Low 3, High 1"');
+    expect(html).not.toContain('aria-label="Repository:');
+    const classification = html.slice(html.indexOf("Work classification"), html.indexOf("Work complexity"));
+    expect(classification.match(/role="meter"/g)).toHaveLength(2);
+    expect(classification).toContain('title="Fix: 3, 75%"');
+    expect(classification).not.toContain('role="img"');
+    const person = html.slice(html.indexOf("Work complexity"), html.indexOf("Review participation"));
+    expect(person).not.toContain('role="meter"');
+    expect(person.match(/background:var\(--step-1\)/g)).toHaveLength(2);
+  });
+
+  it("draws the tested shares and the hygiene share as ring meters", async () => {
+    const tested = { total: 8, tested: count([1, 2, 3, 4, 5]), untested: count([6, 7, 8]), share: 5 / 8 };
+    answeringWith(
+      scores("L2", []),
+      analytics({
+        testingContribution: {
+          featureAndFixPullRequests: { ...tested, testedByTier: EMPTY_DISTRIBUTION },
+          withoutDigest: count(),
+          bugFixPullRequests: TEST_SHARE,
+        },
+      }),
+    );
+
+    const html = await render({ quarter: "2026-Q3" });
+
+    expect(html).toMatch(/role="meter" aria-label="Tested"[^>]*aria-valuenow="63"/);
+    expect(html).toMatch(/role="meter" aria-label="Linked to a work item"[^>]*aria-valuenow="63"/);
+    expect(html).not.toContain('aria-label="Bug fix PRs tested"');
+  });
+
   it("says the backend is down when either call fails", async () => {
     vi.mocked(fetchAnalytics).mockResolvedValue({ status: "down" });
     vi.mocked(fetchDimensionScores).mockResolvedValue({ status: "ok", data: scores("L2", []) });

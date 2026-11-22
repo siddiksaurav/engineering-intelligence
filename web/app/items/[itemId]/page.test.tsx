@@ -122,6 +122,23 @@ describe("ItemPage", () => {
     expect(html).toContain("Substantive: yes");
   });
 
+  it("writes a field name of the judgment in words", async () => {
+    answering({
+      ...FEATURE,
+      type: "test_change",
+      tier: "T2",
+      judgment: {
+        ...COMPLEXITY_JUDGMENT,
+        kind: "item_tier",
+        tier: "T2",
+        value: { testKind: "integration" },
+        facts: null,
+      },
+    });
+
+    expect(await render()).toContain("Test kind: integration");
+  });
+
   it("names the test kind of a test change", async () => {
     answering({
       ...FEATURE,

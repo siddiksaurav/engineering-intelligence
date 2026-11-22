@@ -4,7 +4,9 @@ import { type Analytics, type DimensionScores, fetchAnalytics, fetchDimensionSco
 import { fetchItemSummaries } from "@/lib/items";
 import { itemIdsOnPage, notJudgedYet, profileParams } from "@/lib/profileParams";
 import { percent } from "@/lib/profileText";
-import developers from "../../developers.module.css";
+import { Avatar } from "@/components/Avatar";
+import { HeaderFigure, PageContent, PageHeader } from "@/components/Page";
+import { Notice } from "@/components/Panel";
 import { AnalyticsSection } from "./AnalyticsSection";
 import { DimensionCard } from "./DimensionCard";
 import { GatesPanel } from "./GatesPanel";
@@ -90,90 +92,116 @@ function Profile({
   return (
     <main>
       <ProfileHeader analytics={analytics} scores={scores} />
-      <div className={developers.content}>
+      <PageContent>
         {(unjudged.pullRequests > 0 || unjudged.items > 0) && (
-          <p className={styles.warning}>
+          <Notice tone="warning">
             {plural(unjudged.pullRequests, "PR")} and {plural(unjudged.items, "item")} are not judged yet; the numbers
             will change.
-          </p>
+          </Notice>
         )}
         {scores.scored ? (
           <>
-            {scores.dimensions.map((dimension) => (
-              <DimensionCard
-                key={dimension.key}
-                dimension={dimension}
-                level={scores.level}
-                summariesById={summariesById}
-              />
-            ))}
+            <div className={styles.dimensions}>
+              {scores.dimensions.map((dimension) => (
+                <DimensionCard
+                  key={dimension.key}
+                  dimension={dimension}
+                  level={scores.level}
+                  summariesById={summariesById}
+                />
+              ))}
+            </div>
             {gates.length > 0 && <GatesPanel gates={gates} summariesById={summariesById} />}
           </>
         ) : (
           <NoScores quarter={scores.quarter} />
         )}
         <AnalyticsSection analytics={analytics} summariesById={summariesById} />
-      </div>
+      </PageContent>
     </main>
   );
 }
 
 function ProfileHeader({ analytics, scores }: { analytics: Analytics; scores: DimensionScores }) {
   const { personId, displayName } = analytics.person;
+  const { hygiene, reviewParticipation, reviewFindingsReceived } = analytics;
   return (
-    <header className={developers.header}>
-      <nav className={developers.headerLinks}>
-        <Link href="/developers" className={developers.back}>
-          Developers
-        </Link>
-        <Link href={`/developers/${personId}`} className={developers.back}>
-          Evidence list
-        </Link>
-      </nav>
-      <h1>{displayName}</h1>
-      <p className={styles.headerLine}>
-        {scores.quarter}, hygiene {percent(analytics.hygiene.share)} of pull requests linked to a work item
-      </p>
+    <PageHeader
+      crumbs={[
+        { href: "/", label: "Overview" },
+        { href: "/developers", label: "Developers" },
+      ]}
+      title={
+        <span className={styles.person}>
+          <Avatar name={displayName} size="large" />
+          {displayName}
+        </span>
+      }
+      controls={<LevelControl personId={personId} quarter={scores.quarter} selected={scores.level} />}
+      figures={
+        <>
+          <HeaderFigure
+            value={percent(hygiene.share)}
+            label="Repository hygiene: pull requests linked to a work item"
+          />
+          <HeaderFigure value={reviewFindingsReceived.pullRequests.count} label="Own pull requests merged" />
+          <HeaderFigure value={reviewParticipation.pullRequestsReviewed.count} label="Pull requests reviewed" />
+          <HeaderFigure value={reviewParticipation.comments.substantive.count} label="Substantive comments written" />
+        </>
+      }
+    >
+      <span className={styles.quarter}>{scores.quarter}</span>
+      <Link href={`/developers/${personId}`}>Evidence list</Link>
+    </PageHeader>
+  );
+}
+
+/** The level the scores are read against; each level is a link, so the choice lives in the URL. */
+function LevelControl({ personId, quarter, selected }: { personId: number; quarter: string; selected: Level }) {
+  return (
+    <div className={styles.levelControl}>
+      <span className={styles.levelCaption}>Read at level</span>
       <nav className={styles.levels} aria-label="Level">
         {LEVELS.map((level) => (
           <Link
             key={level}
-            href={`/developers/${personId}/profile?quarter=${scores.quarter}&level=${level}`}
-            className={level === scores.level ? styles.levelSelected : styles.level}
-            aria-current={level === scores.level ? "page" : undefined}
+            href={`/developers/${personId}/profile?quarter=${quarter}&level=${level}`}
+            className={level === selected ? styles.levelSelected : styles.level}
+            aria-current={level === selected ? "page" : undefined}
           >
             {level}
           </Link>
         ))}
       </nav>
-    </header>
+    </div>
   );
 }
 
 function NoScores({ quarter }: { quarter: string }) {
   return (
-    <section className={styles.warning}>
+    <Notice tone="warning">
       <h2>No scores for {quarter} yet</h2>
       <p>
         The scores are made by the dimension-scoring job: start it with{" "}
         <code>POST /api/jobs/dimension-scoring/runs</code> and the body <code>{`{"quarter":"${quarter}"}`}</code>.
       </p>
-    </section>
+    </Notice>
   );
 }
 
 function Shell({ title, notice }: { title: string; notice: string }) {
   return (
     <main>
-      <header className={developers.header}>
-        <Link href="/developers" className={developers.back}>
-          Developers
-        </Link>
-        <h1>{title}</h1>
-      </header>
-      <div className={developers.content}>
-        <p className={developers.notice}>{notice}</p>
-      </div>
+      <PageHeader
+        crumbs={[
+          { href: "/", label: "Overview" },
+          { href: "/developers", label: "Developers" },
+        ]}
+        title={title}
+      />
+      <PageContent>
+        <Notice>{notice}</Notice>
+      </PageContent>
     </main>
   );
 }

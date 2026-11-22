@@ -1,4 +1,6 @@
-import { EVIDENCE_SECTIONS } from "../../evidenceSections";
+import type { ReactNode } from "react";
+import { Swatch } from "@/components/EvidenceTypes";
+import { typeTitle } from "@/lib/evidenceSections";
 import type { Count } from "@/lib/profile";
 import { ItemLink, PullRequestLink, type SummariesById } from "./ItemReferences";
 import styles from "./profile.module.css";
@@ -10,16 +12,37 @@ export function ofPullRequests(pullRequestNumbers: number[]): Count {
 
 /**
  * A number that folds open to the items and pull requests behind it (decision 255). A count of 0 has nothing to open.
+ * A swatch ties the number to its segment of a chart; what is given as `trailing` (a bar, a percent) stays on the
+ * line of the number, so the opened list takes the full width under it.
  */
-export function Drill({ label, count, summariesById }: { label: string; count: Count; summariesById: SummariesById }) {
+export function Drill({
+  label,
+  count,
+  summariesById,
+  swatch,
+  trailing,
+}: {
+  label: string;
+  count: Count;
+  summariesById: SummariesById;
+  swatch?: string;
+  trailing?: ReactNode;
+}) {
+  const line = (
+    <>
+      {swatch && <Swatch color={swatch} />}
+      <span className={styles.drillLabel}>
+        {label}: {count.count}
+      </span>
+      {trailing}
+    </>
+  );
   if (count.count === 0) {
-    return <p className={styles.drillEmpty}>{label}: 0</p>;
+    return <p className={styles.drillEmpty}>{line}</p>;
   }
   return (
     <details className={styles.drill}>
-      <summary>
-        {label}: {count.count}
-      </summary>
+      <summary>{line}</summary>
       {count.evidenceItemIds.length > 0 && (
         <ul className={styles.drillList}>
           {count.evidenceItemIds.map((itemId) => (
@@ -49,11 +72,10 @@ function ItemKind({ itemId, summariesById }: { itemId: number; summariesById: Su
   if (!summary) {
     return null;
   }
-  const typeTitle = EVIDENCE_SECTIONS.find((section) => section.type === summary.type)?.title ?? summary.type;
   return (
     <span className={styles.itemKind}>
       {" "}
-      {typeTitle}
+      {typeTitle(summary.type) ?? summary.type}
       {summary.tier ? `, ${summary.tier}` : ""}
     </span>
   );

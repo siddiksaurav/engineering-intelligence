@@ -1,0 +1,115 @@
+.header {
+  position: relative;
+  color: #fff;
+  /* Graph paper under an azure glow: the page is an instrument that reads engineering work. */
+  background:
+    radial-gradient(900px 320px at 85% -40%, rgb(29 139 245 / 55%), transparent 70%),
+    radial-gradient(600px 260px at 0% 120%, rgb(56 189 248 / 22%), transparent 70%),
+    linear-gradient(rgb(125 211 252 / 7%) 1px, transparent 1px) 0 0 / 28px 28px,
+    linear-gradient(90deg, rgb(125 211 252 / 7%) 1px, transparent 1px) 0 0 / 28px 28px,
+    linear-gradient(180deg, var(--navy-900), var(--navy-800));
+}
+
+.headerInner {
+  max-width: var(--content-width);
+  margin: 0 auto;
+  padding: 28px var(--gutter) 32px;
+}
+
+.crumbs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 14px;
+  font-family: var(--font-data);
+  font-size: 0.78rem;
+}
+
+.crumb {
+  color: var(--sky-300);
+  text-decoration: none;
+}
+
+.crumb:hover {
+  color: #fff;
+  text-decoration: underline;
+}
+
+.crumb::after {
+  content: "/";
+  margin-left: 6px;
+  color: rgb(255 255 255 / 35%);
+}
+
+.titleRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px 24px;
+}
+
+.titleBlock {
+  min-width: 0;
+  flex: 1 1 320px;
+}
+
+.title {
+  margin: 0;
+  font-size: clamp(1.7rem, 1.2rem + 2vw, 2.6rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.lead {
+  margin-top: 8px;
+  color: rgb(255 255 255 / 78%);
+  max-width: 68ch;
+}
+
+.lead a {
+  color: var(--sky-300);
+}
+
+.controls {
+  flex: none;
+}
+
+.figures {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.figure {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 16px;
+  border: 1px solid rgb(125 211 252 / 22%);
+  border-radius: var(--radius);
+  background: rgb(4 21 39 / 45%);
+  backdrop-filter: blur(4px);
+}
+
+.figureValue {
+  font-family: var(--font-display);
+  font-size: 1.9rem;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+.figureLabel {
+  color: rgb(255 255 255 / 70%);
+  font-size: 0.85rem;
+}
+
+.content {
+  max-width: var(--content-width);
+  margin: 0 auto;
+  padding: 24px var(--gutter) 64px;
+  display: grid;
+  gap: 20px;
+}
