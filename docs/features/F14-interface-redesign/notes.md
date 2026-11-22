@@ -65,3 +65,7 @@ Follow-ups left open:
 
 - Add `DEFAULT_QUARTER=2026-Q3` to `.env` (still open from F12). Without it `npm run dev` shows the overview and the roster without scores and says so.
 - Open `localhost:3000` and click through: overview, a developer in "Most evidence", the level control, a fold, an item, GitHub.
+
+## Pull request
+
+https://github.com/siddiksaurav/engineering-intelligence/pull/13
