@@ -20,6 +20,7 @@ class TestingContributionTest extends DatabaseTest {
     void sharesFeatureAndFixPullRequestsWithATestChange() {
         AnalyticsRows rows = new AnalyticsRows(jdbc);
         long ada = rows.person(11, "ada");
+        long grace = rows.person(12, "grace");
         for (int number = 1; number <= 5; number++) {
             rows.pullRequest(number, 1, 11, "ada", "2026-07-0" + number + "T10:00:00Z");
         }
@@ -30,6 +31,10 @@ class TestingContributionTest extends DatabaseTest {
         rows.itemTier(rows.testChange(ada, 3, "2026-07-03"), "T2");
         rows.digest(4, "docs", null);
         rows.testChange(ada, 4, "2026-07-04");
+        rows.pullRequest(6, 1, 12, "grace", "2026-07-06T10:00:00Z");
+        rows.digest(6, "feature", null);
+        rows.testChange(grace, 6, "2026-07-06");
+        rows.pullRequest(7, 1, 12, "grace", "2026-07-07T10:00:00Z");
 
         TestingContribution.Result result = testing.of(ada, QUARTER);
 
@@ -59,6 +64,10 @@ class TestingContributionTest extends DatabaseTest {
         long superseded = rows.item("bug_fix", ada, "2026-07-03", false, null, 4);
         rows.item("bug_fix", ada, "2026-07-03", true, superseded, 4);
         rows.item("bug_fix", grace, "2026-07-04", false, null, 4);
+        rows.pullRequest(5, 1, 11, "ada", "2026-06-30T10:00:00Z");
+        rows.item("bug_fix", ada, "2026-06-30", false, null, 5);
+        rows.pullRequest(6, 1, 11, "ada", "2026-10-01T10:00:00Z");
+        rows.item("bug_fix", ada, "2026-10-01", false, null, 6);
 
         TestingContribution.Result result = testing.of(ada, QUARTER);
 
@@ -69,6 +78,19 @@ class TestingContributionTest extends DatabaseTest {
         assertEquals(1.0 / 3, bugFix.share());
         assertEquals(List.of("not_judged_yet"), names(bugFix.testedByTier()));
         assertEquals(0, result.featureAndFixPullRequests().total());
+    }
+
+    @Test
+    void findsTheTestChangeThroughItsSourcePullRequestWhateverItsKey() {
+        AnalyticsRows rows = new AnalyticsRows(jdbc);
+        long ada = rows.person(11, "ada");
+        rows.pullRequest(1, 1, 11, "ada", "2026-07-01T10:00:00Z");
+        rows.digest(1, "feature", null);
+        long testChange = rows.item("test_change", ada, "2026-07-01", false, null, 1);
+
+        TestingContribution.Share featureAndFix = testing.of(ada, QUARTER).featureAndFixPullRequests();
+
+        assertEquals(List.of(testChange), featureAndFix.tested().evidenceItemIds());
     }
 
     private static List<String> names(Distribution distribution) {
