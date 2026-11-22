@@ -43,7 +43,7 @@ const FEATURE: ItemDetail = {
   person: { personId: 7, displayName: "ada" },
   tier: "T3",
   current: true,
-  currentItemId: 1,
+  currentItemId: null,
   judgment: COMPLEXITY_JUDGMENT,
 };
 
@@ -131,7 +131,7 @@ describe("ItemPage", () => {
         ...COMPLEXITY_JUDGMENT,
         kind: "item_tier",
         tier: "T2",
-        value: { testKind: "integration" },
+        value: { kind: "integration" },
         facts: null,
       },
     });

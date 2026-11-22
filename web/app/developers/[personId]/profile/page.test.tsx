@@ -132,7 +132,7 @@ function summary(id: number, overrides: Partial<ItemSummary> = {}): ItemSummary 
     person: PERSON,
     tier: "T2",
     current: true,
-    currentItemId: id,
+    currentItemId: null,
     ...overrides,
   };
 }

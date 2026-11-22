@@ -14,7 +14,7 @@ const SUMMARY: ItemSummary = {
   person: { personId: 7, displayName: "ada" },
   tier: "T3",
   current: true,
-  currentItemId: 41,
+  currentItemId: null,
 };
 
 function render(count: Parameters<typeof Drill>[0]["count"], summaries: ItemSummary[] = []): string {
