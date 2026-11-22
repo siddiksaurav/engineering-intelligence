@@ -30,6 +30,8 @@ class ReviewFindingsReceivedTest extends DatabaseTest {
         rows.commentJudgment(style, "style", false, null, null);
         long onOthersPullRequest = rows.reviewComment(ada, 3, grace, "2026-07-04");
         rows.commentJudgment(onOthersPullRequest, "design", true, "T3", null);
+        long outsideTheQuarter = rows.reviewComment(grace, 1, ada, "2026-10-01");
+        rows.commentJudgment(outsideTheQuarter, "design", true, "T3", null);
 
         ReviewFindingsReceived.Result result = findings.of(ada, QUARTER);
 
