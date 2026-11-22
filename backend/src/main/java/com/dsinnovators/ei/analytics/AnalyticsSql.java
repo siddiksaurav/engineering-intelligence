@@ -4,8 +4,8 @@ import java.util.List;
 
 /**
  * The query pieces several analytics share, each written once as a named common table expression:
- * the latest version of a stored pull request, the human authors of pull requests merged in the
- * quarter, the current item, the current judgment and the current digest of a pull request.
+ * the latest version of a stored pull request, the pull requests merged in the
+ * quarter with their authors (all of them, and only the human ones), the current item, the current judgment and the current digest of a pull request.
  * Queries take the named parameters {@code :firstDay}, {@code :lastDay} and {@code :botLogins}
  * from {@link AnalyticsQuery}.
  */
@@ -21,21 +21,29 @@ final class AnalyticsSql {
             )""";
 
     // The merge day is the UTC date of mergedAt, as everywhere else (decisions 121, 150).
-    private static final String HUMAN_PULL_REQUEST = """
-            human_pull_request as (
+    // The person is null for a pull request of a bot or of a deleted account.
+    private static final String MERGED_PULL_REQUEST = """
+            merged_pull_request as (
                 select latest.id as record_id,
                        latest.external_id,
                        (latest.payload ->> 'number')::int as number,
-                       identity.person_id
+                       identity.person_id,
+                       (coalesce(latest.payload #>> '{author,__typename}', '') = 'User'
+                        and coalesce(latest.payload #>> '{author,login}', '')
+                            not in (select jsonb_array_elements_text(cast(:botLogins as jsonb)))) as human_author
                 from latest_pull_request latest
                 left join person_identity identity
                        on identity.data_source_id = (select id from data_source where key = 'github')
                       and identity.external_id = latest.payload #>> '{author,databaseId}'
-                where latest.payload #>> '{author,__typename}' = 'User'
-                  and coalesce(latest.payload #>> '{author,login}', '')
-                      not in (select jsonb_array_elements_text(cast(:botLogins as jsonb)))
-                  and ((latest.payload ->> 'mergedAt')::timestamptz at time zone 'UTC')::date
+                where ((latest.payload ->> 'mergedAt')::timestamptz at time zone 'UTC')::date
                       between :firstDay and :lastDay
+            )""";
+
+    private static final String HUMAN_PULL_REQUEST = """
+            human_pull_request as (
+                select record_id, external_id, number, person_id
+                from merged_pull_request
+                where human_author
             )""";
 
     private static final String CURRENT_ITEM = """
@@ -63,11 +71,15 @@ final class AnalyticsSql {
                 order by record.external_id, digest.id desc
             )""";
 
-    static final String HUMAN_PULL_REQUESTS = LATEST_PULL_REQUEST + ",\n" + HUMAN_PULL_REQUEST;
+    static final String MERGED_PULL_REQUESTS = LATEST_PULL_REQUEST + ",\n" + MERGED_PULL_REQUEST;
+
+    static final String HUMAN_PULL_REQUESTS = MERGED_PULL_REQUESTS + ",\n" + HUMAN_PULL_REQUEST;
 
     static final String CURRENT_DIGESTS = CURRENT_JUDGMENT + ",\n" + CURRENT_DIGEST;
 
     static final String CURRENT_ITEMS_AND_JUDGMENTS = CURRENT_ITEM + ",\n" + CURRENT_JUDGMENT;
+
+    static final String CURRENT_ITEMS_JUDGMENTS_AND_DIGESTS = CURRENT_ITEMS_AND_JUDGMENTS + ",\n" + CURRENT_DIGEST;
 
     private AnalyticsSql() {}
 

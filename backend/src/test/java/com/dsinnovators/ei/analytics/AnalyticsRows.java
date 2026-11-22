@@ -84,19 +84,53 @@ final class AnalyticsRows {
     /** A current item built from the given pull requests; returns its id. */
     long item(
             String type, long personId, String occurredOn, boolean withdrawn, Long supersedesId, int... pullRequests) {
+        return itemWithFields(type, null, personId, occurredOn, "{}", withdrawn, supersedesId, pullRequests);
+    }
+
+    /** A current Test change item of the pull request, keyed as the evidence builder keys it. */
+    long testChange(long personId, int pullRequestNumber, String occurredOn) {
+        return itemWithFields(
+                "test_change",
+                "test_change:" + REPOSITORY + "#" + pullRequestNumber,
+                personId,
+                occurredOn,
+                "{}",
+                false,
+                null,
+                pullRequestNumber);
+    }
+
+    /** A current Review comment written item on the pull request; the author is null for a bot's pull request. */
+    long reviewComment(long reviewerPersonId, int pullRequestNumber, Long authorPersonId, String occurredOn) {
+        String fields = "{\"pullRequest\":{\"externalId\":\"" + REPOSITORY + "#" + pullRequestNumber + "\",\"number\":"
+                + pullRequestNumber + "},\"pullRequestAuthorPersonId\":" + authorPersonId + "}";
+        return itemWithFields(
+                "review_comment_written", null, reviewerPersonId, occurredOn, fields, false, null, pullRequestNumber);
+    }
+
+    private long itemWithFields(
+            String type,
+            String itemKey,
+            long personId,
+            String occurredOn,
+            String fields,
+            boolean withdrawn,
+            Long supersedesId,
+            int... pullRequests) {
         inserted++;
         long itemId = jdbc.queryForObject(
                 """
                 insert into evidence_item (item_key, evidence_type, person_id, occurred_on, source_url, fields,
                                            content_hash, withdrawn, supersedes_id, built_at)
-                values (?, ?, ?, ?::date, 'https://example.org', '{}'::jsonb, ?, ?, ?, now())
+                values (?, ?, ?, ?::date, 'https://example.org', ?::jsonb, ?, ?, ?, now())
                 returning id
                 """,
                 Long.class,
-                type + ":" + inserted,
+                itemKey == null ? type + ":" + inserted : itemKey,
                 type,
                 personId,
                 occurredOn,
+                fields,
                 "item-hash-" + inserted,
                 withdrawn,
                 supersedesId);
@@ -108,6 +142,38 @@ final class AnalyticsRows {
                     """, itemId, REPOSITORY + "#" + number);
         }
         return itemId;
+    }
+
+    /** One stored review of a pull request by a user account. */
+    void review(int pullRequestNumber, long accountId, String login, String state) {
+        inserted++;
+        jdbc.update(
+                """
+                insert into raw_record (data_source_id, record_kind, external_id, version, url, content_hash, payload, fetched_at)
+                values ((select id from data_source where key = 'github'), 'review', ?, 1, ?, ?, ?::jsonb, now())
+                """,
+                "review-" + inserted,
+                "https://github.com/" + REPOSITORY + "/pull/" + pullRequestNumber + "#review-" + inserted,
+                "hash-" + inserted,
+                "{\"state\":\"" + state + "\",\"author\":" + author(accountId, login, "User")
+                        + ",\"pullRequest\":{\"number\":" + pullRequestNumber
+                        + ",\"repository\":{\"nameWithOwner\":\"" + REPOSITORY + "\"}}}");
+    }
+
+    /** A Review comment judgment of an item; the tier is null when the comment is not substantive. */
+    long commentJudgment(long itemId, String commentType, boolean substantive, String tier, Long supersedesId) {
+        return judgment(
+                "review_comment",
+                "evidence_item_id",
+                itemId,
+                "{\"commentType\":\"" + commentType + "\",\"substantive\":" + substantive + "}",
+                tier,
+                supersedesId);
+    }
+
+    /** The tier of a Test change item; returns the judgment id. */
+    long itemTier(long itemId, String tier) {
+        return judgment("item_tier", "evidence_item_id", itemId, "{}", tier, null);
     }
 
     /** A Feature work complexity judgment of an item; returns the judgment id. */
