@@ -15,7 +15,7 @@ import tools.jackson.databind.json.JsonMapper;
 
 /** Starts an analytic's query with the parameters every one needs, and reads a count from a result row. */
 @Component
-class AnalyticsQuery {
+public class AnalyticsQuery {
 
     private final JdbcClient jdbc;
     private final BotAccounts botAccounts;
@@ -28,7 +28,7 @@ class AnalyticsQuery {
     }
 
     /** The statement with the first and last day of the quarter and the bot logins in force in it. */
-    JdbcClient.StatementSpec statement(String sql, Quarter quarter) {
+    public JdbcClient.StatementSpec statement(String sql, Quarter quarter) {
         return jdbc.sql(sql)
                 .param("firstDay", quarter.firstDay())
                 .param("lastDay", quarter.lastDay())

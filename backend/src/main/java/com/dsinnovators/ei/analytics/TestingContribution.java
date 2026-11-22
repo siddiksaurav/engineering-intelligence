@@ -26,17 +26,6 @@ public class TestingContribution {
     private static final String UNTESTED = "untested";
     private static final String WITHOUT_DIGEST = "without_digest";
 
-    // A Test change item rests on its pull request as a source record of the role pull_request (TestChangeBuilder).
-    private static final String TEST_CHANGE_ITEM = """
-            test_change_item as (
-                select item.id, record.external_id as pull_request_external_id
-                from current_item item
-                join evidence_item_source source
-                       on source.evidence_item_id = item.id and source.role = 'pull_request'
-                join raw_record record on record.id = source.raw_record_id
-                where item.evidence_type = 'test_change'
-            )""";
-
     private static final String TEST_CHANGE_OF_PULL_REQUEST = """
             left join test_change_item test_change on test_change.pull_request_external_id = pull_request.external_id
             left join current_judgment test_tier
@@ -47,7 +36,7 @@ public class TestingContribution {
             List.of(
                     AnalyticsSql.HUMAN_PULL_REQUESTS,
                     AnalyticsSql.CURRENT_ITEMS_JUDGMENTS_AND_DIGESTS,
-                    TEST_CHANGE_ITEM),
+                    AnalyticsSql.TEST_CHANGE_ITEM),
             """
             select case when digest.value is null then 'without_digest'
                         when digest.value ->> 'workType' not in (:workTypes) then 'other_work_type'
@@ -67,7 +56,7 @@ public class TestingContribution {
             """);
 
     private static final String BUG_FIX_QUERY = AnalyticsSql.with(
-            List.of(AnalyticsSql.CURRENT_ITEMS_AND_JUDGMENTS, TEST_CHANGE_ITEM, """
+            List.of(AnalyticsSql.CURRENT_ITEMS_AND_JUDGMENTS, AnalyticsSql.TEST_CHANGE_ITEM, """
             pull_request as (
                 select distinct record.external_id, (record.payload ->> 'number')::int as number
                 from current_item item

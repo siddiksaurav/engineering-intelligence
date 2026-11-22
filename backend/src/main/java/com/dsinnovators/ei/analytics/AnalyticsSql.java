@@ -5,11 +5,12 @@ import java.util.List;
 /**
  * The query pieces several analytics share, each written once as a named common table expression:
  * the latest version of a stored pull request, the pull requests merged in the
- * quarter with their authors (all of them, and only the human ones), the current item, the current judgment and the current digest of a pull request.
+ * quarter with their authors (all of them, and only the human ones), the current item, the current judgment, the current digest of a pull request and the Test change item
+ * of a pull request. Public because the scoring of F11 reads the same data (decision 215).
  * Queries take the named parameters {@code :firstDay}, {@code :lastDay} and {@code :botLogins}
  * from {@link AnalyticsQuery}.
  */
-final class AnalyticsSql {
+public final class AnalyticsSql {
 
     private static final String LATEST_PULL_REQUEST = """
             latest_pull_request as (
@@ -49,7 +50,7 @@ final class AnalyticsSql {
                 where human_author
             )""";
 
-    static final String CURRENT_ITEM = """
+    public static final String CURRENT_ITEM = """
             current_item as (
                 select item.*
                 from evidence_item item
@@ -74,20 +75,32 @@ final class AnalyticsSql {
                 order by record.external_id, digest.id desc
             )""";
 
-    static final String MERGED_PULL_REQUESTS = LATEST_PULL_REQUEST + ",\n" + MERGED_PULL_REQUEST;
+    // A Test change item rests on its pull request as a source record of the role pull_request (TestChangeBuilder).
+    public static final String TEST_CHANGE_ITEM = """
+            test_change_item as (
+                select item.id, record.external_id as pull_request_external_id
+                from current_item item
+                join evidence_item_source source
+                       on source.evidence_item_id = item.id and source.role = 'pull_request'
+                join raw_record record on record.id = source.raw_record_id
+                where item.evidence_type = 'test_change'
+            )""";
 
-    static final String HUMAN_PULL_REQUESTS = MERGED_PULL_REQUESTS + ",\n" + HUMAN_PULL_REQUEST;
+    public static final String MERGED_PULL_REQUESTS = LATEST_PULL_REQUEST + ",\n" + MERGED_PULL_REQUEST;
 
-    static final String CURRENT_DIGESTS = CURRENT_JUDGMENT + ",\n" + CURRENT_DIGEST;
+    public static final String HUMAN_PULL_REQUESTS = MERGED_PULL_REQUESTS + ",\n" + HUMAN_PULL_REQUEST;
 
-    static final String CURRENT_ITEMS_AND_JUDGMENTS = CURRENT_ITEM + ",\n" + CURRENT_JUDGMENT;
+    public static final String CURRENT_DIGESTS = CURRENT_JUDGMENT + ",\n" + CURRENT_DIGEST;
 
-    static final String CURRENT_ITEMS_JUDGMENTS_AND_DIGESTS = CURRENT_ITEMS_AND_JUDGMENTS + ",\n" + CURRENT_DIGEST;
+    public static final String CURRENT_ITEMS_AND_JUDGMENTS = CURRENT_ITEM + ",\n" + CURRENT_JUDGMENT;
+
+    public static final String CURRENT_ITEMS_JUDGMENTS_AND_DIGESTS =
+            CURRENT_ITEMS_AND_JUDGMENTS + ",\n" + CURRENT_DIGEST;
 
     private AnalyticsSql() {}
 
     /** A query that starts with the given common table expressions and continues with {@code select}. */
-    static String with(List<String> expressions, String select) {
+    public static String with(List<String> expressions, String select) {
         return "with " + String.join(",\n", expressions) + "\n" + select;
     }
 }

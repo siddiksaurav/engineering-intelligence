@@ -20,6 +20,11 @@ public enum EvidenceType {
         return name().toLowerCase(Locale.ROOT);
     }
 
+    /** The type with the name stored in {@code evidence_item.evidence_type}. */
+    public static EvidenceType fromDatabaseName(String name) {
+        return valueOf(name.toUpperCase(Locale.ROOT));
+    }
+
     @Converter
     static class DatabaseConverter implements AttributeConverter<EvidenceType, String> {
 
@@ -30,7 +35,7 @@ public enum EvidenceType {
 
         @Override
         public EvidenceType convertToEntityAttribute(String column) {
-            return valueOf(column.toUpperCase(Locale.ROOT));
+            return fromDatabaseName(column);
         }
     }
 }
