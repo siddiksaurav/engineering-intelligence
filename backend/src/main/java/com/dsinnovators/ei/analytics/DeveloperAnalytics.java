@@ -2,6 +2,7 @@ package com.dsinnovators.ei.analytics;
 
 import com.dsinnovators.ei.common.Quarter;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 /** The five analytics of a developer and the hygiene number of the repository, for one quarter (decision 200). */
@@ -48,8 +49,8 @@ public class DeveloperAnalytics {
             TestingContribution.Result testingContribution,
             RepositoryHygiene.Result hygiene) {}
 
-    /** All the queries run in one read-only transaction, so that the numbers describe one state of the data. */
-    @Transactional(readOnly = true)
+    /** All the queries run in one read-only repeatable-read transaction, so that the numbers describe one snapshot of the data although model jobs write meanwhile. */
+    @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
     public Result of(long personId, Quarter quarter) {
         return new Result(
                 workClassification.of(personId, quarter),
