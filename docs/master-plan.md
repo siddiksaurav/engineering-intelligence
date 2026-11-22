@@ -116,7 +116,7 @@ These are left out on purpose (`poc-plan.md` 3.1). No feature builds them. If a 
 | F07 | Stage 2 Feature work judgment and review comment judgment | F06 | Every Feature work item has a complexity and every review comment a type and tier |
 | F08 | Blind check and the item page | F07 | You label 30 items blind; the item page shows source, AI judgment and your label |
 | F09 | Full-window run (one month) | F08 | July 2026 is ingested and judged |
-| F10 | Five analytics and the hygiene number | F09 | The analytics API returns the numbers for one developer |
+| F10 | Five analytics and the hygiene number | F07 (F09 deferred, decision 178) | The analytics API returns the numbers for one developer |
 | F11 | Scoring | F10 | Two dimension scores per developer, with gates G1 and G2 and the trail |
 | F12 | Profile page | F11 | One page per developer where every number opens down to a PR |
 | F13 | Accuracy measurement (dropped, decision 80) | F12 | An accuracy page with the measures of `poc-plan.md` section 4 |
@@ -388,7 +388,7 @@ The features are built in number order; each depends on those in the "Depends on
 - The deep dive and question brief of the next feature may run in its own session while the current feature builds. Its branch is made from `main` only after the current feature is merged; until then the design reads the current feature's `design.md` for what it will give.
 - F11 Scoring may be built in parallel with F07 to F10 once F06 is merged, in its own session and branch. Whichever of two parallel branches merges second renumbers its Flyway migrations above the highest on `main` before it merges.
 
-F05 is the first point where something can be shown. F08 is the first point where the AI can be judged, and the user decides there whether the run of F09 starts. F12 completes the PoC.
+F08 and F09 are deferred to after F12 (decision 178): F10 to F12 are built on the two-week window, and F08's item page and blind labels come at the end. F05 is the first point where something can be shown. F08 is the first point where the AI can be judged, and the user decides there whether the run of F09 starts. F12 completes the PoC.
 
 ## 7. Status
 
@@ -403,9 +403,9 @@ Update this table when a feature changes state. States: not started, in design, 
 | F05 | Evidence builders without AI, list page | done | `docs/features/F05-evidence-builders/design.md` | `docs/features/F05-evidence-builders/plan.md` |
 | F06 | `JudgmentModel`, PR digest, AI-dependent builders | done | `docs/features/F06-pr-digest/design.md` | `docs/features/F06-pr-digest/plan.md` |
 | F07 | Feature work and review comment judgment | done | `docs/features/F07-stage-2-judgment/design.md` | `docs/features/F07-stage-2-judgment/plan.md` |
-| F08 | Blind check and item page | not started | | |
-| F09 | Full-window run (one month) | not started | | |
-| F10 | Analytics and hygiene | not started | | |
+| F08 | Blind check and item page | deferred to the end (decision 178) | | |
+| F09 | Full-window run (one month) | deferred to the end (decision 178) | | |
+| F10 | Analytics and hygiene | done | `docs/features/F10-analytics/design.md` | `docs/features/F10-analytics/plan.md` |
 | F11 | Scoring | not started | | |
 | F12 | Profile page | not started | | |
 | F13 | Accuracy measurement | dropped (decision 80) | | |

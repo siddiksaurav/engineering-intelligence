@@ -52,7 +52,7 @@ ei:
       - name: ${LLM_PROVIDER_2_NAME:gemini}
         base-url: ${LLM_PROVIDER_2_BASE_URL:https://generativelanguage.googleapis.com/v1beta/openai}
         api-key: ${LLM_PROVIDER_2_API_KEY:}
-        model: ${LLM_PROVIDER_2_MODEL:}
+        model: ${LLM_PROVIDER_2_MODEL:gemini-2.5-flash}
         reasoning-effort: ${LLM_PROVIDER_2_REASONING_EFFORT:}
     timeout: 120s
     retries: 3

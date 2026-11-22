@@ -6,6 +6,12 @@
       "runtimeExecutable": "bash",
       "runtimeArgs": ["-c", "BACKEND_URL=http://localhost:8080 NEXT_TELEMETRY_DISABLED=1 npm --prefix web run dev"],
       "port": 3000
+    },
+    {
+      "name": "backend",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-c", "cd backend && LLM_PROVIDER_2_API_KEY= JAVA_HOME=/usr/lib/jvm/jdk-25-oracle-x64 ./mvnw -q spring-boot:run"],
+      "port": 8080
     }
   ]
 }
