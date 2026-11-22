@@ -2,6 +2,7 @@ package com.dsinnovators.ei.identity;
 
 import com.dsinnovators.ei.common.Quarter;
 import com.dsinnovators.ei.setting.SettingService;
+import java.util.List;
 import org.springframework.stereotype.Component;
 
 /**
@@ -23,7 +24,11 @@ public class BotAccounts {
 
     /** Whether the account is a bot, with the bot list in force in {@code quarter}. */
     public boolean isBot(String login, String typename, Quarter quarter) {
-        return BOT_TYPENAME.equals(typename)
-                || settings.getTextList(BOT_LOGINS_SETTING, quarter).contains(login);
+        return BOT_TYPENAME.equals(typename) || loginsOfBots(quarter).contains(login);
+    }
+
+    /** The logins on the bot list in force in {@code quarter}; accounts GitHub types {@code Bot} are not on it. */
+    public List<String> loginsOfBots(Quarter quarter) {
+        return settings.getTextList(BOT_LOGINS_SETTING, quarter);
     }
 }

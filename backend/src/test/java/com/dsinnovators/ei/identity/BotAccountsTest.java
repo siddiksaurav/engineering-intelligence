@@ -34,4 +34,9 @@ class BotAccountsTest extends DatabaseTest {
     void aHumanAccountIsNotABot() {
         assertFalse(botAccounts.isBot("akabiru", "User", QUARTER));
     }
+
+    @Test
+    void theBotListIsTheLoginsOfTheSetting() {
+        assertTrue(botAccounts.loginsOfBots(QUARTER).contains("openprojectci"));
+    }
 }

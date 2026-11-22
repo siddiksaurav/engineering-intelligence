@@ -56,7 +56,6 @@ class SpecNumbersTest {
     }
 
     @Test
-    @Disabled("F10 creates the analytics package; enable this test in F10")
     void theAnalyticsPackageHoldsNoNumberConstant() {
         holdsNoNumberConstant("analytics");
     }
