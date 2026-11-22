@@ -1,6 +1,6 @@
 # F11 Scoring: design
 
-State: draft
+State: approved on 2026-11-22, through the question brief ("OK, all recommended")
 
 ## Goal
 
@@ -148,94 +148,21 @@ Also:
 - Architecture: `SpecNumbersTest` for `scoring`.
 - Real data: the job runs on a throwaway copy of the Compose database (the user's instruction: do not wait for the model runs; delete the copy afterwards). The scores of one developer are checked against separate SQL.
 
-## Open points
+## Decisions
 
-The question brief is below (and in the chat). Decisions D201 to D217 are numbered 201 to 217 in `docs/decisions.md`.
+All open points are closed. Session decisions (numbers in `docs/decisions.md`):
+201 package `scoring`; 202 V12 tables, versioned mapping and gates; 203 scoring settings; 204 score scale and tier order are definitions; 205 SQL in one repeatable-read snapshot; 206 tier = current judgment of the item's kind, Very high T3 weight 4; 207 one third inclusive and exact; 208 G1 PRs and "changes tests"; 209 no PR of a gate's kind gives "gate unverified"; 210 G4 always "gate unverified"; 211 far miss 0, close miss 2 to 1; 212 Bug fix counted, not tiered, Documentation in neither; 213 rows never updated, one transaction per run; 214 stand-ins and clean-delivery note on the trail; 215 `AnalyticsSql` public; 216 job `dimension-scoring` with `quarter`, three levels; 217 `scored: false`, 404, 400.
 
-### Business questions
-
-**Q1. Items the AI has not judged yet** (most items today). How do they count for presence?
-- A. Left out of the shares; listed on the trail as "not judged yet" with a count. The score rests on what is judged.
-- B. Counted as sitting at no tier: they lower the shares, so scores drop until the model runs finish.
-- C. A person with any unjudged item gets no score ("not scored yet").
-- Recommended: A. The score is honest about what it rests on, and B punishes the person for the free-tier quota.
-
-**Q2. Review comments that are not substantive** (style, acknowledgement; no tier). Do they count in the one-third share?
-- A. Left out of the share; listed on the trail as "not substantive".
-- B. Counted as sitting at no tier: many small style remarks lower the reviewer's share.
-- Recommended: A. Spec 7.2 leaves style comments out of review counts; a careful reviewer is not punished for nits.
-
-**Q3. L3 needs two T3 items in Engineering standards.** How is "two T3 items" counted?
-- A. Across all tiered types of the dimension: presence at T3 in some type and at least two T3 items in total. One T3 item alone gives T2 (score 0 at L3).
-- B. Within one type: that type alone must have presence at T3 and two T3 items.
-- C. Not applied.
-- Recommended: A. The spec says "two T3 items here", that is in the dimension.
-
-**Q4. Review comments at a selected level of L1** (Coding and code quality).
-- A. Not read at L1, as spec 8.3 says; listed on the trail as "not read at L1".
-- B. Read at every level.
-- Recommended: A. Follows the spec; the trail still shows them.
-
-**Q5. Gate boundaries** (difference in percentage points, person lower than the repository).
-- A. Up to and including 10 passes; above 10 up to and including 25 is a close miss; above 25 is a far miss.
-- B. Below 10 passes; 10 to 25 inclusive is a close miss; above 25 is a far miss.
-- Recommended: A. Spec 7.3 says "lower by more than 10 points" fails and "more than 25" is far.
-
-**Q6. The repository's share a gate compares with.**
-- A. One share over all developers' PRs of the kind together, the person included.
-- B. The same, without the person.
-- C. The average of each developer's own share.
-- Recommended: A. It is "the project's share" of spec 7.3 and matches Testing contribution.
-
-**Q7. Who counts as one of the "three developers"** of a gate's group?
-- A. A developer with at least one PR of the gate's kind in the quarter (minimum kept as a setting, 1).
-- B. A developer with at least three such PRs.
-- C. Every person with any PR in the quarter.
-- Recommended: A. Simple, and the minimum can be raised in `setting` without code.
-
-**Q8. Anchor rule** (spec 16, open): one rare T3 item (say one Security item) lifts the whole dimension's working tier.
-- A. Keep as written: any type with presence can set the working tier.
-- B. Only the frequent types set it; rare items are shown but cannot lift it.
-- Recommended: A. The master plan says keep as written unless decided.
-
-**Q9. "Hardest work available" exception** (spec 9.1 step 5: an L3 on a project with no High work is scored against the hardest work offered).
-- A. Not applied; it rests on the opportunity profile, which is out of scope.
-- B. Applied, using the repository's closed Feature work complexities.
-- Recommended: A. Out of scope by the master plan; scores are for a selected level anyway.
-
-**Q10. Who is scored.**
-- A. Every person with at least one current evidence item or merged PR in the quarter.
-- B. Every person in the table.
-- Recommended: A. A person with no work in the quarter has nothing to show; B gives rows of zeros.
-
-### Technical decisions I need your direction on
-
-**Q11. Stored or calculated on request.**
-- A. The job `dimension-scoring` stores the scores at all three levels for every person; the API reads them. Run it again after new judgments.
-- B. Calculated on each request; nothing stored (the `dimension_score` table would go unused).
-- Recommended: A. Spec 9 freezes a score with its trail; the master plan asks to store it.
-
-**Q12. API shape.**
-- A. `GET /api/developers/{id}/dimension-scores?quarter=2026-Q3&level=L2`: both dimensions at that level, with gates, notes and trail.
-- B. The same without `level`: all three levels in one answer.
-- Recommended: A. F12's level control reloads with the level in the address; answers stay small.
-
-### Decisions I made myself (overrule any by number)
-
-- D201. New package `scoring`; `SpecNumbersTest` for it is enabled.
-- D202. Migration V12: `dimension`, `dimension_evidence_type` (with `tiered`, `from_level`), `dimension_gate` (with `applied`), `dimension_score`; mapping versioned per quarter like `setting`.
-- D203. The scoring settings of the table above, valid from 2026-Q2; one third stored as a fraction so "at least one third" is exact.
-- D204. The score scale (0, 1, 2 from comparing tier and level) and the tier order are the spec's definition, not settings.
-- D205. Scoring reads items and tiers with SQL through `JdbcClient` in one repeatable-read snapshot, as analytics does.
-- D206. The tier of an item is its current judgment of its kind: complexity for Feature work, review comment for Review comment written, item tier for the others. Very high is T3 with weight 4.
-- D207. "At least one third" is inclusive and compared exactly with whole numbers.
-- D208. G1 counts the person's human PRs merged in the quarter whose digest says feature or enhancement; a PR without a digest is left out and counted on the trail. "Changes tests" = a current Test change item.
-- D209. A person with no PR of a gate's kind: "gate unverified", no effect (spec 9.1 step 6, "a gate has no data").
-- D210. G4 is listed on every Engineering standards score as "gate unverified" and never calculated.
-- D211. Several gates: any far miss gives 0; otherwise any close miss turns a 2 into 1. Each gate writes its own note.
-- D212. Bug fix items are on the Engineering standards trail as "counted, not tiered"; Documentation is in neither dimension.
-- D213. `dimension_score` rows are never updated; each run inserts its rows with its `job_run_id`, all in one transaction.
-- D214. The trail names the stand-ins ("changes tests" for "adds a regression test"; the repository for the project) and that the clean-delivery rule is not applied.
-- D215. `AnalyticsSql`'s shared query pieces are made public so scoring reuses them instead of copying SQL.
-- D216. The job takes a required `quarter` argument and scores L1, L2 and L3 in one run.
-- D217. Before any run for the quarter the endpoint answers 200 with `scored: false`; 404 for an unknown person; 400 for a missing or wrong quarter or level.
+User's answers to the question brief ("OK, all recommended"):
+- 218 (Q1 A) unjudged items are left out of the shares, listed "not judged yet".
+- 219 (Q2 A) non-substantive review comments are left out of the share, listed "not substantive".
+- 220 (Q3 A) L3 in Engineering standards: presence at T3 and two T3 items across the dimension's types.
+- 221 (Q4 A) review comments are not read at L1, listed "not read at L1".
+- 222 (Q5 A) up to 10 points pass; above 10 to 25 close miss; above 25 far miss.
+- 223 (Q6 A) repository share pooled over all developers, the person included.
+- 224 (Q7 A) a developer counts in a gate's group with at least one PR of its kind (setting).
+- 225 (Q8 A) anchor rule kept: any type can set the working tier.
+- 226 (Q9 A) "hardest work available" exception not applied.
+- 227 (Q10 A) persons with a current item or a merged human PR in the quarter are scored.
+- 228 (Q11 A) the job stores the three levels; the API reads them.
+- 229 (Q12 A) `GET /api/developers/{personId}/dimension-scores?quarter=&level=`.
