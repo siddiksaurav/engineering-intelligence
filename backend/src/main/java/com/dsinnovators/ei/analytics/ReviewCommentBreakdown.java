@@ -13,8 +13,8 @@ import org.springframework.jdbc.core.simple.JdbcClient;
  * (decisions 196, 198). A comment that is not substantive is left out (spec 7.2).
  *
  * @param substantive the substantive comments
- * @param byCommentType the substantive comments by comment type
- * @param byTier the substantive comments by tier; the total is the same as for the comment types
+ * @param byCommentType the judged substantive comments by comment type, without a bucket for the comments not judged yet
+ * @param byTier the judged substantive comments by tier; the total is the same as for the comment types
  * @param notJudgedYet the comments without a current judgment
  */
 public record ReviewCommentBreakdown(

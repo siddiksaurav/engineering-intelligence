@@ -9,7 +9,8 @@ import java.util.TreeSet;
  * its rows (decision 199).
  *
  * @param count the number counted: items for an item count, pull requests for a pull request count
- * @param evidenceItemIds the ids of the counted evidence items; empty for a count of pull requests
+ * @param evidenceItemIds the ids of the counted evidence items; empty for a count that only lists pull requests (see {@link #ofPullRequests}), while a count of
+ *     pull requests that carry Test change items lists those item ids
  * @param pullRequestNumbers the numbers of the pull requests counted, or the ones the counted items rest on
  */
 public record Count(long count, List<Long> evidenceItemIds, List<Integer> pullRequestNumbers) {

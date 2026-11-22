@@ -17,8 +17,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Component
 public class ReviewParticipation {
 
-    private static final String REVIEWED_PULL_REQUESTS_QUERY = AnalyticsSql.with(
-            List.of(AnalyticsSql.MERGED_PULL_REQUESTS, AnalyticsSql.CURRENT_ITEMS_AND_JUDGMENTS, """
+    private static final String REVIEWED_PULL_REQUESTS_QUERY =
+            AnalyticsSql.with(List.of(AnalyticsSql.MERGED_PULL_REQUESTS, AnalyticsSql.CURRENT_ITEM, """
             latest_review as (
                 select distinct on (record.external_id) record.payload
                 from raw_record record

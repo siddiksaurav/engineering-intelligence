@@ -5,7 +5,9 @@ import java.util.Map;
 
 /**
  * A total split into buckets. The shares of the buckets add up to 1 because every counted row is in
- * exactly one bucket, the bucket {@value #NOT_JUDGED_YET} included (decision 198).
+ * exactly one bucket (decision 198). Whether a bucket {@value #NOT_JUDGED_YET} exists depends on the analytic:
+ * the distributions of {@link ReviewCommentBreakdown} hold judged substantive comments only and count the
+ * comments not judged yet apart.
  *
  * @param total the rows counted
  * @param slices the buckets in the order given
