@@ -405,7 +405,7 @@ Update this table when a feature changes state. States: not started, in design, 
 | F07 | Feature work and review comment judgment | done | `docs/features/F07-stage-2-judgment/design.md` | `docs/features/F07-stage-2-judgment/plan.md` |
 | F08 | Blind check and item page | deferred to the end (decision 178) | | |
 | F09 | Full-window run (one month) | deferred to the end (decision 178) | | |
-| F10 | Analytics and hygiene | not started | | |
+| F10 | Analytics and hygiene | in design | | |
 | F11 | Scoring | not started | | |
 | F12 | Profile page | not started | | |
 | F13 | Accuracy measurement | dropped (decision 80) | | |
