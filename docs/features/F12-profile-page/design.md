@@ -1,6 +1,6 @@
 # F12 Profile page: design
 
-State: draft
+State: approved on 2026-11-22, through the question brief ("OK, all recommended")
 
 ## Goal
 
@@ -8,7 +8,7 @@ One web page per developer and quarter, the page management will look at: the tw
 
 ## In scope / Out of scope
 
-**In** (subject to the question brief, "Open points").
+**In** (the question brief's answers are in "Decisions").
 - The profile page in `web/`: header, level control, two dimension cards with the "why" line, the trail, the gates panel, the five analytics drawn as bars, the hygiene number.
 - The drill-down: every count opens to its items and PRs.
 - A minimal read-only item page (Q1), and the backend reads it needs: item summaries by id and one item with its current judgment.
@@ -21,7 +21,8 @@ One web page per developer and quarter, the page management will look at: the tw
 - The source panel (work item text, PR descriptions, files) and the human label of the F08 item page: F08 adds them later (decision 178).
 - The staffing, hygiene and best-practice reports (spec 10.3), the EM's list by level (spec 10.4), the consistency check (spec 11.4).
 - Authentication. Any scheduler. No new table, no migration.
-- "Work level over time" (spec 11.1, 11.2) unless Q6 decides otherwise.
+- "Work level over time" (spec 11.1, 11.2): not built (decision 249).
+- Scores on the developer list, lists by level (decision 250).
 
 ## Data and tables
 
@@ -72,7 +73,8 @@ No migration. F12 reads; it writes nothing.
 `GET /api/developers/{personId}/dimension-scores?quarter=2026-Q3&level=L2` (F11, decisions 217, 228, 229, 231, 232). 404 unknown person, 400 bad quarter or level.
 - `{person, quarter, level, scored, jobRunId, calculatedAt, dimensions: [{key, name, workingTier: "T1"|"T2"|"T3"|null, score: 0|1|2, gates, notes: string[], trail}]}`; `scored: false` with no dimensions before a run.
 - `gates` and `trail.gates`: `[{gate: "G1"|"G2"|"G4", outcome: "PASS"|"CLOSE_MISS"|"FAR_MISS"|"UNVERIFIED", unverifiedReason: "TOO_FEW_DEVELOPERS"|"NO_PULL_REQUEST_OF_THE_KIND"|"NO_REPOSITORY_PULL_REQUESTS"|"NOT_CALCULATED"|null, personTestedPullRequests, personPullRequests, repositoryTestedPullRequests, repositoryPullRequests: int[], personSharePercent, repositorySharePercent, differencePoints: number|null, developersInGroup: long[], minimumDevelopers, limits: {passWithinPoints, farMissBeyondPoints}|null, pullRequestsWithoutDigest: int[], note}]`. Gates sit on Engineering standards only.
-- `trail = {dimensionKey, level, evidenceTypesVersion, gatesVersion, settings, evidenceTypes: [{evidenceType, rule: "FREQUENT"|"RARE", counted, notJudgedYet, notSubstantive, notReadAtLevel: TrailItem[], presence: [{tier, atOrAbove, total, presence}]}], levelThreeRule, workingTier, scoreBeforeGates, gates, countedNotTiered: TrailItem[], notes, finalScore}`.
+- A type not read at the level (Review comment written at L1) has an empty `presence` list and its items under `notReadAtLevel`; a type read at the level always has three `presence` rows.
+- `trail = {dimensionKey, level, evidenceTypesVersion, gatesVersion, settings, evidenceTypes: [{evidenceType, rule: "SHARE"|"ONE_ITEM", counted, notJudgedYet, notSubstantive, notReadAtLevel: TrailItem[], presence: [{tier, atOrAbove, total, presence}]}], levelThreeRule, workingTier, scoreBeforeGates, gates, countedNotTiered: TrailItem[], notes, finalScore}`.
 - `TrailItem = {evidenceItemId, itemKey, evidenceType, tier, complexity, weight, pullRequestNumbers: int[], sourceUrl}`.
 
 ### Real data (checked 22 Nov 2026 on the Compose database)
@@ -96,7 +98,7 @@ Routes (Q2, Q12): the profile at `/developers/{personId}/profile?quarter=2026-Q3
 
 **Uses.** The three endpoints above; `web/lib/evidence.ts` (`read`, `EvidenceResult`); the F05 page layout and colours (`developers.module.css`, `globals.css`, decision 110). Backend: `CurrentEvidenceItems`, `EvidenceItemRepository`, `PersonDirectory`, `JudgmentRepository.findCurrentOfEvidenceItems(JudgmentKind, Collection<Long>)`, `EvidenceItemResponse.of`.
 
-**Gives.** The profile route and the item route; F08 extends the item page with the source panel and the human label. Backend (Q13 A): `GET /api/evidence-items?ids=` and `GET /api/evidence-items/{id}`.
+**Gives.** The profile route and the item route; F08 extends the item page with the source panel and the human label. Backend (Q13 A): `GET /api/evidence-items?ids=` (at most 1,000 ids; per existing id: `id, type, date, quarter, title, sourceUrl, links, person {personId, displayName}, tier` (current tier of its kind or null), `current`, `currentItemId`) and `GET /api/evidence-items/{id}` (the same plus `judgment {state: judged | not_judged_yet | not_tiered, kind, tier, value, reason, facts, model, promptVersion, judgedAt}`). `DEFAULT_QUARTER` in `.env` (web).
 
 ## Edge cases
 
@@ -121,99 +123,33 @@ Also: backend tests for the two item endpoints (unit and database tests: current
 
 Real data needs the Compose database at V12 with a `dimension-scoring` run: a backend on `main` is started only when no job runs (`CLAUDE.md`); otherwise the check runs on a throwaway copy of the database, as F11 did.
 
-## Open points
+## Next-step line (decision 248)
 
-Question brief, shown to the user on 22 Nov 2026.
+For a score below 2 the line says what the next score needs; a score of 2 has no line.
+- Needed tier: for a next score of 1 the level's tier; for 2 one tier above it. Above T3: "T3 is the top tier in the PoC".
+- When a gate held the score (score lower than score before gates): "To score N: G1 within 10 points of the repository" (the limit from the gate's `limits`), naming each gate that held it.
+- Otherwise, for each type read at the level (non-empty `presence`): a share type gives "a third of weighted Feature work at <tier wording> or higher" (Feature work) or "a third of <type> at <tier wording> or higher"; a one-item type gives "one <type> at <tier>: <tier wording>". The parts are joined with "or". At L3 in a dimension with `levelThreeRule`, ", and two T3 items" is added. The fraction is read from the trail's settings (`presenceThreshold`), not written in code.
 
-### 1. Business questions
+## Decisions
 
-**Q1. F08's item page is deferred. What does an item open to?**
-- A. A small read-only item page now: title, type, person, links to GitHub and OpenProject, and the AI's judgment (tier, complexity or comment type, reason, facts with links, model, prompt version). F08 later adds the source text and the human label.
-- B. Straight to GitHub or OpenProject; the AI's reason is never shown.
-- C. The full F08 item page now, with the source panel (work item text, PR descriptions, files).
-- Recommended: A. The master plan's chain score → item → judgment → source works, at small cost.
+All open points are closed. The question brief (Q1 to Q14) was answered "OK, all recommended" on 22 Nov 2026.
 
-**Q2. Where does the profile live?**
-- A. A new page `/developers/{id}/profile`; the developer list links to it; it links to the full evidence list.
-- B. The profile replaces `/developers/{id}`; the evidence list moves to `/developers/{id}/evidence`.
-- Recommended: A. No F05 page moves; one click from the list either way.
+Session decisions (numbers in `docs/decisions.md`): 233 F10 and F11 endpoints unchanged, called on the server; 234 whole percents, "no PRs" for a null share; 235 header contents; 236 generated "why" line; 237 wrong quarter or level gives not-found; 238 superseded items shown, marked; 239 no scores yet: analytics still shown; 240 gates panel from Engineering standards; 241 judgment kind per evidence type; 242 next-step wording is a copy of spec 6.4 in `web/`; 243 sky-blue colours.
 
-**Q3. Which quarter does the page show by default?**
-- A. 2026-Q3, set in `.env` as `DEFAULT_QUARTER`; the URL can change it.
-- B. The newest quarter that has a scoring run (none yet in the Compose database).
-- C. Today's quarter (2026-Q4: empty).
-- Recommended: A. Explicit, works before any scoring run.
+User's answers:
+- 244 (Q1 A) a small read-only item page now; F08 extends it.
+- 245 (Q2 A) profile at `/developers/{personId}/profile`.
+- 246 (Q3 A) default quarter from `DEFAULT_QUARTER` in `.env`.
+- 247 (Q4 A) default level L2.
+- 248 (Q5 A) next-step line.
+- 249 (Q6 A) no "Work level over time" chart.
+- 250 (Q7 A) F05 developer list stays, names open the profile.
+- 251 (Q8 A) strength and gap badges on the cards.
+- 252 (Q9 A) the whole trail, folded.
+- 253 (Q10 A) "not judged yet" notice at the top.
+- 254 (Q11 A) repository numbers open too.
+- 255 (Q12 A) numbers fold open in place.
+- 256 (Q13 A) `GET /api/evidence-items?ids=` and `GET /api/evidence-items/{id}`.
+- 257 (Q14 A) no chart library, CSS bars.
 
-**Q4. Which level is selected when the page opens?**
-- A. L2.
-- B. L1.
-- C. None: the page asks the viewer to pick one first.
-- Recommended: A. The middle level shows both a higher and a lower comparison.
-
-**Q5. Show a "next step" line under each score (spec 11.3)?**
-- A. Yes, generated from the tier table: what work at the needed tier looks like for each type of the dimension, e.g. "To score 2: a third of weighted Feature work at High, or a design, security or performance review comment".
-- B. No.
-- Recommended: A. Cheap, and it turns a score into an action.
-
-**Q6. The "Work level over time" chart (spec 11.1)?**
-- A. Not built: the data covers two weeks, so the chart would have one point.
-- B. Build it.
-- Recommended: A. One point is not a trend.
-
-**Q7. The developer list that leads to a profile?**
-- A. Keep F05's list; each name opens the profile.
-- B. Also show each developer's two scores at L2 (a new endpoint for all persons).
-- C. A list per level sorted by score (spec 10.4).
-- Recommended: A. The PoC shows one profile; ranking people is a later decision.
-
-**Q8. Strengths and gaps (spec 10.2)?**
-- A. A badge on each dimension card: "strength" at 2, "gap" at 0 with the tier the work sat at, the gate that failed and the items. No separate section.
-- B. A separate section, as in the spec.
-- C. Nothing.
-- Recommended: A. With two dimensions a separate section repeats the cards.
-
-**Q9. How much of the trail is shown?**
-- A. All of it, folded: per evidence type the presence table (at or above, total, one third, yes or no), the items with tier and weight, items not judged yet, not substantive or not read at the level, the L3 two-T3 rule, gate numbers, notes and stand-ins.
-- B. Only the items and the score line.
-- Recommended: A. "Can be recalculated by hand" needs the sums.
-
-**Q10. Most items are not judged yet (22 Nov: 60 of 172 PR digests, 7 of 37 Feature work, 41 of 379 comments). How is that shown?**
-- A. A notice at the top ("N items not judged yet; numbers will change") and the "not judged yet" bar in each analytic.
-- B. Only the bar in each analytic.
-- Recommended: A. A manager must not read a half-judged page as final.
-
-**Q11. Do the repository numbers (project bar of Work complexity, hygiene, gate shares) open too?**
-- A. Yes, to other developers' items and PRs, like the person's numbers.
-- B. No, only the person's numbers open.
-- Recommended: A. "Every number opens" (master plan); the comparison must be checkable.
-
-### 2. Technical decisions I need your direction on
-
-**Q12. How does a number open?**
-- A. Folds open in place under the number (no page change, works on a phone, no browser JavaScript).
-- B. A separate drill-down page per number.
-- Recommended: A. Fewer clicks, the context stays in view.
-
-**Q13. Where do item titles and judgments come from?**
-- A. Two new read endpoints: `GET /api/evidence-items?ids=` (titles, links, person, current or not) and `GET /api/evidence-items/{id}` (with the current judgment).
-- B. No new endpoint: the person's own evidence list gives titles; other people's items show as "item #id"; no item page (only with Q1 B).
-- Recommended: A. Needed by Q1 A and Q11 A; one call per page.
-
-**Q14. Chart library?**
-- A. None: bars drawn with CSS Modules, rendered on the server, every bar clickable (decision 110: no new dependency).
-- B. Recharts: richer charts, but browser JavaScript and a new dependency.
-- Recommended: A. The charts are bars and shares; CSS draws them.
-
-### 3. Decisions I made myself (overrule any by number)
-
-- D233. The page calls the F10 and F11 endpoints unchanged, on the server, as F05 does.
-- D234. Shares shown as whole percents; a null share shows "no PRs".
-- D235. Header: name, quarter, level control, repository hygiene. No overall score, confidence or allocation (out of scope).
-- D236. The "why" line is generated from working tier, level, score before gates and gate notes.
-- D237. A wrong quarter or level in the URL gives the not-found page.
-- D238. An item superseded since the scoring run is still shown, marked "no longer current" with a link to the current row.
-- D239. Before a scoring run the page shows "No scores for this quarter yet" and still shows the analytics.
-- D240. The gates panel reads G1, G2 and G4 from the Engineering standards dimension.
-- D241. The judgment kind of an item: Feature work → complexity, Review comment written → review comment, Test change, Refactor, Security, Infra → item tier; Bug fix and Documentation → "counted, not tiered".
-- D242. The next-step text (if Q5 A) is a typed copy of spec 6.4's six rows in `web/`; it is wording, not a number.
-- D243. Colours stay bold sky blue with the F05 type colours; no purple.
+The question brief as it was shown is kept in the git history (commit "docs(F12): design draft, question brief").
