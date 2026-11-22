@@ -2,6 +2,7 @@ package com.dsinnovators.ei.api;
 
 import com.dsinnovators.ei.evidence.CurrentEvidenceItems;
 import com.dsinnovators.ei.evidence.EvidenceItem;
+import com.dsinnovators.ei.evidence.EvidenceType;
 import com.dsinnovators.ei.identity.PersonDirectory;
 import com.dsinnovators.ei.identity.PersonSummary;
 import com.dsinnovators.ei.judgment.CurrentItemJudgments;
@@ -12,6 +13,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Component;
@@ -32,6 +34,15 @@ class EvidenceItemSummaries {
 
     /** The summary of each id that names a row, in the order asked. An unknown id is left out. */
     List<EvidenceItemSummaryResponse> ofIds(List<Long> ids) {
+        return assemble(ids).stream().map(Assembled::summary).toList();
+    }
+
+    /** The row with this id and its current judgment, or nothing when no row has the id. */
+    Optional<EvidenceItemDetailResponse> detailOf(long id) {
+        return assemble(List.of(id)).stream().findFirst().map(Assembled::detail);
+    }
+
+    private List<Assembled> assemble(List<Long> ids) {
         Map<Long, EvidenceItem> rows =
                 evidenceItems.byIds(ids).stream().collect(Collectors.toMap(EvidenceItem::getId, Function.identity()));
         Collection<EvidenceItem> found = rows.values();
@@ -43,11 +54,15 @@ class EvidenceItemSummaries {
         return ids.stream()
                 .filter(rows::containsKey)
                 .map(rows::get)
-                .map(item -> EvidenceItemSummaryResponse.of(
-                        item,
-                        personOf(people.get(item.getPersonId())),
-                        tierOf(currentJudgments.get(item.getId())),
-                        currentRows.get(item.getItemKey())))
+                .map(item -> {
+                    ItemJudgment judgment = currentJudgments.get(item.getId());
+                    EvidenceItemSummaryResponse summary = EvidenceItemSummaryResponse.of(
+                            item,
+                            personOf(people.get(item.getPersonId())),
+                            judgment == null ? null : judgment.tier(),
+                            currentRows.get(item.getItemKey()));
+                    return new Assembled(summary, item.getEvidenceType(), judgment);
+                })
                 .toList();
     }
 
@@ -68,7 +83,17 @@ class EvidenceItemSummaries {
         return new PersonResponse(person.personId(), person.displayName());
     }
 
-    private static String tierOf(ItemJudgment judgment) {
-        return judgment == null ? null : judgment.tier();
+    private record Assembled(EvidenceItemSummaryResponse summary, EvidenceType type, ItemJudgment judgment) {
+
+        EvidenceItemDetailResponse detail() {
+            return new EvidenceItemDetailResponse(summary, judgmentResponse());
+        }
+
+        private ItemJudgmentResponse judgmentResponse() {
+            if (ItemJudgmentKind.of(type).isEmpty()) {
+                return ItemJudgmentResponse.notTiered();
+            }
+            return judgment == null ? ItemJudgmentResponse.notJudgedYet() : ItemJudgmentResponse.judged(judgment);
+        }
     }
 }

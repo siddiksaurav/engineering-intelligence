@@ -5,6 +5,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -26,6 +27,11 @@ class EvidenceItemController {
     @GetMapping
     List<EvidenceItemSummaryResponse> summaries(@RequestParam String ids) {
         return summaries.ofIds(parse(ids));
+    }
+
+    @GetMapping("/{id}")
+    EvidenceItemDetailResponse item(@PathVariable long id) {
+        return summaries.detailOf(id).orElseThrow(() -> new EvidenceItemNotFoundException(id));
     }
 
     private List<Long> parse(String ids) {

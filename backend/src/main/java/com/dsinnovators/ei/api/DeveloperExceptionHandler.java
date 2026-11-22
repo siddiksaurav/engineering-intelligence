@@ -34,4 +34,9 @@ class DeveloperExceptionHandler {
     ProblemDetail wrongEvidenceItemIds(InvalidEvidenceItemIdsException refused) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, refused.getMessage());
     }
+
+    @ExceptionHandler(EvidenceItemNotFoundException.class)
+    ProblemDetail unknownEvidenceItem(EvidenceItemNotFoundException refused) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, refused.getMessage());
+    }
 }

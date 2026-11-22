@@ -30,6 +30,11 @@ class EvidenceItemControllerTest extends DatabaseTest {
              "pullRequests":[{"externalId":"2","number":102,"title":"Fix login","url":"https://gh.test/pull/102","mergedAt":"2026-10-05T10:00:00Z"}],
              "doneAt":"2026-10-05T10:00:00Z"}
             """;
+    private static final String COMMENT_FIELDS = """
+            {"pullRequest":{"externalId":"3","number":103,"title":"Add cache","url":"https://gh.test/pull/103","mergedAt":"2026-10-02T10:00:00Z"},
+             "pullRequestAuthorPersonId":null,
+             "comment":{"databaseId":77,"url":"https://gh.test/pull/103#discussion_r77","path":"a.java","createdAt":"2026-10-01T10:00:00Z","isReply":false}}
+            """;
     private static final String PULL_REQUEST_FIELDS = """
             {"pullRequest":{"externalId":"4","number":104,"title":"Add spec","url":"https://gh.test/pull/104","mergedAt":"2026-10-05T10:00:00Z"},
              "testKind":"integration"}
@@ -64,13 +69,23 @@ class EvidenceItemControllerTest extends DatabaseTest {
     }
 
     private long judgment(long itemId, String kind, String tier, Long supersedes) {
+        return judgment(itemId, kind, tier, "{}", supersedes);
+    }
+
+    private long judgment(long itemId, String kind, String tier, String value, Long supersedes) {
         return jdbc.queryForObject("""
                 insert into judgment (kind, evidence_item_id, value, tier, reason, facts, judged_by, model,
                                       prompt_version, input_hash, supersedes_id, judged_at)
-                values (?, ?, '{}'::jsonb, ?, 'Because', '[{"fact":"f","link":"https://gh.test/pull/101"}]'::jsonb,
-                        'model', 'm', 'v1', 'hash' || gen_random_uuid(), ?, now())
+                values (?, ?, ?::jsonb, ?, 'Because', '[{"fact":"Adds a cache","link":"https://gh.test/pull/101"}]'::jsonb,
+                        'model', 'gpt-test', 'v1', 'hash' || gen_random_uuid(), ?, '2026-11-01T10:00:00Z')
                 returning id
-                """, Long.class, kind, itemId, tier, supersedes);
+                """, Long.class, kind, itemId, value, tier, supersedes);
+    }
+
+    private JsonNode detail(long id) throws Exception {
+        HttpResponse<String> response = client.get("/api/evidence-items/" + id);
+        assertEquals(200, response.statusCode());
+        return JobEndpointClient.json(response);
     }
 
     private HttpResponse<String> summaries(String ids) throws Exception {
@@ -174,5 +189,104 @@ class EvidenceItemControllerTest extends DatabaseTest {
 
         assertEquals(400, response.statusCode());
         assertTrue(JobEndpointClient.json(response).get("detail").stringValue().contains("1000"));
+    }
+
+    @Test
+    void returnsTheItemWithItsCurrentJudgment() throws Exception {
+        long feature = item(ada, "feature_work:10:1", "feature_work", "2026-07-03", FEATURE_FIELDS, false, null);
+        long first = judgment(feature, "feature_work_complexity", "T1", "{\"complexity\":\"Low\"}", null);
+        judgment(feature, "feature_work_complexity", "T3", "{\"complexity\":\"Very high\"}", first);
+
+        JsonNode body = detail(feature);
+
+        assertEquals(feature, body.get("id").longValue());
+        assertEquals("Single sign-on", body.get("title").stringValue());
+        assertEquals("Ada", body.get("person").get("displayName").stringValue());
+        assertEquals("T3", body.get("tier").stringValue());
+        assertTrue(body.get("current").booleanValue());
+        JsonNode judgment = body.get("judgment");
+        assertEquals("judged", judgment.get("state").stringValue());
+        assertEquals("feature_work_complexity", judgment.get("kind").stringValue());
+        assertEquals("T3", judgment.get("tier").stringValue());
+        assertEquals("Very high", judgment.get("value").get("complexity").stringValue());
+        assertEquals("Because", judgment.get("reason").stringValue());
+        assertEquals("Adds a cache", judgment.get("facts").get(0).get("fact").stringValue());
+        assertEquals(
+                "https://gh.test/pull/101",
+                judgment.get("facts").get(0).get("link").stringValue());
+        assertEquals("gpt-test", judgment.get("model").stringValue());
+        assertEquals("v1", judgment.get("promptVersion").stringValue());
+        assertTrue(judgment.get("judgedAt").stringValue().startsWith("2026-11-01T10:00:00"));
+    }
+
+    @Test
+    void aReviewCommentAndATestChangeShowTheirOwnKindOfJudgment() throws Exception {
+        long comment = item(
+                ada, "review_comment_written:77", "review_comment_written", "2026-10-02", COMMENT_FIELDS, false, null);
+        judgment(comment, "review_comment", "T2", "{\"commentType\":\"logic\",\"substantive\":true}", null);
+        long testChange = item(ada, "test_change:104", "test_change", "2026-10-05", PULL_REQUEST_FIELDS, false, null);
+        judgment(testChange, "item_tier", "T2", "{\"kind\":\"integration\"}", null);
+        judgment(testChange, "feature_work_complexity", "T3", null);
+
+        JsonNode commentJudgment = detail(comment).get("judgment");
+        assertEquals("judged", commentJudgment.get("state").stringValue());
+        assertEquals("review_comment", commentJudgment.get("kind").stringValue());
+        assertEquals("logic", commentJudgment.get("value").get("commentType").stringValue());
+        assertTrue(commentJudgment.get("value").get("substantive").booleanValue());
+
+        JsonNode testJudgment = detail(testChange).get("judgment");
+        assertEquals("item_tier", testJudgment.get("kind").stringValue());
+        assertEquals("T2", testJudgment.get("tier").stringValue());
+        assertEquals("integration", testJudgment.get("value").get("kind").stringValue());
+    }
+
+    @Test
+    void anItemWithoutAJudgmentIsNotJudgedYet() throws Exception {
+        long feature = item(ada, "feature_work:10:1", "feature_work", "2026-07-03", FEATURE_FIELDS, false, null);
+
+        JsonNode judgment = detail(feature).get("judgment");
+
+        assertEquals("not_judged_yet", judgment.get("state").stringValue());
+        assertTrue(judgment.get("kind").isNull());
+        assertTrue(judgment.get("tier").isNull());
+        assertTrue(judgment.get("value").isNull());
+        assertTrue(judgment.get("reason").isNull());
+        assertTrue(judgment.get("facts").isNull());
+        assertTrue(judgment.get("model").isNull());
+        assertTrue(judgment.get("promptVersion").isNull());
+        assertTrue(judgment.get("judgedAt").isNull());
+    }
+
+    @Test
+    void aBugFixAndADocumentationItemAreNotTiered() throws Exception {
+        long bugFix = item(ada, "bug_fix:20:1", "bug_fix", "2026-10-05", BUG_FIELDS, false, null);
+        long documentation =
+                item(ada, "documentation:104", "documentation", "2026-10-05", PULL_REQUEST_FIELDS, false, null);
+        judgment(bugFix, "item_tier", "T1", null);
+
+        for (long id : new long[] {bugFix, documentation}) {
+            JsonNode judgment = detail(id).get("judgment");
+            assertEquals("not_tiered", judgment.get("state").stringValue());
+            assertTrue(judgment.get("tier").isNull());
+        }
+    }
+
+    @Test
+    void aSupersededItemIsShownAndPointsToTheCurrentRow() throws Exception {
+        long old = item(ada, "feature_work:10:1", "feature_work", "2026-07-03", FEATURE_FIELDS, false, null);
+        long replacement = item(ada, "feature_work:10:1", "feature_work", "2026-07-03", FEATURE_FIELDS, false, old);
+
+        JsonNode body = detail(old);
+
+        assertFalse(body.get("current").booleanValue());
+        assertEquals(replacement, body.get("currentItemId").longValue());
+    }
+
+    @Test
+    void anUnknownItemAnswers404NamingTheId() throws Exception {
+        HttpResponse<String> response = client.get("/api/evidence-items/999999");
+
+        assertEquals(404, response.statusCode());
+        assertTrue(JobEndpointClient.json(response).get("detail").stringValue().contains("999999"));
     }
 }
