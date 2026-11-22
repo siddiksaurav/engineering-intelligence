@@ -1,6 +1,6 @@
 # F10 Five analytics and the hygiene number: design
 
-State: draft
+State: approved on 2026-11-22, through the question brief ("OK": every recommendation)
 
 ## Goal
 
@@ -106,85 +106,9 @@ Backend tests extend `DatabaseTest`, build their rows directly and never call a 
 - `SpecNumbersTest.theAnalyticsPackageHoldsNoNumberConstant` enabled and green.
 - "Done when" 1, real data: for one developer with judged items, the session runs separate SQL from the evidence list for each number and shows both to the user (`notes.md`, "Verification"). It runs on whatever the background model jobs have judged by then.
 
-## Open points
+## Decisions
 
-The question brief is below. Decisions D179 to D188 are made by the session and logged in `docs/decisions.md`.
+The user answered "OK" to the question brief on 22 Nov 2026: every recommended option.
 
-### Business questions
-
-Q1. Work classification counts what?
-A. Each merged PR by its AI work type (13 types) — every PR shows, even one with no evidence item
-B. Each closed evidence item by its type — a big feature counts once, but PRs with no item are missed
-Recommended: A — the master plan requires a PR with no evidence item to show.
-
-Q2. Testing contribution, "feature and fix PRs": which work types?
-A. Feature, enhancement and fix — enhancement is feature work in this system
-B. Feature and fix only — the spec's words
-Recommended: A — an enhancement is new behaviour that should come with tests.
-
-Q3. "Bug fix PRs that change tests": which test changes count?
-A. Any test change — the master plan's words; the AI's test kind is not needed
-B. Only a regression or integration test — the spec's "adds a regression test"
-Recommended: A — simpler and does not rest on a second AI guess.
-
-Q4. "PRs reviewed": what counts as reviewing a PR?
-A. Any review (approve, changes requested, comment) or inline comment on someone else's PR — an approval with no comment counts as zero substantive, as the spec says
-B. Only PRs where the person left an inline comment — approvals are not seen
-Recommended: A — the spec's "approval counts as zero" needs approvals in the count.
-
-Q5. Hygiene: which PRs?
-A. Human PRs only — bots never link work items; 77% today
-B. All PRs, bots too — lower number, mostly showing bot volume
-Recommended: A — matches the 78% the plan measured.
-
-Q6. Work complexity bars:
-A. Four bars: Low, Medium, High, Very high — Very high stays visible
-B. Three bars, Very high inside High — the spec's three bars
-Recommended: A — nothing is hidden; Very high already counts as T3.
-
-Q7. The project comparison bar:
-A. Shares of all Feature work in the repository this quarter, the person included
-B. The same without the person
-Recommended: A — "what the project offered" is the whole project.
-
-Q8. Decision 175 hid the AI's complexity and comment types until the blind check (F08, now deferred). The analytics show them in totals.
-A. Show them now; the blind check later is done without opening the profile
-B. Leave complexity and comment types out of the API until F08
-Recommended: A — F10 to F12 cannot be built without them.
-
-Q9. Work classification by tier:
-A. No tier split; the tier is shown in the other analytics
-B. Each PR takes the tier of the item it belongs to; PRs with no tiered item show "no tier"
-Recommended: A — work type and tier answer different questions; B adds rules for PRs in two items.
-
-Q10. Items the AI has not judged yet (most of them today):
-A. Show them as a "not judged yet" bucket in each analytic
-B. Leave them out until judged
-Recommended: A — shares stay honest and add up to 100%.
-
-### Technical decisions I need your direction on
-
-Q11. Drill-down:
-A. Each count carries the ids of its items and PR numbers — F12 opens every number to its items; the check is row by row
-B. Numbers only; F12 adds the drill-down
-Recommended: A — F12 needs it and it costs little now.
-
-Q12. API shape:
-A. One endpoint per developer with all five and the hygiene number
-B. One endpoint per analytic
-Recommended: A — the profile page makes one call.
-
-### Decisions I made myself (overrule any by number)
-
-D179. New package `analytics`, read-only SQL through Spring's `JdbcClient`; no migration, nothing stored.
-D180. A count belongs to the quarter of the item's date (decisions 112, 114, 121, 150); PR counts use the merge day.
-D181. Current item: not superseded and not withdrawn; current judgment: not superseded.
-D182. A PR "includes test changes" when it has a current Test change item (the path rule, decision 148), not the digest's own yes or no.
-D183. Bug fix PRs are the PRs of the person's current Bug fix items in the quarter, both kinds (OpenProject Bug, and a fix PR without a work item).
-D184. "Different authors reviewed" counts persons; a bot's PR counts as reviewed but adds no author. A person's own PR is never "reviewed".
-D185. Review findings received per PR divides by all the person's PRs merged in the quarter, also those with no comment.
-D186. Shares are count divided by total, not rounded (a rounding digit would be a number constant); null when the total is 0.
-D187. The quarter is a required parameter (`2026-Q3`); 400 when missing or wrong.
-D188. No web change in F10; F12 draws the charts.
-
-Reply with letters (Q1 B, Q2 A ...), "OK" for all recommendations, or your own answer.
+- Q1 to Q12 → decisions 189 to 200: Work classification per PR by digest work type (189); feature-and-fix set is feature, enhancement, fix (190); any test change counts for a Bug fix PR (191); any review or inline comment makes a PR reviewed (192); hygiene on human PRs (193); four complexity bars (194); project bar is the whole repository, person included (195); complexity and comment types shown now, replacing decision 175 for F10 to F12 (196); no tier split in Work classification (197); a "not judged yet" bucket (198); every count carries its item ids and PR numbers (199); one endpoint `GET /api/developers/{personId}/analytics?quarter=` (200).
+- Made by the session: decisions 179 to 188 (package and SQL, quarter rule, current rows, Test change item decides "includes tests", both Bug fix kinds, authors are persons, per-PR denominator, unrounded shares, required quarter, no web change).
