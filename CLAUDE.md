@@ -134,6 +134,11 @@ curl -s -X POST localhost:8080/api/jobs/review-comment-judgment/runs \
                                                              Stage 2: type and tier of every review comment item (after evidence-build; needs a provider key)
 curl -s "localhost:8080/api/developers/9/analytics?quarter=2026-Q3"
                                                              the five analytics and the hygiene number of developer 9 (F10)
+curl -s -X POST localhost:8080/api/jobs/dimension-scoring/runs \
+  -H 'Content-Type: application/json' -d '{"quarter":"2026-Q3"}'
+                                                             score every developer of the quarter at L1, L2 and L3 (after the model jobs; run again after new judgments)
+curl -s "localhost:8080/api/developers/9/dimension-scores?quarter=2026-Q3&level=L2"
+                                                             the two dimension scores of developer 9 at L2, with gates and trail (F11)
 docker compose exec postgres psql -U ei -d ei -c "select confirm_identity_proposal(7);"
                                                              confirm proposal 7 (list them in identity_proposal)
 docker compose exec postgres psql -U ei -d ei -c "select reject_identity_proposal(7);"
