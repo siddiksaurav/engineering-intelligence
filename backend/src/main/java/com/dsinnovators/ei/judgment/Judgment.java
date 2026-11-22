@@ -127,6 +127,11 @@ public class Judgment {
         return reason;
     }
 
+    /** The facts as stored, {@code [{fact, link}]}. */
+    public JsonNode getFactsAsJson() {
+        return CanonicalJson.parse(facts);
+    }
+
     public List<JudgmentFact> getFacts() {
         return CanonicalJson.parse(facts)
                 .valueStream()
