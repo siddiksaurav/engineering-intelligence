@@ -124,6 +124,22 @@ describe("whyLine", () => {
     );
   });
 
+  it("names a close miss and a far miss that both hold a score of 0 only by the far miss", () => {
+    const gates = [gate("FAR_MISS", { gate: "G2" }), gate("CLOSE_MISS", { gate: "G4" })];
+
+    expect(whyLine(dimension({ score: 0, scoreBeforeGates: 1, gates }), "L1")).toBe(
+      "Works at T2. L1 expects T1: 1, held to 0 by G2 (far miss).",
+    );
+  });
+
+  it("names every close miss that holds a score of 2 to 1", () => {
+    const gates = [gate("CLOSE_MISS"), gate("CLOSE_MISS", { gate: "G2" })];
+
+    expect(whyLine(dimension({ score: 1, scoreBeforeGates: 2, gates }), "L1")).toBe(
+      "Works at T2. L1 expects T1: 2, held to 1 by G1 (close miss), G2 (close miss).",
+    );
+  });
+
   it("does not name a gate that did not hold the score", () => {
     expect(whyLine(dimension({ score: 1, gates: [gate("CLOSE_MISS")] }), "L2")).toBe("Works at T2. L2 expects T2: 1.");
   });
@@ -185,6 +201,72 @@ describe("nextStepLine", () => {
     });
 
     expect(nextStepLine(held, "L1")).toBe("To score 1: G2 within 25 points of the repository.");
+  });
+
+  it("names every gate that holds the denied score, the close miss beside the far miss", () => {
+    const held = dimension({
+      score: 0,
+      scoreBeforeGates: 2,
+      gates: [gate("CLOSE_MISS"), gate("FAR_MISS", { gate: "G2" })],
+    });
+
+    expect(nextStepLine(held, "L2")).toBe(
+      "To score 2: G1 within 10 points of the repository and G2 within 10 points of the repository.",
+    );
+  });
+
+  it("names a close miss that would hold the next score after the tier it needs", () => {
+    const line = nextStepLine(
+      dimension({
+        score: 1,
+        evidenceTypes: [typeTrail("feature_work", "SHARE", true)],
+        gates: [gate("CLOSE_MISS")],
+      }),
+      "L2",
+    );
+
+    expect(line).toBe(
+      "To score 2: a third of weighted Feature work at High complexity or higher;" +
+        " and G1 within 10 points of the repository.",
+    );
+  });
+
+  it("names a far miss that would keep a score of 0 at 0 after the tier it needs", () => {
+    const line = nextStepLine(
+      dimension({
+        score: 0,
+        evidenceTypes: [typeTrail("feature_work", "SHARE", true)],
+        gates: [gate("FAR_MISS", { gate: "G2" })],
+      }),
+      "L2",
+    );
+
+    expect(line).toBe(
+      "To score 1: a third of weighted Feature work at Medium complexity or higher;" +
+        " and G2 within 25 points of the repository.",
+    );
+  });
+
+  it("does not name a close miss when the next score is 1", () => {
+    const line = nextStepLine(
+      dimension({ score: 0, evidenceTypes: [typeTrail("feature_work", "SHARE", true)], gates: [gate("CLOSE_MISS")] }),
+      "L2",
+    );
+
+    expect(line).toBe("To score 1: a third of weighted Feature work at Medium complexity or higher.");
+  });
+
+  it("does not name a gate that passed or is unverified", () => {
+    const line = nextStepLine(
+      dimension({
+        score: 1,
+        evidenceTypes: [typeTrail("feature_work", "SHARE", true)],
+        gates: [gate("PASS"), gate("UNVERIFIED", { gate: "G4", limits: null })],
+      }),
+      "L1",
+    );
+
+    expect(line).toBe("To score 2: a third of weighted Feature work at Medium complexity or higher.");
   });
 
   it("leaves out a type that is not read at the level", () => {

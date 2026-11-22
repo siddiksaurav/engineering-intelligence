@@ -47,28 +47,32 @@ export function whyLine(dimension: DimensionScore, level: Level): string {
 }
 
 /**
- * What the next score needs, written from the tier table and the trail's settings (spec 11.3, decision 248).
+ * What the next score needs, written from the tier table and the trail's settings (spec 11.3, decisions 248, 258):
+ * the tier when the working tier is short of the target, and every gate that would hold the target score.
  * Null at score 2, which has no next step.
  */
 export function nextStepLine(dimension: DimensionScore, level: Level): string | null {
   if (dimension.score === 2) {
     return null;
   }
-  const held = gatesThatHeld(dimension);
-  if (held.length > 0) {
-    return `To score ${dimension.trail.scoreBeforeGates}: ${held.map(gateRequirement(dimension)).join(" and ")}.`;
+  const { scoreBeforeGates } = dimension.trail;
+  // Gates that lowered the score name the score they denied; otherwise the next score is one above.
+  const targetScore = dimension.score < scoreBeforeGates ? scoreBeforeGates : dimension.score + 1;
+  const parts: string[] = [];
+  const gateParts = dimension.gates
+    .filter((gate) => isMiss(gate) && scoreCap(gate) < targetScore)
+    .map(gateRequirement(targetScore));
+  if (scoreBeforeGates < targetScore) {
+    const neededTier = TIERS_ASCENDING[TIERS_ASCENDING.indexOf(LEVEL_TIER[level]) + targetScore - 1];
+    if (!neededTier) {
+      return `T3 is the top tier in the PoC, so ${dimension.score} is the best score at ${level}.`;
+    }
+    parts.push(tierRequirement(dimension, neededTier));
   }
-  const nextScore = dimension.score + 1;
-  const neededTier = TIERS_ASCENDING[TIERS_ASCENDING.indexOf(LEVEL_TIER[level]) + nextScore - 1];
-  if (!neededTier) {
-    return `T3 is the top tier in the PoC, so ${dimension.score} is the best score at ${level}.`;
+  if (gateParts.length > 0) {
+    parts.push(gateParts.join(" and "));
   }
-  const requirements = dimension.trail.evidenceTypes
-    .filter((trail) => trail.presence.length > 0)
-    .map((trail) => typeRequirement(dimension, trail.evidenceType, trail.rule, neededTier))
-    .filter((requirement) => requirement !== null);
-  const needed = requirements.length > 0 ? requirements.join(" or ") : `work at ${neededTier}`;
-  return `To score ${nextScore}: ${needed}${levelThreeAddition(dimension, neededTier)}.`;
+  return `To score ${targetScore}: ${parts.join("; and ")}.`;
 }
 
 /** A gate result in words: the outcome, and the numbers or the reason behind it. */
@@ -104,18 +108,25 @@ function unverifiedWords(gate: GateResult): string {
   return gate.unverifiedReason ? words[gate.unverifiedReason] : "The gate has no result.";
 }
 
-/** The gates that lowered the score: the far misses when there are any, else the close misses. */
+function isMiss(gate: GateResult): boolean {
+  return gate.outcome === "FAR_MISS" || gate.outcome === "CLOSE_MISS";
+}
+
+/** The highest score a missed gate allows: a far miss gives 0, a close miss caps at 1 (decision 211). */
+function scoreCap(gate: GateResult): number {
+  return gate.outcome === "FAR_MISS" ? 0 : 1;
+}
+
+/** The gates that lowered the score: those whose cap is the score it was held to. */
 function gatesThatHeld(dimension: DimensionScore): GateResult[] {
   if (dimension.score >= dimension.trail.scoreBeforeGates) {
     return [];
   }
-  const farMisses = dimension.gates.filter((gate) => gate.outcome === "FAR_MISS");
-  return farMisses.length > 0 ? farMisses : dimension.gates.filter((gate) => gate.outcome === "CLOSE_MISS");
+  return dimension.gates.filter((gate) => isMiss(gate) && scoreCap(gate) === dimension.score);
 }
 
-function gateRequirement(dimension: DimensionScore): (gate: GateResult) => string {
-  // A close miss lowers only a 2, a far miss lowers any score: the target decides the limit.
-  const targetScore = dimension.trail.scoreBeforeGates;
+function gateRequirement(targetScore: number): (gate: GateResult) => string {
+  // A close miss holds only a 2, a far miss holds any score: the target decides the limit.
   return (gate) => {
     if (!gate.limits) {
       return `${gate.gate} passing`;
@@ -123,6 +134,15 @@ function gateRequirement(dimension: DimensionScore): (gate: GateResult) => strin
     const limit = targetScore >= 2 ? gate.limits.passWithinPoints : gate.limits.farMissBeyondPoints;
     return `${gate.gate} within ${limit} points of the repository`;
   };
+}
+
+function tierRequirement(dimension: DimensionScore, neededTier: Tier): string {
+  const requirements = dimension.trail.evidenceTypes
+    .filter((trail) => trail.presence.length > 0)
+    .map((trail) => typeRequirement(dimension, trail.evidenceType, trail.rule, neededTier))
+    .filter((requirement) => requirement !== null);
+  const needed = requirements.length > 0 ? requirements.join(" or ") : `work at ${neededTier}`;
+  return `${needed}${levelThreeAddition(dimension, neededTier)}`;
 }
 
 function typeRequirement(
