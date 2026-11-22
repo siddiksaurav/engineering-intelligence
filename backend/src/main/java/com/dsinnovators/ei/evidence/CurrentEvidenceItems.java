@@ -1,9 +1,11 @@
 package com.dsinnovators.ei.evidence;
 
+import java.util.Collection;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,5 +34,21 @@ public class CurrentEvidenceItems {
                     .merge(item.getEvidenceType(), 1L, Long::sum);
         }
         return counts;
+    }
+
+    /** The rows with these ids, current or not: an id from an old trail still names its row. */
+    @Transactional(readOnly = true)
+    public List<EvidenceItem> byIds(Collection<Long> ids) {
+        return items.findAllById(ids);
+    }
+
+    /** The id of the current row of each of the keys. A key with no current row, or a withdrawn one, is not in the map. */
+    @Transactional(readOnly = true)
+    public Map<String, Long> currentRowIdsOfKeys(Collection<String> itemKeys) {
+        if (itemKeys.isEmpty()) {
+            return Map.of();
+        }
+        return items.findCurrentByKeys(itemKeys).stream()
+                .collect(Collectors.toMap(EvidenceItem::getItemKey, EvidenceItem::getId));
     }
 }

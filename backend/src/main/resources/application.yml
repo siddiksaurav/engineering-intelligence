@@ -22,6 +22,8 @@ management:
 
 # Operating settings, not rules of the evaluation (decision 45).
 ei:
+  api:
+    max-evidence-item-ids: 1000
   jobs:
     count-flush-interval: 30s
   github:

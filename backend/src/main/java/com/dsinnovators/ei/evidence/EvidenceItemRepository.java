@@ -1,5 +1,6 @@
 package com.dsinnovators.ei.evidence;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.Query;
@@ -44,4 +45,14 @@ interface EvidenceItemRepository extends Repository<EvidenceItem, Long> {
             order by e.occurredOn desc, e.id desc
             """)
     List<EvidenceItem> findCurrentOfPerson(@Param("personId") long personId);
+
+    /** The rows with these ids, whatever their state. */
+    List<EvidenceItem> findAllById(Iterable<Long> ids);
+
+    @Query("""
+            select e from EvidenceItem e
+            where e.itemKey in :itemKeys and e.withdrawn = false
+              and not exists (select 1 from EvidenceItem s where s.supersedesId = e.id)
+            """)
+    List<EvidenceItem> findCurrentByKeys(@Param("itemKeys") Collection<String> itemKeys);
 }
