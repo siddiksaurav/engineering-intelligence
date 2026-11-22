@@ -18,6 +18,11 @@ const OUTCOME_WORDS = {
 
 const NO_PULL_REQUESTS = "no PRs";
 
+/** The tier a level expects: L1 expects T1, L2 expects T2, L3 expects T3. */
+export function expectedTier(level: Level): Tier {
+  return LEVEL_TIER[level];
+}
+
 /** A share as a whole percent; "no PRs" when the share is null (decision 234). */
 export function percent(share: number | null): string {
   if (share === null) {
@@ -180,6 +185,7 @@ function points(value: number): string {
   return String(Math.round(value * 10) / 10);
 }
 
-function sharePoints(percentValue: number | null): string {
+/** A gate share in percent with at most one decimal (decision 260); "no PRs" when there is none. */
+export function sharePoints(percentValue: number | null): string {
   return percentValue === null ? NO_PULL_REQUESTS : `${points(percentValue)}%`;
 }

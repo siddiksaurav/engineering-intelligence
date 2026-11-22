@@ -1,0 +1,52 @@
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  min-width: 0;
+}
+
+.head {
+  margin-bottom: 16px;
+}
+
+.title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 650;
+}
+
+.note {
+  margin: 4px 0 0;
+  color: var(--ink-3);
+  font-size: 0.88rem;
+}
+
+.notice {
+  border-radius: var(--radius);
+  padding: 14px 18px;
+  font-weight: 500;
+  border: 1px solid;
+}
+
+.notice h2 {
+  margin: 0 0 4px;
+  font-size: 1.05rem;
+}
+
+.notice p {
+  margin: 0;
+}
+
+.info {
+  background: var(--sky-50);
+  border-color: var(--sky-300);
+  color: var(--ink);
+}
+
+.warning {
+  background: var(--warning-wash);
+  border-color: #f2cf7a;
+  color: #4d3200;
+}
