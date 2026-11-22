@@ -230,3 +230,8 @@
   font-weight: 700;
   color: var(--ink);
 }
+
+.superseded {
+  color: var(--muted);
+  font-style: italic;
+}

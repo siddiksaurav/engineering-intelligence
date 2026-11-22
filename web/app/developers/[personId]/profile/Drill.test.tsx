@@ -52,4 +52,28 @@ describe("Drill", () => {
     expect(html).toContain('href="https://github.com/opf/openproject/pull/201"');
     expect(html).not.toContain("/items/");
   });
+
+  it("marks a superseded item as no longer current and links to the current one", () => {
+    const superseded = { ...SUMMARY, current: false, currentItemId: 99 };
+
+    const html = render({ count: 1, evidenceItemIds: [41], pullRequestNumbers: [] }, [superseded]);
+
+    expect(html).toContain("no longer current");
+    expect(html).toContain('href="/items/99"');
+  });
+
+  it("marks a withdrawn item as no longer current without a link to a current one", () => {
+    const withdrawn = { ...SUMMARY, current: false, currentItemId: null };
+
+    const html = render({ count: 1, evidenceItemIds: [41], pullRequestNumbers: [] }, [withdrawn]);
+
+    expect(html).toContain("no longer current");
+    expect(html).not.toContain("current item");
+  });
+
+  it("does not mark a current item", () => {
+    expect(render({ count: 1, evidenceItemIds: [41], pullRequestNumbers: [] }, [SUMMARY])).not.toContain(
+      "no longer current",
+    );
+  });
 });

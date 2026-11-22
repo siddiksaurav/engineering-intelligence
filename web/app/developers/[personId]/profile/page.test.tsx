@@ -441,6 +441,18 @@ describe("ProfilePage", () => {
     expect(html).toContain("weight 2");
   });
 
+  it("marks a superseded trail item as no longer current with a link to the current row", async () => {
+    const design = withTrail(dimension("design", DESIGN, "T2", 1), {
+      evidenceTypes: [typeTrail({ counted: [trailItem(41)] })],
+    });
+    answeringWith(scores("L2", [design]), analytics(), [summary(41, { current: false, currentItemId: 55 })]);
+
+    const html = await render({ quarter: "2026-Q3" });
+
+    expect(html).toContain("no longer current");
+    expect(html).toContain('href="/items/55"');
+  });
+
   it("asks for the summaries of the items on the page, once", async () => {
     const design = withTrail(dimension("design", DESIGN, "T2", 1), {
       evidenceTypes: [typeTrail({ counted: [trailItem(41), trailItem(42)] })],
