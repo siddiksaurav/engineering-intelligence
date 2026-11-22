@@ -66,4 +66,11 @@ describe("MeterBar", () => {
     expect(html).toContain('title="Fix: 6, 24%"');
     expect(html).toContain("width:24%");
   });
+
+  it("stays an empty track for a share of 0", () => {
+    const html = renderToStaticMarkup(<MeterBar label="Fix" count={0} share={0} color="blue" />);
+
+    expect(html).toContain('aria-valuenow="0"');
+    expect(html).not.toContain("width:");
+  });
 });

@@ -1,91 +1,109 @@
+import { RingMeter } from "@/components/charts/RingMeter";
+import { Panel } from "@/components/Panel";
+import { NOT_JUDGED_COLOR, SINGLE_HUE_COLOR } from "@/lib/palette";
 import type { Analytics, ReviewCommentBreakdown, TestShare } from "@/lib/profile";
-import { BarRow, DistributionBars, shareOf } from "./Bars";
+import { DistributionChart, ShareRow, shareOf } from "./Bars";
 import { Drill } from "./Drill";
 import type { SummariesById } from "./ItemReferences";
 import styles from "./profile.module.css";
 
 type WithSummaries = { summariesById: SummariesById };
 
-/** The five analytics and the hygiene number as bars, each number opening to its items and pull requests. */
+/** The five analytics and the hygiene number as charts, each number opening to its items and pull requests. */
 export function AnalyticsSection({ analytics, summariesById }: { analytics: Analytics } & WithSummaries) {
-  const { reviewParticipation, reviewFindingsReceived } = analytics;
+  const { reviewParticipation, reviewFindingsReceived, testingContribution, hygiene } = analytics;
   return (
     <section className={styles.analytics} aria-label="Analytics">
-      <article className={styles.panel}>
-        <h2 className={styles.panelTitle}>Work classification</h2>
-        <DistributionBars
+      <Panel title="Work classification" note="The person's merged pull requests by work type.">
+        <DistributionChart
           title="Work types"
           distribution={analytics.workClassification}
+          form="ranked"
           summariesById={summariesById}
         />
-      </article>
-      <article className={styles.panel}>
-        <h2 className={styles.panelTitle}>Work complexity</h2>
+      </Panel>
+      <Panel title="Work complexity" note="Feature work by complexity, next to the whole repository.">
         <div className={styles.sideBySide}>
-          <DistributionBars
+          <DistributionChart
             title="Person"
             distribution={analytics.workComplexity.person}
+            form="segmented"
             summariesById={summariesById}
           />
-          <DistributionBars
+          <DistributionChart
             title="Repository"
             distribution={analytics.workComplexity.repository}
+            form="segmented"
             summariesById={summariesById}
           />
         </div>
-      </article>
-      <article className={styles.panel}>
-        <h2 className={styles.panelTitle}>Review participation</h2>
-        <Drill label="PRs reviewed" count={reviewParticipation.pullRequestsReviewed} summariesById={summariesById} />
-        <Drill label="Authors reviewed" count={reviewParticipation.authorsReviewed} summariesById={summariesById} />
-        <PerPullRequest
-          label="Substantive comments per PR reviewed"
-          value={reviewParticipation.substantivePerPullRequestReviewed}
-        />
+      </Panel>
+      <Panel title="Review participation" note="Reviews the person gave on pull requests of others.">
+        <div className={styles.facts}>
+          <Drill label="PRs reviewed" count={reviewParticipation.pullRequestsReviewed} summariesById={summariesById} />
+          <Drill label="Authors reviewed" count={reviewParticipation.authorsReviewed} summariesById={summariesById} />
+          <PerPullRequest
+            label="Substantive comments per PR reviewed"
+            value={reviewParticipation.substantivePerPullRequestReviewed}
+          />
+        </div>
         <CommentBreakdown breakdown={reviewParticipation.comments} summariesById={summariesById} />
-      </article>
-      <article className={styles.panel}>
-        <h2 className={styles.panelTitle}>Review findings received</h2>
-        <Drill label="Own PRs merged" count={reviewFindingsReceived.pullRequests} summariesById={summariesById} />
-        <PerPullRequest label="Substantive comments per PR" value={reviewFindingsReceived.substantivePerPullRequest} />
+      </Panel>
+      <Panel title="Review findings received" note="Review comments others wrote on the person's pull requests.">
+        <div className={styles.facts}>
+          <Drill label="Own PRs merged" count={reviewFindingsReceived.pullRequests} summariesById={summariesById} />
+          <PerPullRequest
+            label="Substantive comments per PR"
+            value={reviewFindingsReceived.substantivePerPullRequest}
+          />
+        </div>
         <CommentBreakdown breakdown={reviewFindingsReceived.comments} summariesById={summariesById} />
-      </article>
-      <article className={styles.panel}>
-        <h2 className={styles.panelTitle}>Testing contribution</h2>
-        <TestShareBars
-          title="Feature and fix PRs"
-          testedLabel="Tested"
-          share={analytics.testingContribution.featureAndFixPullRequests}
-          summariesById={summariesById}
-        />
-        <Drill
-          label="PRs without digest"
-          count={analytics.testingContribution.withoutDigest}
-          summariesById={summariesById}
-        />
-        <TestShareBars
-          title="Bug fix PRs"
-          testedLabel="Bug fix PRs tested"
-          share={analytics.testingContribution.bugFixPullRequests}
-          summariesById={summariesById}
-        />
-      </article>
-      <article className={styles.panel}>
-        <h2 className={styles.panelTitle}>Hygiene</h2>
-        <BarRow
-          label="Linked to a work item"
-          count={analytics.hygiene.linked}
-          share={analytics.hygiene.share}
-          summariesById={summariesById}
-        />
-        <BarRow
-          label="Not linked"
-          count={analytics.hygiene.notLinked}
-          share={shareOf(analytics.hygiene.notLinked, analytics.hygiene.total)}
-          color="var(--not-judged)"
-          summariesById={summariesById}
-        />
-      </article>
+      </Panel>
+      <Panel title="Testing contribution" note="The share of the person's pull requests that came with tests.">
+        <div className={styles.sideBySide}>
+          <TestShareChart
+            title="Feature and fix PRs"
+            testedLabel="Tested"
+            share={testingContribution.featureAndFixPullRequests}
+            summariesById={summariesById}
+          />
+          <TestShareChart
+            title="Bug fix PRs"
+            testedLabel="Bug fix PRs tested"
+            share={testingContribution.bugFixPullRequests}
+            summariesById={summariesById}
+          />
+        </div>
+        <div className={styles.facts}>
+          <Drill label="PRs without digest" count={testingContribution.withoutDigest} summariesById={summariesById} />
+        </div>
+      </Panel>
+      <Panel
+        title="Hygiene"
+        note="The repository's share of pull requests linked to a work item. A number of the project, not of the person."
+      >
+        <div className={styles.ringBlock}>
+          <RingMeter label="Linked to a work item" share={hygiene.share} />
+          <div className={styles.ringRows}>
+            <ShareRow
+              label="Linked to a work item"
+              count={hygiene.linked}
+              share={hygiene.share}
+              color={SINGLE_HUE_COLOR}
+              form="legend"
+              summariesById={summariesById}
+            />
+            <ShareRow
+              label="Not linked"
+              count={hygiene.notLinked}
+              share={shareOf(hygiene.notLinked, hygiene.total)}
+              color={NOT_JUDGED_COLOR}
+              form="legend"
+              summariesById={summariesById}
+            />
+          </div>
+        </div>
+      </Panel>
     </section>
   );
 }
@@ -101,15 +119,27 @@ function PerPullRequest({ label, value }: { label: string; value: number | null 
 function CommentBreakdown({ breakdown, summariesById }: { breakdown: ReviewCommentBreakdown } & WithSummaries) {
   return (
     <>
-      <Drill label="Substantive comments" count={breakdown.substantive} summariesById={summariesById} />
-      <DistributionBars title="By comment type" distribution={breakdown.byCommentType} summariesById={summariesById} />
-      <DistributionBars title="By tier" distribution={breakdown.byTier} summariesById={summariesById} />
-      <Drill label="Not judged yet" count={breakdown.notJudgedYet} summariesById={summariesById} />
+      <div className={styles.facts}>
+        <Drill label="Substantive comments" count={breakdown.substantive} summariesById={summariesById} />
+        <Drill label="Not judged yet" count={breakdown.notJudgedYet} summariesById={summariesById} />
+      </div>
+      <DistributionChart
+        title="By comment type"
+        distribution={breakdown.byCommentType}
+        form="ranked"
+        summariesById={summariesById}
+      />
+      <DistributionChart
+        title="By tier"
+        distribution={breakdown.byTier}
+        form="segmented"
+        summariesById={summariesById}
+      />
     </>
   );
 }
 
-function TestShareBars({
+function TestShareChart({
   title,
   testedLabel,
   share,
@@ -117,10 +147,20 @@ function TestShareBars({
 }: { title: string; testedLabel: string; share: TestShare } & WithSummaries) {
   return (
     <div className={styles.distribution}>
-      <h4>{title}</h4>
-      <BarRow label={testedLabel} count={share.tested} share={share.share} summariesById={summariesById} />
-      <Drill label="Not tested" count={share.untested} summariesById={summariesById} />
-      <DistributionBars title="Tested by tier" distribution={share.testedByTier} summariesById={summariesById} />
+      <h3 className={styles.chartTitle}>{title}</h3>
+      <div className={styles.ringBlock}>
+        <RingMeter label={testedLabel} share={share.share} />
+        <div className={styles.ringRows}>
+          <Drill label={testedLabel} count={share.tested} summariesById={summariesById} swatch={SINGLE_HUE_COLOR} />
+          <Drill label="Not tested" count={share.untested} summariesById={summariesById} swatch="var(--sky-100)" />
+        </div>
+      </div>
+      <DistributionChart
+        title="Tested by tier"
+        distribution={share.testedByTier}
+        form="segmented"
+        summariesById={summariesById}
+      />
     </div>
   );
 }

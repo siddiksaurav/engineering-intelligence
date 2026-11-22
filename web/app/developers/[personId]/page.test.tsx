@@ -113,6 +113,21 @@ describe("DeveloperPage", () => {
     expect(html).toContain('href="https://github.com/opf/openproject/pull/103#discussion_r30"');
   });
 
+  it("shows the counts per type under the header and links each type that has items to its section", async () => {
+    vi.mocked(fetchEvidenceItems).mockResolvedValue({
+      status: "ok",
+      data: answering([comment(30, 103, "Add cache", "2026-10-02"), BUG, FEATURE]),
+    });
+
+    const html = await render();
+
+    expect(html).toContain('aria-label="Evidence of ada: Feature work 1, Bug fix 1, Review comment written 1"');
+    expect(html).toMatch(/<a[^>]*href="#bug_fix"[^>]*>.*?Bug fix.*?<\/a>/);
+    expect(html).toContain('id="bug_fix"');
+    expect(html).not.toContain('href="#security"');
+    expect(html).not.toContain('id="security"');
+  });
+
   it("shows a Test change section with its tier", async () => {
     vi.mocked(fetchEvidenceItems).mockResolvedValue({ status: "ok", data: answering([TEST_CHANGE]) });
 

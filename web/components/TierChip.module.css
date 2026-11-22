@@ -20,3 +20,9 @@
 .chip[data-tier="T2"] {
   background: var(--step-3);
 }
+
+.large {
+  padding: 4px 14px;
+  border-radius: 8px;
+  font-size: 1.15rem;
+}

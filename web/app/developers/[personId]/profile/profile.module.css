@@ -1,70 +1,106 @@
-.headerLine {
-  margin: 4px 0 12px;
+/* Header */
+
+.person {
+  display: inline-flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.quarter {
+  display: inline-block;
+  margin-right: 12px;
+  padding: 1px 10px;
+  border-radius: 999px;
+  border: 1px solid rgb(125 211 252 / 40%);
+  font-family: var(--font-data);
+  font-size: 0.82rem;
+  color: var(--sky-300);
+}
+
+.levelControl {
+  display: grid;
+  gap: 6px;
+  justify-items: end;
+}
+
+.levelCaption {
+  font-family: var(--font-data);
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgb(255 255 255 / 65%);
 }
 
 .levels {
-  display: flex;
-  gap: 8px;
+  display: inline-flex;
+  padding: 4px;
+  border-radius: 999px;
+  border: 1px solid rgb(125 211 252 / 30%);
+  background: rgb(4 21 39 / 55%);
 }
 
 .level,
 .levelSelected {
-  min-width: 56px;
-  padding: 6px 16px;
+  min-width: 52px;
+  padding: 6px 14px;
   border-radius: 999px;
-  border: 2px solid #fff;
   text-align: center;
-  font-weight: 700;
+  font-family: var(--font-data);
+  font-weight: 500;
   text-decoration: none;
+  transition:
+    background-color 150ms,
+    color 150ms;
 }
 
 .level {
+  color: rgb(255 255 255 / 80%);
+}
+
+.level:hover {
   color: #fff;
+  background: rgb(255 255 255 / 10%);
 }
 
-/* Two classes: the header's `.header a` rule (white text) would win over one. */
-.levels .levelSelected {
-  background: #fff;
-  color: var(--sky-900);
+.levelSelected {
+  background: var(--sky-300);
+  color: var(--navy-950);
 }
 
-.warning {
-  background: var(--sky-100);
-  border: 2px solid var(--sky-500);
-  border-radius: 12px;
-  padding: 12px 16px;
-  font-weight: 600;
-}
+/* Dimension cards */
 
-.warning h2 {
-  margin: 0 0 4px;
-  font-size: 1.1rem;
+.dimensions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
+  gap: 20px;
 }
 
 .card {
-  --accent: var(--sky-500);
-  background: #fff;
-  border: 2px solid var(--sky-200);
-  border-left: 8px solid var(--accent);
-  border-radius: 12px;
-  padding: 12px 16px;
-  margin-bottom: 16px;
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 22px 24px 18px;
+  min-width: 0;
+  overflow: hidden;
 }
 
-.score0 {
-  --accent: var(--bug-fix);
+/* A band at the top in the blue of the score: darker for more, as everywhere on the pages. */
+.card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 5px;
+  background: var(--step-1);
 }
 
-.score1 {
-  --accent: var(--sky-500);
+.card[data-score="1"]::before {
+  background: var(--step-3);
 }
 
-.score2 {
-  --accent: var(--review-comment-written);
-}
-
-.card p {
-  margin: 8px 0;
+.card[data-score="2"]::before {
+  background: linear-gradient(90deg, var(--step-5), var(--azure-500));
 }
 
 .cardHeader {
@@ -78,160 +114,555 @@
 .cardHeader h2 {
   margin: 0;
   font-size: 1.2rem;
-  color: var(--sky-700);
+  font-weight: 650;
 }
 
 .badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   border-radius: 999px;
-  padding: 2px 12px;
-  color: #fff;
-  font-size: 0.85rem;
-  font-weight: 700;
+  padding: 2px 12px 2px 10px;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.badge::before {
+  font-size: 0.9em;
 }
 
 .strength {
-  background: var(--review-comment-written);
+  background: var(--good-wash);
+  color: var(--good);
+}
+
+.strength::before {
+  content: "\2713";
 }
 
 .gap {
-  background: var(--bug-fix);
+  background: var(--critical-wash);
+  color: var(--critical);
+}
+
+.gap::before {
+  content: "\25B2";
+  font-size: 0.65em;
+}
+
+.figure {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 12px 0 16px;
+}
+
+.score {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: 1rem;
 }
 
 .score strong {
-  font-size: 1.8rem;
-  color: var(--accent);
+  font-family: var(--font-display);
+  font-size: 4.6rem;
+  font-weight: 750;
+  line-height: 0.9;
+  letter-spacing: -0.04em;
+  color: var(--ink);
+  margin-right: 4px;
 }
 
 .workingTier {
-  color: var(--muted);
   font-weight: 600;
+  color: var(--ink);
+}
+
+.pips {
+  display: flex;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.pip {
+  width: 44px;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--sky-100);
+}
+
+.pip[data-reached] {
+  background: var(--azure-600);
+}
+
+.why {
+  margin: 0;
+  font-weight: 500;
 }
 
 .nextStep {
-  color: var(--muted);
+  margin: 12px 0 0;
+  padding: 10px 14px;
+  border-radius: var(--radius-small);
+  background: var(--sky-50);
+  border-left: 3px solid var(--sun);
+  color: var(--ink-2);
+  font-size: 0.92rem;
 }
+
+/* Folds: a number that opens */
 
 .drill {
-  margin: 4px 0;
+  margin: 0;
 }
 
-.drill summary {
-  cursor: pointer;
-  font-weight: 600;
-  color: var(--sky-700);
+.drill > summary,
+.drillEmpty,
+.trail > summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 28px;
+  list-style: none;
+}
+
+.drill > summary::-webkit-details-marker,
+.trail > summary::-webkit-details-marker {
+  display: none;
+}
+
+.drill > summary {
+  color: var(--azure-700);
+  font-weight: 500;
+  border-radius: 6px;
+}
+
+.drill > summary:hover .drillLabel {
+  text-decoration: underline;
+}
+
+.drillLabel {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+/* The chevron after the label says the number opens; a number of 0 has none. */
+.drill > summary .drillLabel::after,
+.trail > summary::after {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-left: 8px;
+  border-right: 2px solid currentcolor;
+  border-bottom: 2px solid currentcolor;
+  transform: translateY(-2px) rotate(45deg);
+  transition: transform 150ms;
+  opacity: 0.6;
+}
+
+.drill[open] > summary .drillLabel::after,
+.trail[open] > summary::after {
+  transform: translateY(1px) rotate(225deg);
 }
 
 .drillEmpty {
-  margin: 4px 0;
-  color: var(--muted);
+  margin: 0;
+  color: var(--ink-3);
 }
 
 .drillList {
+  margin: 4px 0 10px;
+  padding: 10px 14px 10px 30px;
+  border-radius: var(--radius-small);
+  background: var(--sky-50);
+  font-size: 0.92rem;
+}
+
+.drillList li + li {
+  margin-top: 4px;
+}
+
+.drillPullRequests {
+  margin: 4px 0 10px;
+  padding: 10px 14px;
+  border-radius: var(--radius-small);
+  background: var(--sky-50);
+  font-size: 0.88rem;
+  color: var(--ink-2);
+}
+
+.drillList + .drillPullRequests {
+  margin-top: -6px;
+}
+
+.pullRequest {
+  display: inline-block;
+  margin-right: 8px;
+  font-family: var(--font-data);
+}
+
+.itemKind {
+  color: var(--ink-3);
+  font-size: 0.85rem;
+}
+
+.superseded {
+  color: var(--ink-3);
+  font-style: italic;
+}
+
+/* Trail */
+
+.trail {
+  margin-top: 16px;
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+  font-size: 0.92rem;
+}
+
+.trail > summary {
+  justify-content: space-between;
+  font-family: var(--font-data);
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+
+.trail p {
+  margin: 8px 0;
+}
+
+.trail ul {
   margin: 4px 0;
   padding-left: 20px;
 }
 
-.drillPullRequests {
-  margin: 4px 0;
-}
-
-.pullRequest {
-  margin-right: 8px;
-}
-
-.itemKind {
-  color: var(--muted);
-  font-size: 0.9rem;
-}
-
-.trail {
+.typeTrail {
   margin-top: 12px;
-  border-top: 2px solid var(--sky-100);
-  padding-top: 8px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-small);
 }
 
-.trail > summary {
-  cursor: pointer;
-  font-weight: 700;
-  color: var(--sky-700);
+.typeTrail h3 {
+  margin: 0 0 6px;
+  font-size: 0.98rem;
 }
 
-.typeTrail h3,
-.gate h3 {
-  margin: 12px 0 4px;
-  font-size: 1rem;
+.typeTrail > ul {
+  font-family: var(--font-data);
+  font-size: 0.82rem;
+  color: var(--ink-2);
+  list-style: none;
+  padding-left: 0;
 }
 
-.panelTitle {
-  margin: 0 0 8px;
-  font-size: 1.2rem;
-  color: var(--sky-700);
-}
+/* Gates */
 
-.analytics {
+.gates {
   display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
   gap: 16px;
 }
 
-.panel {
-  background: #fff;
-  border: 2px solid var(--sky-200);
-  border-radius: 12px;
-  padding: 12px 16px;
+.gate {
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-small);
+  background: var(--surface);
+  min-width: 0;
 }
 
-.panel h4 {
+.gateHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0;
+}
+
+.gateName {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+.gateOutcome {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 12px 2px 10px;
+  border-radius: 999px;
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  font-weight: 600;
+  background: #e9eef3;
+  color: var(--ink-2);
+}
+
+.gateOutcome::before {
+  content: "\2013";
+}
+
+.gate[data-outcome="PASS"] .gateOutcome {
+  background: var(--good-wash);
+  color: var(--good);
+}
+
+.gate[data-outcome="PASS"] .gateOutcome::before {
+  content: "\2713";
+}
+
+.gate[data-outcome="CLOSE_MISS"] .gateOutcome {
+  background: var(--warning-wash);
+  color: var(--warning);
+}
+
+.gate[data-outcome="CLOSE_MISS"] .gateOutcome::before {
+  content: "!";
+}
+
+.gate[data-outcome="FAR_MISS"] .gateOutcome {
+  background: var(--critical-wash);
+  color: var(--critical);
+}
+
+.gate[data-outcome="FAR_MISS"] .gateOutcome::before {
+  content: "\2715";
+}
+
+.gateDetail {
+  margin: 8px 0;
+  color: var(--ink-2);
+  font-size: 0.9rem;
+}
+
+/* The person's label sits above the track, the repository's below, so the two never collide. */
+.gateChart {
+  position: relative;
   margin: 12px 0 4px;
-  font-size: 1rem;
+  padding: 30px 0;
+}
+
+.gateTrack {
+  position: relative;
+  height: 14px;
+  border-radius: 4px;
+  background: var(--critical-wash);
+  overflow: hidden;
+}
+
+.gateZone {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+}
+
+.gateZone[data-zone="pass"] {
+  background: #bfe8cd;
+}
+
+.gateZone[data-zone="close"] {
+  background: #ffe2a3;
+}
+
+.gateMark {
+  position: absolute;
+  top: 30px;
+  width: 0;
+  height: 14px;
+}
+
+.gateMark[data-mark="repository"]::before {
+  content: "";
+  position: absolute;
+  left: -1.5px;
+  top: -5px;
+  width: 3px;
+  height: 24px;
+  border-radius: 2px;
+  background: var(--ink);
+}
+
+.gateMark[data-mark="person"]::before {
+  content: "";
+  position: absolute;
+  left: -9px;
+  top: -2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--azure-600);
+  border: 3px solid var(--surface);
+  box-shadow: 0 1px 3px rgb(10 37 64 / 35%);
+}
+
+.gateMarkLabel {
+  position: absolute;
+  left: 0;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-family: var(--font-data);
+  font-size: 0.76rem;
+  color: var(--ink-2);
+}
+
+.gateMark[data-mark="person"] .gateMarkLabel {
+  bottom: 22px;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.gateMark[data-mark="repository"] .gateMarkLabel {
+  top: 24px;
+}
+
+.gateMark[data-edge="start"] .gateMarkLabel {
+  transform: translateX(-10px);
+}
+
+.gateMark[data-edge="end"] .gateMarkLabel {
+  transform: translateX(calc(-100% + 10px));
+}
+
+/* Analytics */
+
+.analytics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 460px), 1fr));
+  gap: 20px;
+  align-items: start;
+}
+
+.distribution {
+  min-width: 0;
+}
+
+.distribution + .distribution,
+.facts + .distribution,
+.ringBlock + .distribution {
+  margin-top: 18px;
+}
+
+.chartTitle {
+  margin: 0 0 8px;
+  font-family: var(--font-data);
+  font-size: 0.74rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.distribution > [role="img"] {
+  margin-bottom: 8px;
+}
+
+.noShare {
+  margin: 0;
+  color: var(--ink-3);
+}
+
+.rowBar {
+  flex: 1 1 80px;
+  min-width: 60px;
+  margin-left: auto;
+}
+
+.rowBar + .rowShare {
+  margin-left: 0;
+}
+
+.rowShare {
+  flex: none;
+  min-width: 3.2rem;
+  margin-left: auto;
+  text-align: right;
+  font-family: var(--font-data);
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+/* In a bar row the label takes a fixed share of the line, so the bars of all rows start at one edge. */
+.drill > summary:has(.rowBar) .drillLabel,
+.drillEmpty:has(.rowBar) .drillLabel {
+  flex: 0 0 46%;
 }
 
 .sideBySide {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
+  gap: 20px 28px;
+}
+
+.sideBySide .distribution + .distribution {
+  margin-top: 0;
+}
+
+.sideBySide .distribution .distribution {
+  margin-top: 16px;
+}
+
+.facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 28px;
+  margin-bottom: 4px;
+}
+
+.facts > * {
+  flex: 1 1 200px;
+}
+
+.sideBySide + .facts {
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
 }
 
 .perPullRequest {
-  margin: 4px 0;
-}
-
-.barRow {
-  margin: 4px 0;
-}
-
-.barLine {
+  margin: 0;
+  min-height: 28px;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  color: var(--ink-2);
 }
 
-.barTrack {
-  flex: 1;
-  height: 10px;
-  background: var(--sky-100);
-  border-radius: 0 5px 5px 0;
-}
-
-.barFill {
-  width: var(--bar-width);
-  height: 100%;
-  min-width: 2px;
-  background: var(--bar-color);
-  border-radius: 0 5px 5px 0;
-}
-
-.barRow + .barRow {
-  margin-top: 6px;
-}
-
-.barValue {
-  min-width: 56px;
-  text-align: right;
-  font-weight: 700;
+.perPullRequest strong {
+  flex: none;
+  font-family: var(--font-data);
+  font-weight: 500;
   color: var(--ink);
 }
 
-.superseded {
-  color: var(--muted);
-  font-style: italic;
+.ringBlock {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 20px;
+}
+
+.ringRows {
+  flex: 1 1 170px;
+  min-width: 0;
+}
+
+@media (width <= 520px) {
+  .levelControl {
+    justify-items: start;
+  }
+
+  .score strong {
+    font-size: 3.6rem;
+  }
+
+  .figure {
+    flex-wrap: wrap;
+  }
 }

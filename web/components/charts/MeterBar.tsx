@@ -25,7 +25,9 @@ export function MeterBar({
       aria-valuenow={whole}
       title={`${label}: ${count}, ${percent(share)}`}
     >
-      <div className={styles.meterFill} style={{ width: `${share * 100}%`, background: color } as CSSProperties} />
+      {share > 0 && (
+        <div className={styles.meterFill} style={{ width: `${share * 100}%`, background: color } as CSSProperties} />
+      )}
     </div>
   );
 }
