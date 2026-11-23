@@ -17,8 +17,6 @@ import tools.jackson.databind.JsonNode;
 @Component
 public class ModelExchange {
 
-    private static final int MAX_ANSWERED_BY_LENGTH = 200;
-
     /** An answer given to a request, with who gave it; the author is stored as the judgment's model. */
     record GivenAnswer(JsonNode answer, String answeredBy) {}
 
@@ -61,7 +59,7 @@ public class ModelExchange {
     /**
      * Gives the answer to a waiting request.
      *
-     * @throws InvalidExchangeAnswerException when the answer is not a JSON object or the author is blank or too long
+     * @throws InvalidExchangeAnswerException when the answer is not a JSON object or the author is blank
      * @throws ExchangeRequestNotFoundException when no request has the hash
      * @throws ExchangeRequestAlreadyAnsweredException when the request has an answer already
      */
@@ -70,9 +68,9 @@ public class ModelExchange {
             throw new InvalidExchangeAnswerException(
                     "The answer to request " + requestHash + " must be a JSON object, was " + answer);
         }
-        if (answeredBy == null || answeredBy.isBlank() || answeredBy.length() > MAX_ANSWERED_BY_LENGTH) {
-            throw new InvalidExchangeAnswerException("answeredBy must name the model in 1 to " + MAX_ANSWERED_BY_LENGTH
-                    + " characters, was '" + answeredBy + "'");
+        if (answeredBy == null || answeredBy.isBlank()) {
+            throw new InvalidExchangeAnswerException(
+                    "answeredBy must name the model that gave the answer to request " + requestHash);
         }
         int answered = jdbc.sql("""
                         update model_exchange
