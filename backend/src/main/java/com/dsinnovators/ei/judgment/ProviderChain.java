@@ -56,6 +56,11 @@ final class ProviderChain implements JudgmentModel {
                         : "Every model provider has reached its limit: " + providerNames());
     }
 
+    @Override
+    public void answerRefused(ModelRequest request, String reason) {
+        providers.forEach(provider -> provider.model().answerRefused(request, reason));
+    }
+
     /**
      * Starts a run of a job that needs the model.
      *

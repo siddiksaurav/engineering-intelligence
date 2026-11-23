@@ -50,7 +50,7 @@ public abstract class DatabaseTest {
                     jdbc.queryForList("select dimension_id, gate, valid_from_quarter, applied from dimension_gate");
         }
         jdbc.execute(
-                "truncate raw_record, setting, dimension_evidence_type, dimension_gate, dimension_score, identity_proposal, person_identity, person, project, job_run, pull_request_work_item, evidence_item, evidence_item_source, evidence_item_link, judgment restart identity cascade");
+                "truncate raw_record, setting, dimension_evidence_type, dimension_gate, dimension_score, identity_proposal, person_identity, person, project, job_run, pull_request_work_item, evidence_item, evidence_item_source, evidence_item_link, judgment, model_exchange restart identity cascade");
         for (Map<String, Object> setting : seededSettings) {
             jdbc.update(
                     "insert into setting (key, valid_from_quarter, value, description) values (?, ?, ?::jsonb, ?)",

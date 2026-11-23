@@ -13,4 +13,10 @@ public interface JudgmentModel {
      * @throws ModelLimitReachedException when no provider can take the request any more
      */
     ModelAnswer judge(ModelRequest request);
+
+    /**
+     * Learns that the answer to the request broke its schema or could not be read; the request is
+     * asked once more right after. A provider that keeps no answers ignores it.
+     */
+    default void answerRefused(ModelRequest request, String reason) {}
 }

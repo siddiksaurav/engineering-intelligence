@@ -34,7 +34,18 @@ class LocalCallerOnlyFilterTest {
         assertEquals(403, response.getStatus());
         assertTrue(response.getContentType().startsWith("application/problem+json"));
         assertTrue(response.getContentAsString()
-                .contains("Jobs can only be started from the machine the backend runs on"));
+                .contains("Jobs and the model exchange can only be reached from the machine the backend runs on"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"/api/model-exchange/requests", "/api/model-exchange/requests/abc/answer"})
+    void theModelExchangeIsGuardedLikeTheJobs(String path) throws Exception {
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        MockFilterChain chain = call(path, "192.168.1.20", response);
+
+        assertNull(chain.getRequest());
+        assertEquals(403, response.getStatus());
     }
 
     @ParameterizedTest
@@ -46,7 +57,7 @@ class LocalCallerOnlyFilterTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"/actuator/health", "/api/jobsx"})
+    @ValueSource(strings = {"/actuator/health", "/api/jobsx", "/api/model-exchangex"})
     void otherPathsAreNotGuarded(String path) throws Exception {
         MockFilterChain chain = call(path, "192.168.1.20", new MockHttpServletResponse());
 

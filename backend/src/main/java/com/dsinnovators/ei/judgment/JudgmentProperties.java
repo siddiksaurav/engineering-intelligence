@@ -10,6 +10,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * How the backend reaches the model, from {@code ei.judgment} in {@code application.yml}. Operating
  * numbers, not rules of the evaluation (decision 45).
  *
+ * @param mode where the answers come from; the providers when not set
  * @param providers the providers in the order they are tried; one with no key is left out, so the
  *     application starts without any key and a job that needs the model fails at its start
  * @param timeout how long one call may take
@@ -33,6 +34,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  */
 @ConfigurationProperties("ei.judgment")
 record JudgmentProperties(
+        JudgmentMode mode,
         List<JudgmentProvider> providers,
         Duration timeout,
         int retries,
@@ -51,6 +53,7 @@ record JudgmentProperties(
         int maxQuoteCharacters) {
 
     JudgmentProperties {
+        mode = mode == null ? JudgmentMode.PROVIDERS : mode;
         providers = providersWithAKey(providers);
         requireUnique(providers);
         if (timeout == null || timeout.isNegative() || timeout.isZero()) {

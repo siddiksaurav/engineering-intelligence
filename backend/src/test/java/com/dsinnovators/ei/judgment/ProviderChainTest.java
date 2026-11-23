@@ -176,4 +176,17 @@ class ProviderChainTest {
 
         assertEquals(Map.of("calls_groq", 0L, "calls_gemini", 1L, "rate_limit_wait_seconds", 0L), counts);
     }
+
+    @Test
+    void passesARefusedAnswerOnToEveryProvider() {
+        FakeJudgmentModel groq = new FakeJudgmentModel();
+        FakeJudgmentModel exchange = new FakeJudgmentModel();
+        ProviderChain chain =
+                chainOf(new ProviderChain.Provider("groq", groq), new ProviderChain.Provider("claude-code", exchange));
+
+        chain.answerRefused(REQUEST, "facts are missing");
+
+        assertEquals(List.of("facts are missing"), groq.refusalReasons());
+        assertEquals(List.of("facts are missing"), exchange.refusalReasons());
+    }
 }

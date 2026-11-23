@@ -15,7 +15,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * The persons to score in a quarter and their current evidence items (decision 227): a person is
+ * The persons to score in a quarter and their current evidence items (decision 271): a person is
  * scored with at least one current item dated in the quarter or a human pull request merged in it.
  * An item carries the tier of its current judgment, whatever the kind of the judgment is.
  */

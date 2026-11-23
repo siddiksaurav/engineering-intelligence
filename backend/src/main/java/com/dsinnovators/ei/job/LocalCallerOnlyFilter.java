@@ -14,7 +14,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 /**
- * Lets only callers on the machine the backend runs on reach the job endpoints (decision 44). The
+ * Lets only callers on the machine the backend runs on reach the job endpoints (decision 44) and the
+ * model exchange (decision 271). The
  * PoC has no authentication; this guard is replaced when it is built. A proxy in front of the
  * backend would make every caller look local.
  */
@@ -22,14 +23,19 @@ import org.springframework.web.filter.OncePerRequestFilter;
 class LocalCallerOnlyFilter extends OncePerRequestFilter {
 
     static final String JOBS_PATH = "/api/jobs";
+    static final String MODEL_EXCHANGE_PATH = "/api/model-exchange";
 
     private static final String REFUSED_BODY = "{\"type\":\"about:blank\",\"title\":\"Forbidden\",\"status\":403,"
-            + "\"detail\":\"Jobs can only be started from the machine the backend runs on\"}";
+            + "\"detail\":\"Jobs and the model exchange can only be reached from the machine the backend runs on\"}";
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getRequestURI();
-        return !path.equals(JOBS_PATH) && !path.startsWith(JOBS_PATH + "/");
+        return !isUnder(path, JOBS_PATH) && !isUnder(path, MODEL_EXCHANGE_PATH);
+    }
+
+    private static boolean isUnder(String path, String root) {
+        return path.equals(root) || path.startsWith(root + "/");
     }
 
     @Override

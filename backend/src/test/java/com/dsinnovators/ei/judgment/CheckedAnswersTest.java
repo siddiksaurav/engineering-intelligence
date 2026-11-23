@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.dsinnovators.ei.common.CanonicalJson;
 import com.dsinnovators.ei.job.JobCounts;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import tools.jackson.databind.JsonNode;
@@ -80,5 +81,15 @@ class CheckedAnswersTest {
                 () -> CheckedAnswers.ask(model, REQUEST, CheckedAnswersTest::check, jobCounts));
 
         assertEquals(1, model.calls());
+    }
+
+    @Test
+    void tellsTheModelWhyItsFirstAnswerWasRefusedBeforeAskingAgain() {
+        model.thenAnswers(BAD).thenAnswers(GOOD);
+
+        CheckedAnswers.ask(model, REQUEST, CheckedAnswersTest::check, jobCounts);
+
+        assertEquals(List.of(REQUEST), model.refusedRequests());
+        assertEquals(List.of("ok must be true"), model.refusalReasons());
     }
 }

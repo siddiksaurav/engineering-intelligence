@@ -23,6 +23,8 @@ final class FakeJudgmentModel implements JudgmentModel {
 
     private final Deque<Supplier<ModelAnswer>> scripted = new ArrayDeque<>();
     private final List<ModelRequest> requests = new ArrayList<>();
+    private final List<ModelRequest> refusedRequests = new ArrayList<>();
+    private final List<String> refusalReasons = new ArrayList<>();
     private JsonNode unscriptedAnswer = aDigest();
 
     /** A digest answer that follows the schema, for a fix with a regression spec. */
@@ -126,6 +128,20 @@ final class FakeJudgmentModel implements JudgmentModel {
 
     List<ModelRequest> requests() {
         return List.copyOf(requests);
+    }
+
+    List<ModelRequest> refusedRequests() {
+        return List.copyOf(refusedRequests);
+    }
+
+    List<String> refusalReasons() {
+        return List.copyOf(refusalReasons);
+    }
+
+    @Override
+    public void answerRefused(ModelRequest request, String reason) {
+        refusedRequests.add(request);
+        refusalReasons.add(reason);
     }
 
     @Override
