@@ -40,6 +40,15 @@ public final class JobEndpointClient {
         return json(response).get("id").longValue();
     }
 
+    /** {@code PUT} of a JSON body to the path. */
+    public HttpResponse<String> put(String path, String body) throws Exception {
+        HttpRequest request = HttpRequest.newBuilder(uri(path))
+                .header("Content-Type", "application/json")
+                .PUT(HttpRequest.BodyPublishers.ofString(body))
+                .build();
+        return client.send(request, HttpResponse.BodyHandlers.ofString());
+    }
+
     public HttpResponse<String> get(String path) throws Exception {
         return client.send(HttpRequest.newBuilder(uri(path)).build(), HttpResponse.BodyHandlers.ofString());
     }
