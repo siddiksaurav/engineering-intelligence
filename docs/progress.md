@@ -2,6 +2,21 @@
 
 One entry per working session, newest at the top. Each entry says what was done, what is next and what is blocked. Read the top entry first.
 
+## 23 Nov 2026: model exchange, Claude Code answers the model jobs (PoC only)
+
+**Done**
+- Free LLM limits blocked the digests. The user chose to let Claude Code answer the model requests, built without a question brief (decision 271). Branch `feature/model-exchange`.
+- `JUDGMENT_MODE=exchange` (default `providers`, untouched): the model jobs put each request into the new table `model_exchange` (V13) and count `left_for_exchange`; `GET /api/model-exchange/requests` and `PUT /api/model-exchange/requests/{hash}/answer` (local machine only); the next job run stores the judgment through the normal checks. Skill `/judge <digest|feature-work|review-comments> [max]` runs a round with Sonnet subagents.
+- The latest dump from the other machine (`ei-2026-11-23-0907.dump`) is restored into a separate database `ei_latest`; the Compose `ei` database was left as it was. Start the backend on it with `POSTGRES_DB=ei_latest JUDGMENT_MODE=exchange ./mvnw spring-boot:run`.
+- On `ei_latest`: 112 PR digests wait in the exchange (60 digested before, 43 bot PRs).
+
+**Next**
+- `/judge digest` in rounds until no digest waits, then `evidence-build`, `/judge feature-work`, `/judge review-comments`, `dimension-scoring` for 2026-Q3.
+- Then the chart redesign of the pages the user asked for, on the full data.
+
+**Blocked or needed from the user**
+- Nothing.
+
 ## 23 Nov 2026: F14 Interface redesign with charts shipped
 
 **Done**

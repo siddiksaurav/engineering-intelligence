@@ -140,6 +140,8 @@ curl -s -X POST localhost:8080/api/jobs/dimension-scoring/runs \
 curl -s "localhost:8080/api/developers/9/dimension-scores?quarter=2026-Q3&level=L2"
                                                              the two dimension scores of developer 9 at L2, with gates and trail (F11)
 curl -s "localhost:8080/api/evidence-items/42"               one evidence item with its current AI judgment (F12); ?ids=1,2,3 on /api/evidence-items for several
+curl -s "localhost:8080/api/model-exchange/requests?promptVersion=pull-request-digest/v1&limit=10"
+                                                             model requests waiting for Claude Code (backend with JUDGMENT_MODE=exchange; decision 271, run /judge)
 docker compose exec postgres psql -U ei -d ei -c "select confirm_identity_proposal(7);"
                                                              confirm proposal 7 (list them in identity_proposal)
 docker compose exec postgres psql -U ei -d ei -c "select reject_identity_proposal(7);"
@@ -150,6 +152,7 @@ docker compose exec postgres psql -U ei -d ei -c "select reject_identity_proposa
 - Jobs are started only through `POST /api/jobs/{name}/runs`, from the machine the backend runs on. Every run is recorded in `job_run`. A second start of a running job answers `409`. `github-import` takes `repository` and either `mergedFrom` and `mergedTo` or `pullRequestNumbers` (comma-separated).
 - `github-import` needs a read-only `GITHUB_TOKEN` in `.env` (a fine-grained token with public repository access). Two weeks take about six minutes.
 - `pull-request-digest` calls a free LLM through `LLM_PROVIDER_1_*` (Groq) and, when that one is at its limit, `LLM_PROVIDER_2_*` (Gemini) from `.env` (decisions 144, 146, 158). With every provider at its limit the run stops, counts what is left and succeeds; run it again later. Never several keys of one provider. `feature-work-judgment` and `review-comment-judgment` use the same providers and rules; the three model jobs never run at once (decision 174).
+- PoC only: with `JUDGMENT_MODE=exchange` the model jobs need no key; they queue their requests in `model_exchange` and `/judge <stage>` has Claude Code subagents answer them; the next run stores the judgments (decision 271). The providers mode stays the default.
 - Tests run with the profile `test` and never read `.env`. They never call GitHub; `GitHubApiFixture` gives a client on a mock server.
 - Health: `curl -s localhost:8080/actuator/health`. The overview at `localhost:3000` shows "backend up" or "backend down" and the numbers of the team (F14).
 - Developers: `localhost:3000/developers` (after `evidence-build`), with the two scores per developer at L2 when `DEFAULT_QUARTER` is set. Evidence list of one developer: `localhost:3000/developers/9`.
