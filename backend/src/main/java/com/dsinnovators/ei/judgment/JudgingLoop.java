@@ -12,13 +12,15 @@ import org.slf4j.LoggerFactory;
 /**
  * The loop of a model job over its subjects, in order: a subject that fails on its own is named and
  * the loop goes on; when every provider has reached its limit the loop stops, counts what is left
- * and succeeds, so the next run goes on with the rest (decision 152).
+ * and succeeds, so the next run goes on with the rest (decision 152). A subject whose request waits
+ * in the model exchange is counted in {@code left_for_exchange} and the loop goes on (decision 271).
  *
  * @param <T> what the job judges one at a time
  */
 final class JudgingLoop<T> {
 
     private static final Logger LOG = LoggerFactory.getLogger(JudgingLoop.class);
+    private static final String LEFT_FOR_EXCHANGE = "left_for_exchange";
 
     private final String leftForLaterCount;
     private final String subjectsName;
@@ -49,6 +51,8 @@ final class JudgingLoop<T> {
             T subject = subjects.get(index);
             try {
                 judge.accept(subject);
+            } catch (AnswerNotYetGivenException waiting) {
+                counts.add(LEFT_FOR_EXCHANGE, sizeOf.applyAsLong(subject));
             } catch (ModelLimitReachedException limit) {
                 LOG.warn("{}; the next run goes on with the {} not yet judged", limit.getMessage(), subjectsName);
                 counts.add(leftForLaterCount, sizeLeftFrom(subjects, index));

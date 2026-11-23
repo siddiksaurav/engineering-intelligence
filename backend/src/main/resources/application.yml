@@ -43,6 +43,9 @@ ei:
     retry-wait: 2s
     timeout: 60s
   judgment:
+    # providers (default): the HTTP providers below. exchange: PoC only, Claude Code answers the
+    # requests through the model exchange instead (decision 271).
+    mode: ${JUDGMENT_MODE:providers}
     # Free hosted models, tried in this order (decisions 144, 146, 158). A provider with no key is
     # left out. The keys come from .env; never committed, never printed.
     providers:

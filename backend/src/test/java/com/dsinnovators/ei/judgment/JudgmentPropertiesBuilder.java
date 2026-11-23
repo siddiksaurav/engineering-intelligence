@@ -6,6 +6,7 @@ import java.util.List;
 /** Builds valid judgment properties as application.yml sets them; a test changes the one number it is about. */
 final class JudgmentPropertiesBuilder {
 
+    private JudgmentMode mode = JudgmentMode.PROVIDERS;
     private List<JudgmentProvider> providers = List.of();
     private Duration timeout = Duration.ofMinutes(2);
     private int retries = 3;
@@ -25,6 +26,11 @@ final class JudgmentPropertiesBuilder {
 
     static JudgmentPropertiesBuilder properties() {
         return new JudgmentPropertiesBuilder();
+    }
+
+    JudgmentPropertiesBuilder mode(JudgmentMode mode) {
+        this.mode = mode;
+        return this;
     }
 
     JudgmentPropertiesBuilder providers(List<JudgmentProvider> providers) {
@@ -109,6 +115,7 @@ final class JudgmentPropertiesBuilder {
 
     JudgmentProperties build() {
         return new JudgmentProperties(
+                mode,
                 providers,
                 timeout,
                 retries,

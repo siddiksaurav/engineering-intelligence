@@ -13,10 +13,19 @@ import org.springframework.web.client.RestClient;
 @EnableConfigurationProperties(JudgmentProperties.class)
 class JudgmentConfiguration {
 
-    /** The model, as the chain of the configured providers; empty when no provider has a key. */
+    private static final String EXCHANGE_PROVIDER = "claude-code";
+
+    /**
+     * The model, as the chain of the configured providers, empty when no provider has a key; in
+     * exchange mode the model exchange alone (decision 271).
+     */
     @Bean
-    ProviderChain providerChain(JudgmentProperties properties, Clock clock) {
+    ProviderChain providerChain(JudgmentProperties properties, ModelExchange exchange, Clock clock) {
         WaitMeter waitMeter = new WaitMeter(Thread::sleep);
+        if (properties.mode() == JudgmentMode.EXCHANGE) {
+            return new ProviderChain(
+                    List.of(new ProviderChain.Provider(EXCHANGE_PROVIDER, new ExchangeModel(exchange))), waitMeter);
+        }
         List<ProviderChain.Provider> providers = properties.providers().stream()
                 .map(provider ->
                         new ProviderChain.Provider(provider.name(), clientOf(provider, properties, waitMeter, clock)))

@@ -214,4 +214,17 @@ class JudgmentPropertiesTest {
                         .maxQuoteCharacters(0)
                         .build());
     }
+
+    @Test
+    void theModeIsTheProvidersUnlessTheExchangeIsChosen() {
+        assertEquals(
+                JudgmentMode.PROVIDERS,
+                JudgmentPropertiesBuilder.properties().mode(null).build().mode());
+        assertEquals(
+                JudgmentMode.EXCHANGE,
+                JudgmentPropertiesBuilder.properties()
+                        .mode(JudgmentMode.EXCHANGE)
+                        .build()
+                        .mode());
+    }
 }

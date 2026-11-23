@@ -17,9 +17,21 @@ class JudgingLoopTest {
             "items_left_for_later", "items", subject -> subject.length(), subject -> "<" + subject + ">");
 
     private void run(List<String> subjects, List<String> limitReachedAt, List<String> failingAt, List<String> failed) {
+        run(subjects, limitReachedAt, failingAt, List.of(), failed);
+    }
+
+    private void run(
+            List<String> subjects,
+            List<String> limitReachedAt,
+            List<String> failingAt,
+            List<String> waitingAt,
+            List<String> failed) {
         failed.addAll(loop.run(
                 subjects,
                 subject -> {
+                    if (waitingAt.contains(subject)) {
+                        throw new AnswerNotYetGivenException("no answer yet for " + subject);
+                    }
                     if (limitReachedAt.contains(subject)) {
                         throw new ModelLimitReachedException("every provider is at its limit");
                     }
@@ -61,5 +73,17 @@ class JudgingLoopTest {
         assertEquals(List.of("a", "bb"), judged);
         assertEquals(7L, counts.get("items_left_for_later"));
         assertEquals(List.of(), failed);
+    }
+
+    @Test
+    void countsTheSizeOfASubjectWaitingForAnExchangeAnswerAndGoesOn() {
+        List<String> failed = new ArrayList<>();
+
+        run(List.of("a", "bb", "ccc", "dddd"), List.of(), List.of(), List.of("bb", "dddd"), failed);
+
+        assertEquals(List.of("a", "ccc"), judged);
+        assertEquals(6L, counts.get("left_for_exchange"));
+        assertEquals(List.of(), failed);
+        assertNull(counts.get("items_left_for_later"));
     }
 }

@@ -34,6 +34,7 @@ final class CheckedAnswers {
             return askOnce(model, request, checker, counts);
         } catch (InvalidAnswerException | UnreadableAnswerException firstRefusal) {
             LOG.warn("The model's answer was refused, asking once more: {}", firstRefusal.getMessage());
+            model.answerRefused(request, firstRefusal.getMessage());
             return askOnce(model, request, checker, counts);
         }
     }
