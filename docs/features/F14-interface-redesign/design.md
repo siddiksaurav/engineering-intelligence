@@ -89,7 +89,7 @@ Text never takes a series colour; a swatch next to the text carries the identity
 - Body: IBM Plex Sans 400, 500, 600.
 - Data: IBM Plex Mono 400, 500, for PR numbers, tiers, dates, eyebrow labels and axis values.
 
-**Layout.** A 1180 px content column. The profile, the overview and the roster use a 12-column grid that falls to one column under 760 px.
+**Layout.** A 1600 px content column (widened from 1180 px on 23 Nov 2026 so wide screens are used). The profile, the overview and the roster use a 12-column grid that falls to one column under 760 px.
 
 **Signature: the tier steps.** Three steps that rise from T1 to T3. The steps up to the working tier are filled; the step a level expects carries a sun-yellow marker. It is on each dimension card and, small, on each roster row. It shows in one figure what the why line says in words.
 
