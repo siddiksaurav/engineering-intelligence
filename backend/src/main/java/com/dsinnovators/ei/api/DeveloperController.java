@@ -44,13 +44,18 @@ class DeveloperController {
     @GetMapping
     List<DeveloperSummaryResponse> developers(@RequestParam(name = "quarter", required = false) String quarterText) {
         Quarter quarter = QuarterParameter.parse(quarterText);
-        return scoredItems.of(quarter).entrySet().stream()
-                .map(entry -> summaryOf(entry.getKey(), entry.getValue()))
+        Map<Long, List<ScoredItem>> itemsByPerson = scoredItems.of(quarter);
+        Map<Long, PersonSummary> people = persons.find(itemsByPerson.keySet());
+        return itemsByPerson.entrySet().stream()
+                .map(entry -> summaryOf(people, entry.getKey(), entry.getValue()))
                 .toList();
     }
 
-    private DeveloperSummaryResponse summaryOf(long personId, List<ScoredItem> items) {
-        PersonSummary person = persons.find(personId).orElseThrow(() -> new DeveloperNotFoundException(personId));
+    private DeveloperSummaryResponse summaryOf(Map<Long, PersonSummary> people, long personId, List<ScoredItem> items) {
+        PersonSummary person = people.get(personId);
+        if (person == null) {
+            throw new DeveloperNotFoundException(personId);
+        }
         Map<EvidenceType, Long> counts =
                 items.stream().collect(Collectors.groupingBy(ScoredItem::evidenceType, Collectors.counting()));
         return new DeveloperSummaryResponse(person.personId(), person.displayName(), TypeCounts.of(counts));
