@@ -134,7 +134,7 @@ function DeveloperRow({
         <p className={styles.total}>
           <strong>{total}</strong> items
         </p>
-        {total > 0 && <TypeBar label={`Items of ${developer.displayName}`} counts={developer.counts} size="thin" />}
+        {total > 0 && <TypeBar label={`Items of ${developer.displayName}`} counts={developer.counts} />}
       </div>
     </li>
   );
