@@ -1,0 +1,94 @@
+.pickers {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+  gap: 20px;
+}
+
+.picker {
+  padding: 16px 20px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.pickerTitle {
+  margin: 0 0 10px;
+  font-family: var(--font-data);
+  font-size: 0.74rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.choice,
+.chosen {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.choice:hover {
+  background: var(--sky-50);
+}
+
+.chosen {
+  background: var(--step-3);
+  border-color: var(--step-3);
+  color: #fff;
+}
+
+.sections {
+  display: grid;
+  gap: 20px;
+}
+
+.columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+  gap: 20px 28px;
+}
+
+.columnTitle {
+  margin: 0 0 12px;
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 650;
+}
+
+.scores {
+  display: grid;
+  gap: 14px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.score {
+  display: grid;
+  gap: 4px;
+}
+
+.dimension {
+  color: var(--ink-3);
+  font-size: 0.82rem;
+}
+
+.notScored {
+  margin: 0;
+  color: var(--ink-3);
+  font-style: italic;
+}

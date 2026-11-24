@@ -6,7 +6,7 @@ import { TypeBar, TypeLegend } from "@/components/EvidenceTypes";
 import { LevelSwitch } from "@/components/LevelSwitch";
 import { PageContent, PageHeader } from "@/components/Page";
 import { Notice } from "@/components/Panel";
-import { TierChip } from "@/components/TierChip";
+import { ScoreLine } from "@/components/ScoreLine";
 import { fetchDevelopers, type Developer } from "@/lib/evidence";
 import type { Level } from "@/lib/profile";
 import { profileParams } from "@/lib/profileParams";
@@ -149,16 +149,7 @@ function Scores({ scores }: { scores: DeveloperScore[] | undefined }) {
       {scores.map((dimension) => (
         <li key={dimension.key} className={styles.score}>
           <span className={styles.dimension}>{dimension.name}</span>
-          <span className={styles.scoreLine}>
-            <span className={styles.scoreValue} data-score={dimension.score}>
-              {dimension.score}
-            </span>
-            {dimension.workingTier ? (
-              <TierChip tier={dimension.workingTier} />
-            ) : (
-              <span className={styles.noTier}>no working tier</span>
-            )}
-          </span>
+          <ScoreLine score={dimension.score} workingTier={dimension.workingTier} />
         </li>
       ))}
     </ul>
