@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { Developer, TypeCounts } from "./evidence";
 import type { DimensionScores } from "./profile";
-import { fetchTeamScores, teamSummary, totalOf, type TeamScores } from "./team";
+import { fetchTeamAnalytics, fetchTeamScores, teamSummary, totalOf, type TeamScores } from "./team";
 
 const NO_COUNTS: TypeCounts = {
   featureWork: 0,
@@ -113,5 +113,25 @@ describe("teamSummary", () => {
 describe("totalOf", () => {
   it("adds the counts of all types", () => {
     expect(totalOf({ ...NO_COUNTS, featureWork: 2, security: 3 })).toBe(5);
+  });
+});
+
+describe("fetchTeamAnalytics", () => {
+  it("asks the team analytics of the quarter", async () => {
+    const body = { quarter: "2026-Q3" };
+    const fetchFn = vi.fn(async () => new Response(JSON.stringify(body))) as unknown as typeof fetch;
+
+    const result = await fetchTeamAnalytics("http://localhost:8080", "2026-Q3", fetchFn);
+
+    expect(result).toEqual({ status: "ok", data: body });
+    expect(vi.mocked(fetchFn).mock.calls[0][0]).toBe("http://localhost:8080/api/team/analytics?quarter=2026-Q3");
+  });
+
+  it("says the backend is down when it answers an error", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const fetchFn = vi.fn(async () => new Response("{}", { status: 400 })) as unknown as typeof fetch;
+
+    expect(await fetchTeamAnalytics("http://localhost:8080", "2026-Q3", fetchFn)).toEqual({ status: "down" });
+    warn.mockRestore();
   });
 });

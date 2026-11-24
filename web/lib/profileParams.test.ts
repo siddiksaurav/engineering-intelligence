@@ -1,5 +1,15 @@
 import { describe, expect, it } from "vitest";
-import type { Analytics, Count, DimensionScore, DimensionScores, Distribution, GateResult, TrailItem } from "./profile";
+import type {
+  Analytics,
+  Count,
+  Coverage,
+  DimensionScore,
+  DimensionScores,
+  Distribution,
+  GateResult,
+  TrailItem,
+  WeightedWorkLevel,
+} from "./profile";
 import { itemIdsOnPage, notJudgedYet, profileParams } from "./profileParams";
 
 describe("profileParams", () => {
@@ -56,9 +66,21 @@ function distribution(slices: Record<string, Count> = {}): Distribution {
   };
 }
 
+const NO_COVERAGE: Coverage = { judged: 0, total: 0 };
+
+const NO_WORK_LEVEL: WeightedWorkLevel = {
+  weightedTotal: 0,
+  weightedAtT2OrAbove: 0,
+  shareAtT2OrAbove: null,
+  weightedAtT3: 0,
+  shareAtT3: null,
+};
+
 function breakdown(notJudged: Count = count(), substantive: Count = count()) {
   return {
     substantive,
+    notSubstantive: count(),
+    coverage: NO_COVERAGE,
     byCommentType: distribution(),
     byTier: distribution(),
     notJudgedYet: notJudged,
@@ -73,8 +95,9 @@ function analytics(overrides: Partial<Analytics> = {}): Analytics {
   return {
     person: { personId: 7, displayName: "ada" },
     quarter: "2026-Q3",
-    workClassification: distribution(),
-    workComplexity: { person: distribution(), repository: distribution() },
+    workClassification: { distribution: distribution(), coverage: NO_COVERAGE },
+    workComplexity: { coverage: NO_COVERAGE, person: distribution(), restOfRepository: distribution() },
+    workLevel: { person: NO_WORK_LEVEL, restOfRepository: NO_WORK_LEVEL, line: 1 / 3, coverage: NO_COVERAGE },
     reviewParticipation: {
       pullRequestsReviewed: count(),
       authorsReviewed: count(),
@@ -83,6 +106,7 @@ function analytics(overrides: Partial<Analytics> = {}): Analytics {
     },
     reviewFindingsReceived: { pullRequests: count(), comments: breakdown(), substantivePerPullRequest: null },
     testingContribution: {
+      coverage: NO_COVERAGE,
       featureAndFixPullRequests: testShare(),
       withoutDigest: count(),
       bugFixPullRequests: testShare(),
@@ -194,10 +218,14 @@ describe("notJudgedYet", () => {
     const sameItemTwice = trailItem(5);
     const result = notJudgedYet(
       analytics({
-        workClassification: distribution({ not_judged_yet: count([], [100, 101]) }),
+        workClassification: {
+          distribution: distribution({ not_judged_yet: count([], [100, 101]) }),
+          coverage: NO_COVERAGE,
+        },
         workComplexity: {
+          coverage: NO_COVERAGE,
           person: distribution({ not_judged_yet: count([5, 6]) }),
-          repository: distribution({ not_judged_yet: count([5, 6, 7]) }),
+          restOfRepository: distribution({ not_judged_yet: count([5, 6, 7]) }),
         },
         reviewParticipation: {
           pullRequestsReviewed: count(),
@@ -211,6 +239,7 @@ describe("notJudgedYet", () => {
           substantivePerPullRequest: null,
         },
         testingContribution: {
+          coverage: NO_COVERAGE,
           featureAndFixPullRequests: testShare(count(), distribution({ not_judged_yet: count([10]) })),
           withoutDigest: count([], [101, 102]),
           bugFixPullRequests: testShare(count(), distribution({ not_judged_yet: count([10, 11]) })),
@@ -236,8 +265,9 @@ describe("itemIdsOnPage", () => {
     const ids = itemIdsOnPage(
       analytics({
         workComplexity: {
+          coverage: NO_COVERAGE,
           person: distribution({ low: count([3, 1]) }),
-          repository: distribution({ low: count([1, 2]) }),
+          restOfRepository: distribution({ low: count([1, 2]) }),
         },
         hygiene: { total: 1, linked: count([], [50]), notLinked: count(), share: 1 },
       }),

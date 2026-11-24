@@ -26,7 +26,17 @@ const TIERS = ["T1", "T2", "T3"] as const;
 export default async function Home() {
   const backendUrl = process.env.BACKEND_URL;
   const quarter = process.env.DEFAULT_QUARTER || undefined;
-  const [status, developers] = await Promise.all([checkBackend(backendUrl), fetchDevelopers(backendUrl)]);
+  if (quarter === undefined) {
+    return (
+      <Overview status={await checkBackend(backendUrl)}>
+        <Notice>
+          The overview needs a quarter: set <code>DEFAULT_QUARTER</code> in the web environment, for example{" "}
+          <code>2026-Q3</code>.
+        </Notice>
+      </Overview>
+    );
+  }
+  const [status, developers] = await Promise.all([checkBackend(backendUrl), fetchDevelopers(backendUrl, quarter)]);
   if (developers.status !== "ok") {
     return (
       <Overview status={status}>
@@ -41,18 +51,15 @@ export default async function Home() {
       </Overview>
     );
   }
-  const scores =
-    quarter === undefined
-      ? null
-      : await fetchTeamScores(
-          backendUrl,
-          developers.data.map((developer) => developer.personId),
-          quarter,
-          TEAM_LEVEL,
-        );
-  const summary = teamSummary(developers.data, scores ?? new Map());
+  const scores = await fetchTeamScores(
+    backendUrl,
+    developers.data.map((developer) => developer.personId),
+    quarter,
+    TEAM_LEVEL,
+  );
+  const summary = teamSummary(developers.data, scores);
   return (
-    <Overview status={status} figures={<TeamFigures summary={summary} scoresRead={scores !== null} />}>
+    <Overview status={status} figures={<TeamFigures summary={summary} />}>
       <div className={styles.grid}>
         <EvidenceByType summary={summary} />
         <MostEvidence developers={summary.mostEvidence} />
@@ -82,15 +89,13 @@ function Overview({ status, figures, children }: { status: BackendStatus; figure
   );
 }
 
-function TeamFigures({ summary, scoresRead }: { summary: TeamSummary; scoresRead: boolean }) {
+function TeamFigures({ summary }: { summary: TeamSummary }) {
   return (
     <>
       <HeaderFigure value={summary.developers} label="Developers" />
       <HeaderFigure value={summary.evidenceItems} label="Evidence items" />
       <HeaderFigure value={summary.byType.reviewCommentWritten} label="Review comments written" />
-      {scoresRead && (
-        <HeaderFigure value={`${summary.scoredDevelopers} of ${summary.developers}`} label="Developers scored" />
-      )}
+      <HeaderFigure value={`${summary.scoredDevelopers} of ${summary.developers}`} label="Developers scored" />
     </>
   );
 }
@@ -153,17 +158,7 @@ function MostEvidence({ developers }: { developers: Developer[] }) {
   );
 }
 
-function TeamScoresPanels({ summary, quarter }: { summary: TeamSummary; quarter: string | undefined }) {
-  if (quarter === undefined) {
-    return (
-      <div className={styles.full}>
-        <Notice>
-          Scores need a quarter: set <code>DEFAULT_QUARTER</code> in the web environment, for example{" "}
-          <code>2026-Q3</code>.
-        </Notice>
-      </div>
-    );
-  }
+function TeamScoresPanels({ summary, quarter }: { summary: TeamSummary; quarter: string }) {
   if (summary.dimensions.length === 0) {
     return (
       <div className={styles.full}>

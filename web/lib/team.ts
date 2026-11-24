@@ -1,5 +1,6 @@
+import { type BackendResult, readBackend } from "./backend";
 import type { Developer, TypeCounts } from "./evidence";
-import { fetchDimensionScores, type Level, type Tier } from "./profile";
+import { type Count, type Coverage, fetchDimensionScores, type Distribution, type Level, type Tier } from "./profile";
 
 /** One dimension of one developer as the overview and the roster show it. */
 export type DeveloperScore = { key: string; name: string; score: 0 | 1 | 2; workingTier: Tier | null };
@@ -25,6 +26,24 @@ export type TeamSummary = {
 };
 
 const DEFAULT_MOST_EVIDENCE = 8;
+
+/** The analytics of every developer together in one quarter (F15). */
+export type TeamAnalytics = {
+  quarter: string;
+  workClassification: { distribution: Distribution; coverage: Coverage };
+  workComplexity: { distribution: Distribution; coverage: Coverage };
+  hygiene: { total: number; linked: Count; notLinked: Count; share: number | null };
+};
+
+/** The team analytics of a quarter. Never throws. */
+export async function fetchTeamAnalytics(
+  baseUrl: string | undefined,
+  quarter: string,
+  fetchFn: typeof fetch = fetch,
+): Promise<BackendResult<TeamAnalytics>> {
+  const query = new URLSearchParams({ quarter });
+  return readBackend<TeamAnalytics>(baseUrl, `/api/team/analytics?${query}`, fetchFn);
+}
 
 /**
  * The scores of every given developer at one level, one call each, in parallel (decision 266). Never throws: a

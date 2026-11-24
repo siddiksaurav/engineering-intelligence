@@ -1,5 +1,5 @@
 import { renderToStaticMarkup } from "react-dom/server";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fetchDevelopers } from "@/lib/evidence";
 import { fetchTeamScores } from "@/lib/team";
 import DevelopersPage from "./page";
@@ -22,6 +22,11 @@ const NO_ITEMS = {
 };
 
 describe("DevelopersPage", () => {
+  beforeEach(() => {
+    vi.stubEnv("DEFAULT_QUARTER", "2026-Q3");
+    vi.mocked(fetchTeamScores).mockResolvedValue(new Map());
+  });
+
   afterEach(() => {
     vi.mocked(fetchDevelopers).mockReset();
     vi.mocked(fetchTeamScores).mockReset();
@@ -29,7 +34,6 @@ describe("DevelopersPage", () => {
   });
 
   it("shows each developer's score and working tier per dimension at L2, and not scored without them", async () => {
-    vi.stubEnv("DEFAULT_QUARTER", "2026-Q3");
     vi.mocked(fetchDevelopers).mockResolvedValue({
       status: "ok",
       data: [
@@ -70,14 +74,12 @@ describe("DevelopersPage", () => {
     expect(renderToStaticMarkup(await DevelopersPage())).toMatch(/>6<\/strong> items/);
   });
 
-  it("asks for no scores and says why when DEFAULT_QUARTER is not set", async () => {
-    vi.mocked(fetchDevelopers).mockResolvedValue({
-      status: "ok",
-      data: [{ personId: 7, displayName: "ada", counts: NO_ITEMS }],
-    });
+  it("asks for nothing and says why when DEFAULT_QUARTER is not set", async () => {
+    vi.stubEnv("DEFAULT_QUARTER", "");
 
     const html = renderToStaticMarkup(await DevelopersPage());
 
+    expect(fetchDevelopers).not.toHaveBeenCalled();
     expect(fetchTeamScores).not.toHaveBeenCalled();
     expect(html).toContain("DEFAULT_QUARTER");
   });
@@ -140,6 +142,6 @@ describe("DevelopersPage", () => {
 
     await DevelopersPage();
 
-    expect(fetchDevelopers).toHaveBeenCalledWith("http://backend.test:9000");
+    expect(fetchDevelopers).toHaveBeenCalledWith("http://backend.test:9000", "2026-Q3");
   });
 });

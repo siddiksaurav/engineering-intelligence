@@ -17,7 +17,7 @@ export function AnalyticsSection({ analytics, summariesById }: { analytics: Anal
       <Panel title="Work classification" note="The person's merged pull requests by work type.">
         <DistributionChart
           title="Work types"
-          distribution={analytics.workClassification}
+          distribution={analytics.workClassification.distribution}
           form="ranked"
           summariesById={summariesById}
         />
@@ -32,7 +32,7 @@ export function AnalyticsSection({ analytics, summariesById }: { analytics: Anal
           />
           <DistributionChart
             title="Repository"
-            distribution={analytics.workComplexity.repository}
+            distribution={analytics.workComplexity.restOfRepository}
             form="segmented"
             summariesById={summariesById}
           />

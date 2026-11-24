@@ -49,7 +49,7 @@ function valueOf(parameter: string | string[] | undefined): string | undefined {
  */
 export function notJudgedYet(analytics: Analytics, scores: DimensionScores): { pullRequests: number; items: number } {
   const pullRequests = new Set<number>([
-    ...notJudgedSlices(analytics.workClassification).flatMap((count) => count.pullRequestNumbers),
+    ...notJudgedSlices(analytics.workClassification.distribution).flatMap((count) => count.pullRequestNumbers),
     ...analytics.testingContribution.withoutDigest.pullRequestNumbers,
     ...scores.dimensions.flatMap((dimension) =>
       [...dimension.gates, ...dimension.trail.gates].flatMap((gate) => gate.pullRequestsWithoutDigest),
@@ -92,9 +92,9 @@ function notJudgedIds(distribution: Distribution): number[] {
 function analyticsCounts(analytics: Analytics): Count[] {
   const { reviewParticipation, reviewFindingsReceived, testingContribution, hygiene } = analytics;
   return [
-    ...sliceCounts(analytics.workClassification),
+    ...sliceCounts(analytics.workClassification.distribution),
     ...sliceCounts(analytics.workComplexity.person),
-    ...sliceCounts(analytics.workComplexity.repository),
+    ...sliceCounts(analytics.workComplexity.restOfRepository),
     reviewParticipation.pullRequestsReviewed,
     reviewParticipation.authorsReviewed,
     ...breakdownCounts(reviewParticipation.comments),
@@ -115,6 +115,7 @@ function sliceCounts(distribution: Distribution): Count[] {
 function breakdownCounts(breakdown: ReviewCommentBreakdown): Count[] {
   return [
     breakdown.substantive,
+    breakdown.notSubstantive,
     ...sliceCounts(breakdown.byCommentType),
     ...sliceCounts(breakdown.byTier),
     breakdown.notJudgedYet,

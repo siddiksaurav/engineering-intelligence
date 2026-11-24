@@ -1,5 +1,5 @@
 import { renderToStaticMarkup } from "react-dom/server";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fetchEvidenceItems, type DeveloperEvidence, type EvidenceItem } from "@/lib/evidence";
 import DeveloperPage from "./page";
 
@@ -87,6 +87,10 @@ async function render(personId = "7"): Promise<string> {
 }
 
 describe("DeveloperPage", () => {
+  beforeEach(() => {
+    vi.stubEnv("DEFAULT_QUARTER", "2026-Q3");
+  });
+
   afterEach(() => {
     vi.mocked(fetchEvidenceItems).mockReset();
     vi.unstubAllEnvs();
@@ -198,6 +202,15 @@ describe("DeveloperPage", () => {
     await expect(render("99")).rejects.toThrow("NEXT_HTTP_ERROR_FALLBACK;404");
   });
 
+  it("says a quarter is needed, without asking the backend, when DEFAULT_QUARTER is not set", async () => {
+    vi.stubEnv("DEFAULT_QUARTER", "");
+
+    const html = await render("7");
+
+    expect(html).toContain("DEFAULT_QUARTER");
+    expect(fetchEvidenceItems).not.toHaveBeenCalled();
+  });
+
   it("is not found for an id that is no number, without asking the backend", async () => {
     await expect(render("ada")).rejects.toThrow("NEXT_HTTP_ERROR_FALLBACK;404");
     expect(fetchEvidenceItems).not.toHaveBeenCalled();
@@ -209,6 +222,6 @@ describe("DeveloperPage", () => {
 
     await render("7");
 
-    expect(fetchEvidenceItems).toHaveBeenCalledWith("http://backend.test:9000", 7);
+    expect(fetchEvidenceItems).toHaveBeenCalledWith("http://backend.test:9000", 7, "2026-Q3");
   });
 });

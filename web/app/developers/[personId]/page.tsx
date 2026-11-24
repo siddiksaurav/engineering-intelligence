@@ -20,7 +20,18 @@ export default async function DeveloperPage({ params }: { params: Promise<{ pers
   if (!/^\d+$/.test(personId)) {
     notFound();
   }
-  const result = await fetchEvidenceItems(process.env.BACKEND_URL, Number(personId));
+  const quarter = process.env.DEFAULT_QUARTER || undefined;
+  if (quarter === undefined) {
+    return (
+      <main>
+        <PageHeader crumbs={[{ href: "/developers", label: "Developers" }]} title="Evidence list" />
+        <PageContent>
+          <Notice>Set DEFAULT_QUARTER in the web environment, for example 2026-Q3.</Notice>
+        </PageContent>
+      </main>
+    );
+  }
+  const result = await fetchEvidenceItems(process.env.BACKEND_URL, Number(personId), quarter);
   if (result.status === "not-found") {
     notFound();
   }

@@ -18,7 +18,15 @@ const ROSTER_LEVEL = "L2";
 export default async function DevelopersPage() {
   const backendUrl = process.env.BACKEND_URL;
   const quarter = process.env.DEFAULT_QUARTER || undefined;
-  const result = await fetchDevelopers(backendUrl);
+  if (quarter === undefined) {
+    return (
+      <Roster
+        lead="The developers need a quarter."
+        notice="Set DEFAULT_QUARTER in the web environment, for example 2026-Q3."
+      />
+    );
+  }
+  const result = await fetchDevelopers(backendUrl, quarter);
   if (result.status !== "ok") {
     return <Roster lead="The developers could not be read." notice="backend down" />;
   }
@@ -26,33 +34,21 @@ export default async function DevelopersPage() {
   if (developers.length === 0) {
     return <Roster lead="Persons made of the stored GitHub accounts." notice="No developers" />;
   }
-  const scores =
-    quarter === undefined
-      ? null
-      : await fetchTeamScores(
-          backendUrl,
-          developers.map((developer) => developer.personId),
-          quarter,
-          ROSTER_LEVEL,
-        );
+  const scores = await fetchTeamScores(
+    backendUrl,
+    developers.map((developer) => developer.personId),
+    quarter,
+    ROSTER_LEVEL,
+  );
   const mostItems = Math.max(...developers.map((developer) => totalOf(developer.counts)));
-  const lead =
-    quarter === undefined
-      ? `${developers.length} developers.`
-      : `${developers.length} developers. Scores of ${quarter}, read at ${ROSTER_LEVEL}.`;
+  const lead = `${developers.length} developers. Scores of ${quarter}, read at ${ROSTER_LEVEL}.`;
   return (
     <Roster lead={lead}>
-      {scores === null && (
-        <Notice>
-          Scores need a quarter: set <code>DEFAULT_QUARTER</code> in the web environment, for example{" "}
-          <code>2026-Q3</code>.
-        </Notice>
-      )}
       <section className={styles.roster}>
         <header className={styles.rosterHead}>
           <TypeLegend />
         </header>
-        {scores !== null && <ColumnTitles scores={scores} />}
+        <ColumnTitles scores={scores} />
         <ul className={styles.rows}>
           {developers.map((developer) => (
             <DeveloperRow key={developer.personId} developer={developer} mostItems={mostItems} scores={scores} />
@@ -85,7 +81,7 @@ function DeveloperRow({
 }: {
   developer: Developer;
   mostItems: number;
-  scores: TeamScores | null;
+  scores: TeamScores;
 }) {
   const total = totalOf(developer.counts);
   return (
@@ -111,7 +107,7 @@ function DeveloperRow({
           </div>
         )}
       </div>
-      {scores !== null && <Scores scores={scores.get(developer.personId)} />}
+      <Scores scores={scores.get(developer.personId)} />
     </li>
   );
 }

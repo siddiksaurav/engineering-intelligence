@@ -46,6 +46,7 @@ async function render(): Promise<string> {
 
 describe("Home", () => {
   beforeEach(() => {
+    vi.stubEnv("DEFAULT_QUARTER", "2026-Q3");
     vi.mocked(checkBackend).mockResolvedValue("up");
     vi.mocked(fetchDevelopers).mockResolvedValue({ status: "ok", data: DEVELOPERS });
     vi.mocked(fetchTeamScores).mockResolvedValue(SCORES);
@@ -82,7 +83,7 @@ describe("Home", () => {
     await render();
 
     expect(checkBackend).toHaveBeenCalledWith("http://backend.test:9000");
-    expect(fetchDevelopers).toHaveBeenCalledWith("http://backend.test:9000");
+    expect(fetchDevelopers).toHaveBeenCalledWith("http://backend.test:9000", "2026-Q3");
   });
 
   it("shows the numbers of the team: developers, evidence items, review comments and developers scored", async () => {
@@ -129,10 +130,13 @@ describe("Home", () => {
     expect(html).toContain('aria-label="Working tiers: No working tier 1"');
   });
 
-  it("says that scores need DEFAULT_QUARTER when it is not set, and asks for none", async () => {
+  it("says that the overview needs DEFAULT_QUARTER when it is not set, and asks for nothing", async () => {
+    vi.stubEnv("DEFAULT_QUARTER", "");
+
     const html = await render();
 
     expect(html).toContain("DEFAULT_QUARTER");
+    expect(fetchDevelopers).not.toHaveBeenCalled();
     expect(fetchTeamScores).not.toHaveBeenCalled();
   });
 

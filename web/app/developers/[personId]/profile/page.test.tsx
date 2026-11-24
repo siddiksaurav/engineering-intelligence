@@ -5,6 +5,8 @@ import {
   fetchDimensionScores,
   type Analytics,
   type Count,
+  type Coverage,
+  type WeightedWorkLevel,
   type Distribution,
   type EvidenceTypeTrail,
   type GateResult,
@@ -28,8 +30,20 @@ function count(pullRequestNumbers: number[] = [], evidenceItemIds: number[] = []
 
 const EMPTY_DISTRIBUTION: Distribution = { total: 0, slices: [] };
 
+const NO_COVERAGE: Coverage = { judged: 0, total: 0 };
+
+const NO_WORK_LEVEL: WeightedWorkLevel = {
+  weightedTotal: 0,
+  weightedAtT2OrAbove: 0,
+  shareAtT2OrAbove: null,
+  weightedAtT3: 0,
+  shareAtT3: null,
+};
+
 const BREAKDOWN = {
   substantive: count(),
+  notSubstantive: count(),
+  coverage: NO_COVERAGE,
   byCommentType: EMPTY_DISTRIBUTION,
   byTier: EMPTY_DISTRIBUTION,
   notJudgedYet: count(),
@@ -41,8 +55,9 @@ function analytics(overrides: Partial<Analytics> = {}): Analytics {
   return {
     person: PERSON,
     quarter: "2026-Q3",
-    workClassification: EMPTY_DISTRIBUTION,
-    workComplexity: { person: EMPTY_DISTRIBUTION, repository: EMPTY_DISTRIBUTION },
+    workClassification: { distribution: EMPTY_DISTRIBUTION, coverage: NO_COVERAGE },
+    workComplexity: { coverage: NO_COVERAGE, person: EMPTY_DISTRIBUTION, restOfRepository: EMPTY_DISTRIBUTION },
+    workLevel: { person: NO_WORK_LEVEL, restOfRepository: NO_WORK_LEVEL, line: 1 / 3, coverage: NO_COVERAGE },
     reviewParticipation: {
       pullRequestsReviewed: count(),
       authorsReviewed: count(),
@@ -51,6 +66,7 @@ function analytics(overrides: Partial<Analytics> = {}): Analytics {
     },
     reviewFindingsReceived: { pullRequests: count(), comments: BREAKDOWN, substantivePerPullRequest: null },
     testingContribution: {
+      coverage: NO_COVERAGE,
       featureAndFixPullRequests: TEST_SHARE,
       withoutDigest: count(),
       bugFixPullRequests: TEST_SHARE,
@@ -325,8 +341,11 @@ describe("ProfilePage", () => {
       scores("L2", [dimension("design", DESIGN, "T2", 1)]),
       analytics({
         workClassification: {
-          total: 3,
-          slices: [{ name: "not_judged_yet", count: count([11, 12]), share: 0.5 }],
+          distribution: {
+            total: 3,
+            slices: [{ name: "not_judged_yet", count: count([11, 12]), share: 0.5 }],
+          },
+          coverage: NO_COVERAGE,
         },
         reviewParticipation: {
           pullRequestsReviewed: count(),
@@ -346,7 +365,10 @@ describe("ProfilePage", () => {
     answeringWith(
       scores("L2", [dimension("design", DESIGN, "T2", 1)]),
       analytics({
-        workClassification: { total: 1, slices: [{ name: "not_judged_yet", count: count([11]), share: 1 }] },
+        workClassification: {
+          distribution: { total: 1, slices: [{ name: "not_judged_yet", count: count([11]), share: 1 }] },
+          coverage: NO_COVERAGE,
+        },
         reviewParticipation: {
           pullRequestsReviewed: count(),
           authorsReviewed: count(),
@@ -364,8 +386,9 @@ describe("ProfilePage", () => {
       scores("L2", [dimension("design", DESIGN, "T2", 1)]),
       analytics({
         workComplexity: {
+          coverage: NO_COVERAGE,
           person: EMPTY_DISTRIBUTION,
-          repository: { total: 2, slices: [{ name: "not_judged_yet", count: count([], [5, 6]), share: 1 }] },
+          restOfRepository: { total: 2, slices: [{ name: "not_judged_yet", count: count([], [5, 6]), share: 1 }] },
         },
       }),
     );
@@ -378,7 +401,10 @@ describe("ProfilePage", () => {
     answeringWith(
       scores("L2", [dimension("design", DESIGN, "T2", 1), engineering]),
       analytics({
-        workClassification: { total: 1, slices: [{ name: "not_judged_yet", count: count([11]), share: 1 }] },
+        workClassification: {
+          distribution: { total: 1, slices: [{ name: "not_judged_yet", count: count([11]), share: 1 }] },
+          coverage: NO_COVERAGE,
+        },
       }),
     );
 
@@ -560,6 +586,8 @@ describe("ProfilePage", () => {
       tiers: [string, number][],
       unjudged: number,
     ) => ({
+      notSubstantive: count(),
+      coverage: NO_COVERAGE,
       substantive: count(
         [],
         Array.from({ length: substantive }, (_, index) => 800 + index),
@@ -578,13 +606,17 @@ describe("ProfilePage", () => {
       ),
     });
     const full = analytics({
-      workClassification: slices(7, [
-        ["feature_work", 3],
-        ["bug_fix", 2],
-        ["test_change", 1],
-        ["not_judged_yet", 1],
-      ]),
+      workClassification: {
+        distribution: slices(7, [
+          ["feature_work", 3],
+          ["bug_fix", 2],
+          ["test_change", 1],
+          ["not_judged_yet", 1],
+        ]),
+        coverage: NO_COVERAGE,
+      },
       workComplexity: {
+        coverage: NO_COVERAGE,
         person: slices(8, [
           ["low", 1],
           ["medium", 2],
@@ -592,7 +624,7 @@ describe("ProfilePage", () => {
           ["very_high", 1],
           ["not_judged_yet", 1],
         ]),
-        repository: slices(9, [
+        restOfRepository: slices(9, [
           ["low", 4],
           ["medium", 2],
           ["high", 1],
@@ -623,6 +655,7 @@ describe("ProfilePage", () => {
         substantivePerPullRequest: 0.5,
       },
       testingContribution: {
+        coverage: NO_COVERAGE,
         featureAndFixPullRequests: {
           total: 8,
           tested: count([521, 522, 523, 524, 525]),
@@ -713,8 +746,9 @@ describe("ProfilePage", () => {
       scores("L2", []),
       analytics({
         workComplexity: {
+          coverage: NO_COVERAGE,
           person: EMPTY_DISTRIBUTION,
-          repository: { total: 2, slices: [{ name: "low", count: withPullRequests, share: 1 }] },
+          restOfRepository: { total: 2, slices: [{ name: "low", count: withPullRequests, share: 1 }] },
         },
       }),
     );
@@ -792,8 +826,8 @@ describe("ProfilePage", () => {
     answeringWith(
       scores("L2", []),
       analytics({
-        workClassification: workTypes,
-        workComplexity: { person: complexity, repository: EMPTY_DISTRIBUTION },
+        workClassification: { distribution: workTypes, coverage: NO_COVERAGE },
+        workComplexity: { coverage: NO_COVERAGE, person: complexity, restOfRepository: EMPTY_DISTRIBUTION },
       }),
     );
 
@@ -816,6 +850,7 @@ describe("ProfilePage", () => {
       scores("L2", []),
       analytics({
         testingContribution: {
+          coverage: NO_COVERAGE,
           featureAndFixPullRequests: { ...tested, testedByTier: EMPTY_DISTRIBUTION },
           withoutDigest: count(),
           bugFixPullRequests: TEST_SHARE,
