@@ -412,7 +412,7 @@ Every count is split by tier (spec 7).
 - **Analytics fixes**: every count limited to the quarter (also the per-developer counts of `/api/developers`); Work complexity gives shares and leaves the person out of the project bars; each analytic reports judged out of total ("based on 41 of 52 PRs"); delivery numbers: Feature work items closed, PRs merged, bugs fixed.
 - **Team endpoint** `GET /api/team/scores?quarter=&level=`: every developer's score, sub-scores, dimension scores and working tiers in one call.
 
-**Before it starts.** The judging of July must be finished on `ei_latest` (`/judge digest` until nothing waits, then `evidence-build`, `/judge feature-work`, `/judge review-comments`, `dimension-scoring`), or every number rests on "not judged yet".
+**Before it starts.** The judging of 1 to 14 Jul is complete on `ei_latest` (24 Nov 2026). The data holds two weeks, so weekly points give two points; the deep dive settles whether 15 to 31 Jul is imported first (F09) or the points are daily.
 
 **Read first.** Spec 8.1, 8.3, 10.1, 10.2, 11.1. `docs/features/F10-analytics/notes.md`, `docs/features/F11-scoring/notes.md`. The deck.
 
