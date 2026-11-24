@@ -431,7 +431,7 @@ Every count is split by tier (spec 7).
 - **Overview** (`/`): score distribution, work by type, complexity of the team, hygiene and judged coverage, all for one quarter.
 - Evidence list and item page keep their content in the calmer style.
 
-**Read first.** `docs/features/F14-interface-redesign/design.md` and `notes.md`. The deck, slides 3 to 10 and 28. The `dataviz` skill.
+**Read first.** The approved mock-up of the profile, `docs/mockups/profile.dc.html` (sample data; approved by the user on 24 Nov 2026, also at https://claude.ai/artifact/VTEJB7UcCRvtggAX6HFvJt): the profile follows its sections, order and look, drawn with Recharts. `docs/features/F14-interface-redesign/design.md` and `notes.md`. The deck, slides 3 to 10 and 28. The `dataviz` skill.
 
 **Done when.** The pages render on desktop and phone width with real data. The numbers equal the F15 API. A viewer clicks from the score down to a PR on GitHub. The palette passes the colour-blind check. Web format check, lint, type check, tests and build are green.
 
