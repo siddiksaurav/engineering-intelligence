@@ -30,24 +30,13 @@ class DeveloperDimensionScoresController {
             @RequestParam(name = "quarter", required = false) String quarterText,
             @RequestParam(name = "level", required = false) String levelText) {
         PersonSummary person = persons.find(personId).orElseThrow(() -> new DeveloperNotFoundException(personId));
-        Quarter quarter = parseQuarter(quarterText);
+        Quarter quarter = QuarterParameter.parse(quarterText);
         Level level = parseLevel(levelText);
         return DimensionScoresResponse.of(
                 new PersonResponse(person.personId(), person.displayName()),
                 quarter,
                 level,
                 scores.of(personId, quarter, level));
-    }
-
-    private static Quarter parseQuarter(String quarterText) {
-        if (quarterText == null) {
-            throw new InvalidQuarterException("The parameter quarter is required, in the form YYYY-Qn");
-        }
-        try {
-            return Quarter.parse(quarterText);
-        } catch (IllegalArgumentException wrongForm) {
-            throw new InvalidQuarterException(wrongForm.getMessage(), wrongForm);
-        }
     }
 
     private static Level parseLevel(String levelText) {

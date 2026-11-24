@@ -15,6 +15,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 class EvidenceItemRepositoryTest extends DatabaseTest {
 
+    private static final LocalDate FIRST_DAY = LocalDate.parse("2026-07-01");
+    private static final LocalDate LAST_DAY = LocalDate.parse("2026-09-30");
+
     @Autowired
     private EvidenceItemRepository repository;
 
@@ -78,10 +81,14 @@ class EvidenceItemRepositoryTest extends DatabaseTest {
 
         assertEquals(
                 List.of(newer.getId(), older.getId()),
-                repository.findCurrentOfPerson(personId).stream()
+                repository.findCurrentOfPersonBetween(personId, FIRST_DAY, LAST_DAY).stream()
                         .map(EvidenceItem::getId)
                         .toList());
-        assertEquals(List.of(), repository.findCurrentOfPerson(personId + 1));
+        assertEquals(List.of(), repository.findCurrentOfPersonBetween(personId + 1, FIRST_DAY, LAST_DAY));
+        assertEquals(
+                List.of(),
+                repository.findCurrentOfPersonBetween(
+                        personId, LocalDate.parse("2026-10-01"), LocalDate.parse("2026-12-31")));
     }
 
     @Test

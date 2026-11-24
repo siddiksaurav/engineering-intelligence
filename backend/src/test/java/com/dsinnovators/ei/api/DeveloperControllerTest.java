@@ -75,12 +75,12 @@ class DeveloperControllerTest extends DatabaseTest {
         long oldBug = item(ada, "bug_fix:20:1", "bug_fix", "2026-07-09", BUG_FIELDS, false, null);
         long currentBug = item(ada, "bug_fix:20:1", "bug_fix", "2026-07-09", BUG_FIELDS, false, oldBug);
         long commentId = item(
-                ada, "review_comment_written:77", "review_comment_written", "2026-10-02", COMMENT_FIELDS, false, null);
+                ada, "review_comment_written:77", "review_comment_written", "2026-07-12", COMMENT_FIELDS, false, null);
         long withdrawn = item(
-                ada, "review_comment_written:78", "review_comment_written", "2026-10-03", COMMENT_FIELDS, false, null);
-        item(ada, "review_comment_written:78", "review_comment_written", "2026-10-03", COMMENT_FIELDS, true, withdrawn);
+                ada, "review_comment_written:78", "review_comment_written", "2026-07-13", COMMENT_FIELDS, false, null);
+        item(ada, "review_comment_written:78", "review_comment_written", "2026-07-13", COMMENT_FIELDS, true, withdrawn);
 
-        HttpResponse<String> response = client.get("/api/developers/" + ada + "/evidence-items");
+        HttpResponse<String> response = client.get("/api/developers/" + ada + "/evidence-items?quarter=2026-Q3");
 
         assertEquals(200, response.statusCode());
         JsonNode body = JobEndpointClient.json(response);
@@ -97,15 +97,16 @@ class DeveloperControllerTest extends DatabaseTest {
     void anItemHasItsTypeDateQuarterTitleAndLinks() throws Exception {
         item(ada, "feature_work:10:1", "feature_work", "2026-07-03", FEATURE_FIELDS, false, null);
         item(ada, "bug_fix:20:1", "bug_fix", "2026-07-09", BUG_FIELDS, false, null);
-        item(ada, "review_comment_written:77", "review_comment_written", "2026-10-02", COMMENT_FIELDS, false, null);
+        item(ada, "review_comment_written:77", "review_comment_written", "2026-07-12", COMMENT_FIELDS, false, null);
 
-        JsonNode items = JobEndpointClient.json(client.get("/api/developers/" + ada + "/evidence-items"))
+        JsonNode items = JobEndpointClient.json(
+                        client.get("/api/developers/" + ada + "/evidence-items?quarter=2026-Q3"))
                 .get("items");
 
         JsonNode comment = items.get(0);
         assertEquals("review_comment_written", comment.get("type").stringValue());
-        assertEquals("2026-10-02", comment.get("date").stringValue());
-        assertEquals("2026-Q4", comment.get("quarter").stringValue());
+        assertEquals("2026-07-12", comment.get("date").stringValue());
+        assertEquals("2026-Q3", comment.get("quarter").stringValue());
         assertEquals("Add cache", comment.get("title").stringValue());
         assertEquals(
                 "https://source.test/review_comment_written:77",
@@ -143,7 +144,8 @@ class DeveloperControllerTest extends DatabaseTest {
         long first = tier(testChange, "T1", "Unit tests only", null);
         tier(testChange, "T2", "Integration tests", first);
 
-        JsonNode body = JobEndpointClient.json(client.get("/api/developers/" + ada + "/evidence-items"));
+        JsonNode body =
+                JobEndpointClient.json(client.get("/api/developers/" + ada + "/evidence-items?quarter=2026-Q4"));
         JsonNode items = body.get("items");
 
         JsonNode withTier = items.get(0);
@@ -162,7 +164,8 @@ class DeveloperControllerTest extends DatabaseTest {
         item(ada, "feature_work:pull_request:104", "feature_work", "2026-10-05", NO_WORK_ITEM_FIELDS, false, null);
         item(ada, "bug_fix:pull_request:104", "bug_fix", "2026-10-04", NO_WORK_ITEM_FIELDS, false, null);
 
-        JsonNode items = JobEndpointClient.json(client.get("/api/developers/" + ada + "/evidence-items"))
+        JsonNode items = JobEndpointClient.json(
+                        client.get("/api/developers/" + ada + "/evidence-items?quarter=2026-Q4"))
                 .get("items");
 
         for (JsonNode item : items) {
@@ -181,8 +184,9 @@ class DeveloperControllerTest extends DatabaseTest {
         item(ada, "infra_release:104", "infra_release", "2026-10-05", TEST_CHANGE_FIELDS, false, null);
         item(ada, "documentation:104", "documentation", "2026-10-05", TEST_CHANGE_FIELDS, false, null);
 
-        JsonNode counts =
-                JobEndpointClient.json(client.get("/api/developers")).get(0).get("counts");
+        JsonNode counts = JobEndpointClient.json(client.get("/api/developers?quarter=2026-Q4"))
+                .get(0)
+                .get("counts");
 
         assertEquals(1, counts.get("testChange").longValue());
         assertEquals(1, counts.get("refactorPerformance").longValue());
@@ -197,31 +201,88 @@ class DeveloperControllerTest extends DatabaseTest {
     }
 
     @Test
-    void theListHasEveryPersonWithTheCountsOfCurrentItems() throws Exception {
-        long grace = person("Grace");
+    void theListHasTheDevelopersWithItemsInTheQuarterAndTheirCounts() throws Exception {
+        person("Grace");
         item(ada, "feature_work:10:1", "feature_work", "2026-07-03", FEATURE_FIELDS, false, null);
         long oldBug = item(ada, "bug_fix:20:1", "bug_fix", "2026-07-09", BUG_FIELDS, false, null);
         item(ada, "bug_fix:20:1", "bug_fix", "2026-07-09", BUG_FIELDS, false, oldBug);
         long gone = item(
-                ada, "review_comment_written:77", "review_comment_written", "2026-10-02", COMMENT_FIELDS, false, null);
-        item(ada, "review_comment_written:77", "review_comment_written", "2026-10-02", COMMENT_FIELDS, true, gone);
+                ada, "review_comment_written:77", "review_comment_written", "2026-07-12", COMMENT_FIELDS, false, null);
+        item(ada, "review_comment_written:77", "review_comment_written", "2026-07-12", COMMENT_FIELDS, true, gone);
 
-        JsonNode developers = JobEndpointClient.json(client.get("/api/developers"));
+        JsonNode developers = JobEndpointClient.json(client.get("/api/developers?quarter=2026-Q3"));
 
-        assertEquals(2, developers.size());
+        assertEquals(1, developers.size());
         JsonNode first = developers.get(0);
         assertEquals(ada, first.get("personId").longValue());
         assertEquals("Ada", first.get("displayName").stringValue());
         assertEquals(1, first.get("counts").get("featureWork").longValue());
         assertEquals(1, first.get("counts").get("bugFix").longValue());
         assertEquals(0, first.get("counts").get("reviewCommentWritten").longValue());
+    }
+
+    @Test
+    void countsOnlyTheItemsOfTheQuarter() throws Exception {
+        long grace = person("Grace");
+        item(ada, "bug_fix:20:1", "bug_fix", "2026-06-30", BUG_FIELDS, false, null);
+        item(grace, "bug_fix:20:2", "bug_fix", "2026-06-30", BUG_FIELDS, false, null);
+        item(grace, "bug_fix:20:3", "bug_fix", "2026-07-01", BUG_FIELDS, false, null);
+        item(ada, "feature_work:10:1", "feature_work", "2026-07-03", FEATURE_FIELDS, false, null);
+        item(ada, "feature_work:10:2", "feature_work", "2026-10-01", FEATURE_FIELDS, false, null);
+
+        JsonNode developers = JobEndpointClient.json(client.get("/api/developers?quarter=2026-Q3"));
+
+        assertEquals(2, developers.size());
+        JsonNode adaCounts = developers.get(0).get("counts");
+        assertEquals(ada, developers.get(0).get("personId").longValue());
+        assertEquals(1, adaCounts.get("featureWork").longValue());
+        assertEquals(0, adaCounts.get("bugFix").longValue());
         assertEquals(grace, developers.get(1).get("personId").longValue());
-        assertEquals(0, developers.get(1).get("counts").get("featureWork").longValue());
+        assertEquals(1, developers.get(1).get("counts").get("bugFix").longValue());
+    }
+
+    @Test
+    void aPersonWithOnlyAnItemOutsideTheQuarterIsNotListed() throws Exception {
+        item(ada, "bug_fix:20:1", "bug_fix", "2026-06-30", BUG_FIELDS, false, null);
+
+        assertEquals(
+                0,
+                JobEndpointClient.json(client.get("/api/developers?quarter=2026-Q3"))
+                        .size());
+    }
+
+    @Test
+    void theDeveloperListNeedsAValidQuarter() throws Exception {
+        assertEquals(400, client.get("/api/developers").statusCode());
+        assertEquals(400, client.get("/api/developers?quarter=2026-Q5").statusCode());
+    }
+
+    @Test
+    void evidenceItemsOfTheQuarterOnly() throws Exception {
+        item(ada, "bug_fix:20:1", "bug_fix", "2026-06-30", BUG_FIELDS, false, null);
+        long july = item(ada, "feature_work:10:1", "feature_work", "2026-07-03", FEATURE_FIELDS, false, null);
+
+        JsonNode items = JobEndpointClient.json(
+                        client.get("/api/developers/" + ada + "/evidence-items?quarter=2026-Q3"))
+                .get("items");
+
+        assertEquals(1, items.size());
+        assertEquals(july, items.get(0).get("id").longValue());
+    }
+
+    @Test
+    void theEvidenceListNeedsAValidQuarter() throws Exception {
+        assertEquals(
+                400, client.get("/api/developers/" + ada + "/evidence-items").statusCode());
+        assertEquals(
+                400,
+                client.get("/api/developers/" + ada + "/evidence-items?quarter=July")
+                        .statusCode());
     }
 
     @Test
     void anUnknownDeveloperAnswers404NamingTheId() throws Exception {
-        HttpResponse<String> response = client.get("/api/developers/999/evidence-items");
+        HttpResponse<String> response = client.get("/api/developers/999/evidence-items?quarter=2026-Q3");
 
         assertEquals(404, response.statusCode());
         assertTrue(JobEndpointClient.json(response).get("detail").stringValue().contains("999"));

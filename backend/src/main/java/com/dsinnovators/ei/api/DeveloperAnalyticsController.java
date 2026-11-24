@@ -27,19 +27,8 @@ class DeveloperAnalyticsController {
     DeveloperAnalyticsResponse analytics(
             @PathVariable long personId, @RequestParam(name = "quarter", required = false) String quarterText) {
         PersonSummary person = persons.find(personId).orElseThrow(() -> new DeveloperNotFoundException(personId));
-        Quarter quarter = parse(quarterText);
+        Quarter quarter = QuarterParameter.parse(quarterText);
         return DeveloperAnalyticsResponse.of(
                 new PersonResponse(person.personId(), person.displayName()), quarter, analytics.of(personId, quarter));
-    }
-
-    private static Quarter parse(String quarterText) {
-        if (quarterText == null) {
-            throw new InvalidQuarterException("The parameter quarter is required, in the form YYYY-Qn");
-        }
-        try {
-            return Quarter.parse(quarterText);
-        } catch (IllegalArgumentException wrongForm) {
-            throw new InvalidQuarterException(wrongForm.getMessage(), wrongForm);
-        }
     }
 }
