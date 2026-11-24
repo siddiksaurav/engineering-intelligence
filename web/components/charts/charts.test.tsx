@@ -1,5 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
+import { formatValue } from "./chartFormat";
 import { DonutChart } from "./DonutChart";
 import { GroupedBarChart } from "./GroupedBarChart";
 import { SegmentedBar } from "./SegmentedBar";
@@ -52,6 +53,20 @@ describe("DonutChart", () => {
     expect(html).toContain("Feature work: 3 (75%)");
     expect(html).toContain("Bug fix: 1 (25%)");
     expect(html).toContain("Documentation: 0 (0%)");
+  });
+
+  it("rounds a share as the profile text does, so 14.5% reads 15%", () => {
+    const html = renderToStaticMarkup(
+      <DonutChart
+        label="Pull requests"
+        slices={[
+          { key: "a", label: "A", value: 29, color: "blue" },
+          { key: "b", label: "B", value: 171, color: "orange" },
+        ]}
+      />,
+    );
+
+    expect(html).toContain("A: 29 (15%)");
   });
 
   it("says there is no data for a total of 0", () => {
@@ -131,5 +146,17 @@ describe("StackedBarChart", () => {
     );
 
     expect(html).toContain("Ada: T1 2, T2 3, total 5");
+  });
+});
+
+describe("formatValue", () => {
+  it("rounds a share as the profile text does", () => {
+    expect(formatValue(0.145, "percent")).toBe("15%");
+    expect(formatValue(0.825, "percent")).toBe("83%");
+  });
+
+  it("shows a count as it is and a missing value as no data", () => {
+    expect(formatValue(7, "count")).toBe("7");
+    expect(formatValue(null, "percent")).toBe("no data");
   });
 });

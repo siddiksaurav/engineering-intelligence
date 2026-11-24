@@ -2,6 +2,7 @@
 
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import { CHART_SURFACE_COLOR } from "@/lib/palette";
+import { percent } from "@/lib/profileText";
 import { ChartFrame } from "./ChartFrame";
 import styles from "./charts.module.css";
 
@@ -28,7 +29,7 @@ export function DonutChart({
     );
   }
   const drawn = slices.filter((slice) => slice.value > 0);
-  const summary = slices.map((slice) => `${slice.label}: ${slice.value} (${Math.round((slice.value / total) * 100)}%)`);
+  const summary = slices.map((slice) => `${slice.label}: ${slice.value} (${percent(slice.value / total)})`);
   return (
     <ChartFrame label={label} summary={summary} legend={drawn}>
       <div className={styles.donut}>
