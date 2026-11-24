@@ -51,17 +51,29 @@ class WorkComplexityTest extends DatabaseTest {
         assertEquals(List.of(1, 2), result.person().slices().get(2).count().pullRequestNumbers());
         assertEquals(List.of(unjudged), result.person().slices().get(4).count().evidenceItemIds());
         assertEquals(0.25, result.person().slices().get(2).share());
-        assertEquals(5, result.repository().total());
-        assertEquals(List.of(1L, 1L, 1L, 1L, 1L), counts(result.repository()));
+        assertEquals(1, result.restOfRepository().total());
+        assertEquals(List.of(0L, 1L, 0L, 0L, 0L), counts(result.restOfRepository()));
         assertEquals(
                 List.of(othersMedium),
-                result.repository().slices().get(1).count().evidenceItemIds());
-        assertEquals(
-                List.of(low, high, veryHigh, unjudged, othersMedium),
-                result.repository().slices().stream()
-                        .flatMap(slice -> slice.count().evidenceItemIds().stream())
-                        .sorted()
-                        .toList());
+                result.restOfRepository().slices().get(1).count().evidenceItemIds());
+    }
+
+    @Test
+    void restOfRepositoryLeavesThePersonOut() {
+        AnalyticsRows rows = new AnalyticsRows(jdbc);
+        long ada = rows.person(11, "ada");
+        long grace = rows.person(12, "grace");
+        for (int day = 2; day <= 3; day++) {
+            long medium = rows.item("feature_work", ada, "2026-07-0" + day, false, null);
+            rows.complexity(medium, "medium", "T2", null);
+        }
+        long high = rows.item("feature_work", grace, "2026-07-04", false, null);
+        rows.complexity(high, "high", "T3", null);
+
+        WorkComplexity.Result result = complexity.of(ada, QUARTER);
+
+        assertEquals(List.of(0L, 2L, 0L, 0L, 0L), counts(result.person()));
+        assertEquals(List.of(0L, 0L, 1L, 0L, 0L), counts(result.restOfRepository()));
     }
 
     @Test
@@ -71,7 +83,7 @@ class WorkComplexityTest extends DatabaseTest {
         WorkComplexity.Result result = complexity.of(ada, QUARTER);
 
         assertEquals(BARS, names(result.person()));
-        assertEquals(List.of(0L, 0L, 0L, 0L, 0L), counts(result.repository()));
+        assertEquals(List.of(0L, 0L, 0L, 0L, 0L), counts(result.restOfRepository()));
         assertNull(result.person().slices().get(0).share());
     }
 

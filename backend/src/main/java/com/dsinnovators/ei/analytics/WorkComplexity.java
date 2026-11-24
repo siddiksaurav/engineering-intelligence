@@ -12,7 +12,8 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * How hard a person's work was: their current Feature work items dated in the quarter, counted by
  * the complexity of the current {@code feature_work_complexity} judgment, next to the same count for
- * every current Feature work item of the repository, the person's included (decisions 194, 195).
+ * the Feature work items of every other person, so the person is compared with the rest of the
+ * repository and not with a total that holds them (decisions 194, 195, 284).
  * An item without a judgment is counted as not judged yet (decision 198). Complexity gives the tier,
  * so the split by complexity is the split by tier.
  */
@@ -51,26 +52,24 @@ public class WorkComplexity {
      * The two sets of bars of Work complexity.
      *
      * @param person the person's Feature work items
-     * @param repository every Feature work item of the repository, the person's included
+     * @param restOfRepository the Feature work items of every other person
      */
-    public record Result(Distribution person, Distribution repository) {}
+    public record Result(Distribution person, Distribution restOfRepository) {}
 
     @Transactional(readOnly = true)
     public Result of(long personId, Quarter quarter) {
         Map<String, Count> person = emptyBars();
-        Map<String, Count> repository = emptyBars();
+        Map<String, Count> restOfRepository = emptyBars();
         List<Row> rows = analyticsQuery
                 .statement(QUERY, quarter)
                 .param("personId", personId)
                 .query(WorkComplexity::rowOf)
                 .list();
         for (Row row : rows) {
-            repository.merge(row.complexity(), row.count(), Count::plus);
-            if (row.own()) {
-                person.merge(row.complexity(), row.count(), Count::plus);
-            }
+            Map<String, Count> bars = row.own() ? person : restOfRepository;
+            bars.merge(row.complexity(), row.count(), Count::plus);
         }
-        return new Result(Distribution.of(person), Distribution.of(repository));
+        return new Result(Distribution.of(person), Distribution.of(restOfRepository));
     }
 
     private record Row(boolean own, String complexity, Count count) {}
