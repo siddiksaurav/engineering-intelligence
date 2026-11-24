@@ -33,11 +33,21 @@ public class WorkClassification {
         this.analyticsQuery = analyticsQuery;
     }
 
-    /** The pull requests of the person in the quarter by work type; only the work types that occur. */
+    /**
+     * The pull requests of the person by work type.
+     *
+     * @param distribution the pull requests in the quarter by work type; only the work types that occur
+     * @param coverage the pull requests with a digest of all of them
+     */
+    public record Result(Distribution distribution, Coverage coverage) {}
+
     @Transactional(readOnly = true)
-    public Distribution of(long personId, Quarter quarter) {
+    public Result of(long personId, Quarter quarter) {
         Map<String, Count> countsByWorkType = AnalyticsQuery.countsByBucket(
                 analyticsQuery.statement(QUERY, quarter).param("personId", personId), "work_type");
-        return Distribution.of(countsByWorkType);
+        Distribution distribution = Distribution.of(countsByWorkType);
+        Count notJudgedYet = countsByWorkType.getOrDefault(Distribution.NOT_JUDGED_YET, Count.none());
+        return new Result(
+                distribution, new Coverage(distribution.total() - notJudgedYet.count(), distribution.total()));
     }
 }

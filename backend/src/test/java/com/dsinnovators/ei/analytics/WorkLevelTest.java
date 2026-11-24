@@ -94,6 +94,7 @@ class WorkLevelTest extends DatabaseTest {
 
         WorkLevel.Result result = workLevel.of(ada, QUARTER);
 
+        assertEquals(new Coverage(1, 2), result.coverage());
         assertEquals(2, result.person().weightedTotal());
         assertEquals(2, result.person().weightedAtT2OrAbove());
         assertEquals(0, result.person().weightedAtT3());

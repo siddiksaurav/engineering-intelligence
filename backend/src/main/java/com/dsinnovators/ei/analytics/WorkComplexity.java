@@ -53,8 +53,9 @@ public class WorkComplexity {
      *
      * @param person the person's Feature work items
      * @param restOfRepository the Feature work items of every other person
+     * @param coverage the person's Feature work items that have a complexity, of all of them
      */
-    public record Result(Distribution person, Distribution restOfRepository) {}
+    public record Result(Distribution person, Distribution restOfRepository, Coverage coverage) {}
 
     @Transactional(readOnly = true)
     public Result of(long personId, Quarter quarter) {
@@ -69,7 +70,12 @@ public class WorkComplexity {
             Map<String, Count> bars = row.own() ? person : restOfRepository;
             bars.merge(row.complexity(), row.count(), Count::plus);
         }
-        return new Result(Distribution.of(person), Distribution.of(restOfRepository));
+        Distribution personBars = Distribution.of(person);
+        long notJudgedYet = person.get(Distribution.NOT_JUDGED_YET).count();
+        return new Result(
+                personBars,
+                Distribution.of(restOfRepository),
+                new Coverage(personBars.total() - notJudgedYet, personBars.total()));
     }
 
     private record Row(boolean own, String complexity, Count count) {}

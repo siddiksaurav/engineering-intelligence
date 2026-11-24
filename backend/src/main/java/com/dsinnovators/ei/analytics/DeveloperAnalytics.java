@@ -46,7 +46,7 @@ public class DeveloperAnalytics {
      * @param hygiene how many pull requests of the repository are linked to a work item
      */
     public record Result(
-            Distribution workClassification,
+            WorkClassification.Result workClassification,
             WorkComplexity.Result workComplexity,
             WorkLevel.Result workLevel,
             ReviewParticipation.Result reviewParticipation,

@@ -51,6 +51,7 @@ class WorkComplexityTest extends DatabaseTest {
         assertEquals(List.of(1, 2), result.person().slices().get(2).count().pullRequestNumbers());
         assertEquals(List.of(unjudged), result.person().slices().get(4).count().evidenceItemIds());
         assertEquals(0.25, result.person().slices().get(2).share());
+        assertEquals(new Coverage(3, 4), result.coverage());
         assertEquals(1, result.restOfRepository().total());
         assertEquals(List.of(0L, 1L, 0L, 0L, 0L), counts(result.restOfRepository()));
         assertEquals(

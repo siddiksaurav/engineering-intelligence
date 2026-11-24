@@ -51,7 +51,8 @@ class DeveloperAnalyticsControllerTest extends DatabaseTest {
         assertEquals(ada, body.get("person").get("personId").longValue());
         assertEquals("Ada", body.get("person").get("displayName").stringValue());
         assertEquals("2026-Q3", body.get("quarter").stringValue());
-        JsonNode notJudgedYet = body.get("workClassification").get("slices").get(0);
+        JsonNode notJudgedYet =
+                body.get("workClassification").get("distribution").get("slices").get(0);
         assertEquals("not_judged_yet", notJudgedYet.get("name").stringValue());
         assertEquals(1.0, notJudgedYet.get("share").doubleValue());
         assertEquals(
@@ -59,6 +60,9 @@ class DeveloperAnalyticsControllerTest extends DatabaseTest {
         assertTrue(notJudgedYet.get("count").get("evidenceItemIds").isArray());
         assertTrue(body.get("workComplexity").has("person"));
         assertTrue(body.get("workComplexity").has("restOfRepository"));
+        assertTrue(body.get("workComplexity").has("coverage"));
+        assertTrue(body.get("workClassification").get("coverage").has("judged"));
+        assertTrue(body.get("reviewFindingsReceived").get("comments").has("notSubstantive"));
         assertTrue(body.get("workLevel").get("person").has("shareAtT2OrAbove"));
         assertTrue(body.get("workLevel").has("line"));
         assertTrue(body.get("reviewParticipation").has("pullRequestsReviewed"));

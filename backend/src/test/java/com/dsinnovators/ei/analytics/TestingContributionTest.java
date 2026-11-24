@@ -46,6 +46,7 @@ class TestingContributionTest extends DatabaseTest {
         assertEquals(List.of("T1", "T2"), names(featureAndFix.testedByTier()));
         assertEquals(List.of(1L, 1L), counts(featureAndFix.testedByTier()));
         assertEquals(List.of(5), result.withoutDigest().pullRequestNumbers());
+        assertEquals(new Coverage(4, 5), result.coverage());
         assertEquals(0, result.bugFixPullRequests().total());
         assertNull(result.bugFixPullRequests().share());
     }
