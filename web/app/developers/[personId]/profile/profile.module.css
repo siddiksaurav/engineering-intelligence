@@ -17,56 +17,6 @@
   color: var(--sky-300);
 }
 
-.levelControl {
-  display: grid;
-  gap: 6px;
-  justify-items: end;
-}
-
-.levelCaption {
-  font-family: var(--font-data);
-  font-size: 0.72rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: rgb(255 255 255 / 65%);
-}
-
-.levels {
-  display: inline-flex;
-  padding: 4px;
-  border-radius: 999px;
-  border: 1px solid rgb(125 211 252 / 30%);
-  background: rgb(4 21 39 / 55%);
-}
-
-.level,
-.levelSelected {
-  min-width: 52px;
-  padding: 6px 14px;
-  border-radius: 999px;
-  text-align: center;
-  font-family: var(--font-data);
-  font-weight: 500;
-  text-decoration: none;
-  transition:
-    background-color 150ms,
-    color 150ms;
-}
-
-.level {
-  color: rgb(255 255 255 / 80%);
-}
-
-.level:hover {
-  color: #fff;
-  background: rgb(255 255 255 / 10%);
-}
-
-.levelSelected {
-  background: var(--sky-300);
-  color: var(--navy-950);
-}
-
 /* Dimensions table */
 
 .tableScroll {
@@ -316,10 +266,6 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
   gap: 20px 28px;
-}
-
-.levelControl {
-  justify-items: start;
 }
 
 .score strong {

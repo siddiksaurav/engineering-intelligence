@@ -4,6 +4,11 @@ import { fetchDevelopers } from "@/lib/evidence";
 import { fetchTeamScores } from "@/lib/team";
 import DevelopersPage from "./page";
 
+vi.mock("next/navigation", () => ({
+  notFound: () => {
+    throw new Error("not found");
+  },
+}));
 vi.mock("@/lib/evidence", () => ({ fetchDevelopers: vi.fn() }));
 vi.mock("@/lib/team", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/team")>()),
@@ -21,6 +26,10 @@ const NO_ITEMS = {
   documentation: 0,
 };
 
+async function render(searchParams: Record<string, string> = {}): Promise<string> {
+  return renderToStaticMarkup(await DevelopersPage({ searchParams: Promise.resolve(searchParams) }));
+}
+
 describe("DevelopersPage", () => {
   beforeEach(() => {
     vi.stubEnv("DEFAULT_QUARTER", "2026-Q3");
@@ -33,12 +42,12 @@ describe("DevelopersPage", () => {
     vi.unstubAllEnvs();
   });
 
-  it("shows each developer's score and working tier per dimension at L2, and not scored without them", async () => {
+  it("lists developers by name with both scores at the chosen level", async () => {
     vi.mocked(fetchDevelopers).mockResolvedValue({
       status: "ok",
       data: [
-        { personId: 7, displayName: "ada", counts: { ...NO_ITEMS, featureWork: 2 } },
         { personId: 8, displayName: "grace", counts: NO_ITEMS },
+        { personId: 7, displayName: "ada", counts: { ...NO_ITEMS, featureWork: 2 } },
       ],
     });
     vi.mocked(fetchTeamScores).mockResolvedValue(
@@ -53,94 +62,85 @@ describe("DevelopersPage", () => {
       ]),
     );
 
-    const html = renderToStaticMarkup(await DevelopersPage());
+    const html = await render({ level: "L3" });
 
-    expect(fetchTeamScores).toHaveBeenCalledWith(undefined, [7, 8], "2026-Q3", "L2");
+    expect(fetchTeamScores).toHaveBeenCalledWith(undefined, [7, 8], "2026-Q3", "L3");
+    expect(html.indexOf(">ada<")).toBeLessThan(html.indexOf(">grace<"));
     const ada = html.slice(html.indexOf(">ada<"), html.indexOf(">grace<"));
     expect(ada).toContain("Coding and code quality");
-    expect(ada).toMatch(/<strong[^>]*>2<\/strong> of 2/);
-    expect(ada).toContain('aria-label="Works at T3"');
-    expect(ada).toMatch(/<strong[^>]*>0<\/strong> of 2/);
+    expect(ada).toMatch(/data-score="2"[^>]*>2</);
+    expect(ada).toContain('data-tier="T3"');
+    expect(ada).toMatch(/data-score="0"[^>]*>0</);
     expect(ada).toContain("no working tier");
     expect(html.slice(html.indexOf(">grace<"))).toContain("not scored");
   });
 
-  it("shows the total of a developer's evidence items", async () => {
+  it("links each level, keeping the quarter, and marks the chosen one", async () => {
+    vi.mocked(fetchDevelopers).mockResolvedValue({ status: "ok", data: [] });
+
+    const html = await render({ quarter: "2026-Q2" });
+
+    expect(html).toContain('href="/developers?quarter=2026-Q2&amp;level=L1"');
+    expect(html).toMatch(/aria-current="page"[^>]*>L2</);
+    expect(fetchDevelopers).toHaveBeenCalledWith(undefined, "2026-Q2");
+  });
+
+  it("shows the total and a bar of a developer's items of the quarter", async () => {
     vi.mocked(fetchDevelopers).mockResolvedValue({
       status: "ok",
       data: [{ personId: 7, displayName: "ada", counts: { ...NO_ITEMS, featureWork: 2, security: 4 } }],
     });
 
-    expect(renderToStaticMarkup(await DevelopersPage())).toMatch(/>6<\/strong> items/);
+    const html = await render();
+
+    expect(html).toMatch(/>6<\/strong> items/);
+    expect(html).toContain('aria-label="Items of ada');
   });
 
-  it("asks for nothing and says why when DEFAULT_QUARTER is not set", async () => {
+  it("links each developer to the profile, the evidence list and a comparison at the chosen level", async () => {
+    vi.mocked(fetchDevelopers).mockResolvedValue({
+      status: "ok",
+      data: [{ personId: 7, displayName: "ada", counts: NO_ITEMS }],
+    });
+
+    const html = await render({ level: "L1" });
+
+    expect(html).toMatch(/<a[^>]*href="\/developers\/7\/profile\?quarter=2026-Q3&amp;level=L1"[^>]*>ada<\/a>/);
+    expect(html).toContain('href="/developers/7"');
+    expect(html).toContain('href="/developers/compare?a=7&amp;quarter=2026-Q3&amp;level=L1"');
+  });
+
+  it("asks for nothing and says why when no quarter is given or set", async () => {
     vi.stubEnv("DEFAULT_QUARTER", "");
 
-    const html = renderToStaticMarkup(await DevelopersPage());
+    const html = await render();
 
     expect(fetchDevelopers).not.toHaveBeenCalled();
     expect(fetchTeamScores).not.toHaveBeenCalled();
     expect(html).toContain("DEFAULT_QUARTER");
   });
 
-  it("lists each developer with a count per type and a link to the page", async () => {
-    vi.mocked(fetchDevelopers).mockResolvedValue({
-      status: "ok",
-      data: [
-        {
-          personId: 7,
-          displayName: "ada",
-          counts: { ...NO_ITEMS, featureWork: 2, bugFix: 1, reviewCommentWritten: 5, testChange: 3, security: 4 },
-        },
-        { personId: 8, displayName: "grace", counts: NO_ITEMS },
-      ],
-    });
-
-    const html = renderToStaticMarkup(await DevelopersPage());
-
-    expect(html).toContain('href="/developers/7"');
-    expect(html).toContain('href="/developers/8"');
-    expect(html).toContain("ada");
-    expect(html).toContain("grace");
-    expect(html).toMatch(/Feature work[^0-9]*2/);
-    expect(html).toMatch(/Bug fix[^0-9]*1/);
-    expect(html).toMatch(/Review comment written[^0-9]*5/);
-    expect(html).toMatch(/Test change[^0-9]*3/);
-    expect(html).toMatch(/Security[^0-9]*4/);
-    for (const label of ["Refactor and performance", "Infra and release", "Documentation"]) {
-      expect(html).toContain(label);
-    }
-  });
-
-  it("each developer links to their profile", async () => {
-    vi.mocked(fetchDevelopers).mockResolvedValue({
-      status: "ok",
-      data: [{ personId: 7, displayName: "ada", counts: NO_ITEMS }],
-    });
-
-    const html = renderToStaticMarkup(await DevelopersPage());
-
-    expect(html).toMatch(/<a[^>]*href="\/developers\/7\/profile"[^>]*>ada<\/a>/);
+  it("answers not found for an unknown level", async () => {
+    await expect(render({ level: "L9" })).rejects.toThrow("not found");
   });
 
   it("says there are no developers when none is stored", async () => {
     vi.mocked(fetchDevelopers).mockResolvedValue({ status: "ok", data: [] });
 
-    expect(renderToStaticMarkup(await DevelopersPage())).toContain("No developers");
+    expect(await render()).toContain("No developers");
   });
 
   it("says the backend is down when it cannot be read", async () => {
     vi.mocked(fetchDevelopers).mockResolvedValue({ status: "down" });
 
-    expect(renderToStaticMarkup(await DevelopersPage())).toContain("backend down");
+    expect(await render()).toContain("backend down");
   });
 
   it("asks the backend named by BACKEND_URL", async () => {
     vi.stubEnv("BACKEND_URL", "http://backend.test:9000");
     vi.mocked(fetchDevelopers).mockResolvedValue({ status: "ok", data: [] });
 
-    await DevelopersPage();
+    await render();
 
     expect(fetchDevelopers).toHaveBeenCalledWith("http://backend.test:9000", "2026-Q3");
   });

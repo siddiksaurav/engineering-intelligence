@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { type Analytics, type DimensionScores, fetchAnalytics, fetchDimensionScores, type Level } from "@/lib/profile";
+import { type Analytics, type DimensionScores, fetchAnalytics, fetchDimensionScores } from "@/lib/profile";
 import { fetchItemSummaries } from "@/lib/items";
 import { itemIdsOnPage, notJudgedYet, profileParams } from "@/lib/profileParams";
 import { Avatar } from "@/components/Avatar";
+import { LevelSwitch } from "@/components/LevelSwitch";
 import { HeaderFigure, PageContent, PageHeader } from "@/components/Page";
 import { Notice } from "@/components/Panel";
 import { DimensionsSection } from "./DimensionsSection";
@@ -17,8 +18,6 @@ import { WorkLevelSection } from "./WorkLevelSection";
 
 // Read on every request, on the server. The browser never calls the backend.
 export const dynamic = "force-dynamic";
-
-const LEVELS: Level[] = ["L1", "L2", "L3"];
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
@@ -135,7 +134,12 @@ function ProfileHeader({ analytics, scores }: { analytics: Analytics; scores: Di
           {displayName}
         </span>
       }
-      controls={<LevelControl personId={personId} quarter={scores.quarter} selected={scores.level} />}
+      controls={
+        <LevelSwitch
+          selected={scores.level}
+          hrefFor={(level) => `/developers/${personId}/profile?quarter=${scores.quarter}&level=${level}`}
+        />
+      }
       figures={scores.dimensions.map((dimension) => (
         <HeaderFigure
           key={dimension.key}
@@ -150,27 +154,6 @@ function ProfileHeader({ analytics, scores }: { analytics: Analytics; scores: Di
       </span>
       <Link href={`/developers/${personId}`}>Evidence list</Link>
     </PageHeader>
-  );
-}
-
-/** The level the scores are read against; each level is a link, so the choice lives in the URL. */
-function LevelControl({ personId, quarter, selected }: { personId: number; quarter: string; selected: Level }) {
-  return (
-    <div className={styles.levelControl}>
-      <span className={styles.levelCaption}>Read at level</span>
-      <nav className={styles.levels} aria-label="Level">
-        {LEVELS.map((level) => (
-          <Link
-            key={level}
-            href={`/developers/${personId}/profile?quarter=${quarter}&level=${level}`}
-            className={level === selected ? styles.levelSelected : styles.level}
-            aria-current={level === selected ? "page" : undefined}
-          >
-            {level}
-          </Link>
-        ))}
-      </nav>
-    </div>
   );
 }
 
