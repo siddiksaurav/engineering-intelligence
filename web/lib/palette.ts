@@ -6,6 +6,13 @@ export const NOT_JUDGED_COLOR = "var(--not-judged)";
 /** The one hue of a list of classes that have no colour each, such as the work types of pull requests. */
 export const SINGLE_HUE_COLOR = "var(--azure-600)";
 
+/** The chart chrome is recessive: axis text, grid lines and the reference line never compete with the data. */
+export const CHART_AXIS_COLOR = "var(--ink-3)";
+export const CHART_GRID_COLOR = "var(--sky-100)";
+export const CHART_REFERENCE_COLOR = "var(--ink-2)";
+/** The gap between touching fills is drawn in the colour of the surface the chart sits on. */
+export const CHART_SURFACE_COLOR = "var(--surface)";
+
 /** Evidence types are identities: a fixed colour each, checked for colour-blind readers in this order (decision 265). */
 const TYPE_COLORS: Record<EvidenceType, string> = {
   feature_work: "var(--type-feature-work)",

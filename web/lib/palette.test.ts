@@ -1,5 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { NOT_JUDGED_COLOR, orderedColor, scoreColor, typeColor } from "./palette";
+import {
+  CHART_AXIS_COLOR,
+  CHART_GRID_COLOR,
+  CHART_REFERENCE_COLOR,
+  CHART_SURFACE_COLOR,
+  NOT_JUDGED_COLOR,
+  orderedColor,
+  scoreColor,
+  typeColor,
+} from "./palette";
 
 describe("palette", () => {
   it("gives every evidence type a colour of its own", () => {
@@ -36,5 +45,9 @@ describe("palette", () => {
   it("gives what is not judged yet the neutral colour and has none for an unordered name", () => {
     expect(orderedColor("not_judged_yet")).toBe(NOT_JUDGED_COLOR);
     expect(orderedColor("design")).toBeUndefined();
+  });
+
+  it("keeps the chart chrome apart from the data colours", () => {
+    expect(new Set([CHART_AXIS_COLOR, CHART_GRID_COLOR, CHART_REFERENCE_COLOR, CHART_SURFACE_COLOR]).size).toBe(4);
   });
 });

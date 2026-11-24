@@ -102,3 +102,64 @@
     stroke-dasharray: 0 100;
   }
 }
+
+.frame {
+  margin: 0;
+}
+
+.plot {
+  width: 100%;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.85rem;
+  color: var(--ink-2);
+}
+
+.legendSwatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 6px;
+  border-radius: 2px;
+}
+
+.donut {
+  position: relative;
+}
+
+.donutCenter {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.noData {
+  margin: 0;
+  padding: 32px 0;
+  text-align: center;
+  color: var(--ink-3);
+}
+
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
