@@ -1,5 +1,6 @@
 package com.dsinnovators.ei.api;
 
+import com.dsinnovators.ei.analytics.Count;
 import com.dsinnovators.ei.analytics.DeveloperAnalytics;
 import com.dsinnovators.ei.analytics.RepositoryHygiene;
 import com.dsinnovators.ei.analytics.ReviewFindingsReceived;
@@ -14,6 +15,7 @@ record DeveloperAnalyticsResponse(
         PersonResponse person,
         String quarter,
         WorkClassification.Result workClassification,
+        Count bugsFixed,
         WorkComplexity.Result workComplexity,
         WorkLevel.Result workLevel,
         ReviewParticipation.Result reviewParticipation,
@@ -26,6 +28,7 @@ record DeveloperAnalyticsResponse(
                 person,
                 quarter.toString(),
                 analytics.workClassification(),
+                analytics.bugsFixed(),
                 analytics.workComplexity(),
                 analytics.workLevel(),
                 analytics.reviewParticipation(),

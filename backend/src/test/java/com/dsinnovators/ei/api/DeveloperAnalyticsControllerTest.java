@@ -58,6 +58,9 @@ class DeveloperAnalyticsControllerTest extends DatabaseTest {
         assertEquals(
                 7, notJudgedYet.get("count").get("pullRequestNumbers").get(0).intValue());
         assertTrue(notJudgedYet.get("count").get("evidenceItemIds").isArray());
+        assertEquals(0, body.get("bugsFixed").get("count").longValue());
+        assertTrue(body.get("bugsFixed").get("evidenceItemIds").isArray());
+        assertTrue(body.get("bugsFixed").get("pullRequestNumbers").isArray());
         assertTrue(body.get("workComplexity").has("person"));
         assertTrue(body.get("workComplexity").has("restOfRepository"));
         assertTrue(body.get("workComplexity").has("coverage"));

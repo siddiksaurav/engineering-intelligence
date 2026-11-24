@@ -67,6 +67,8 @@ export type Analytics = {
   person: PersonSummary;
   quarter: string;
   workClassification: { distribution: Distribution; coverage: Coverage };
+  /** The person's Bug fix items of the quarter; a Bug is decided by the tracker type, not by the model. */
+  bugsFixed: Count;
   workComplexity: { person: Distribution; restOfRepository: Distribution; coverage: Coverage };
   workLevel: WorkLevel;
   reviewParticipation: {

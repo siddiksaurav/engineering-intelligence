@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class DeveloperAnalytics {
 
     private final WorkClassification workClassification;
+    private final BugsFixed bugsFixed;
     private final WorkComplexity workComplexity;
     private final WorkLevel workLevel;
     private final ReviewParticipation reviewParticipation;
@@ -19,6 +20,7 @@ public class DeveloperAnalytics {
 
     DeveloperAnalytics(
             WorkClassification workClassification,
+            BugsFixed bugsFixed,
             WorkComplexity workComplexity,
             WorkLevel workLevel,
             ReviewParticipation reviewParticipation,
@@ -26,6 +28,7 @@ public class DeveloperAnalytics {
             TestingContribution testingContribution,
             RepositoryHygiene repositoryHygiene) {
         this.workClassification = workClassification;
+        this.bugsFixed = bugsFixed;
         this.workComplexity = workComplexity;
         this.workLevel = workLevel;
         this.reviewParticipation = reviewParticipation;
@@ -38,6 +41,7 @@ public class DeveloperAnalytics {
      * Everything the profile shows for one developer and quarter.
      *
      * @param workClassification the merged pull requests by work type
+     * @param bugsFixed the person's Bug fix items in the quarter
      * @param workComplexity the Feature work items by complexity, of the person and of the repository
      * @param workLevel the share of the Feature work at T2 or above and at T3, of the person and of the rest of the repository
      * @param reviewParticipation the review work of the person
@@ -47,6 +51,7 @@ public class DeveloperAnalytics {
      */
     public record Result(
             WorkClassification.Result workClassification,
+            Count bugsFixed,
             WorkComplexity.Result workComplexity,
             WorkLevel.Result workLevel,
             ReviewParticipation.Result reviewParticipation,
@@ -59,6 +64,7 @@ public class DeveloperAnalytics {
     public Result of(long personId, Quarter quarter) {
         return new Result(
                 workClassification.of(personId, quarter),
+                bugsFixed.of(personId, quarter),
                 workComplexity.of(personId, quarter),
                 workLevel.of(personId, quarter),
                 reviewParticipation.of(personId, quarter),

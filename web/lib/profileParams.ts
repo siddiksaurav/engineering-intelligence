@@ -85,6 +85,7 @@ function notJudgedIds(distribution: Distribution): number[] {
 function analyticsCounts(analytics: Analytics): Count[] {
   return [
     ...sliceCounts(analytics.workClassification.distribution),
+    analytics.bugsFixed,
     ...sliceCounts(analytics.workComplexity.person),
     ...sliceCounts(analytics.workComplexity.restOfRepository),
     ...breakdownCounts(analytics.reviewParticipation.comments),

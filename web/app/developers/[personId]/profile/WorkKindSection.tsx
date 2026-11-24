@@ -49,7 +49,7 @@ export function WorkKindSection({ analytics, summariesById }: { analytics: Analy
       <div className={styles.tiles}>
         <Drill figure label="Feature work items" count={allOf(person)} summariesById={summariesById} />
         <Drill figure label="PRs merged" count={allOf(distribution)} summariesById={summariesById} />
-        <Drill figure label="Bugs fixed" count={sliceCount(distribution, "fix")} summariesById={summariesById} />
+        <Drill figure label="Bugs fixed" count={analytics.bugsFixed} summariesById={summariesById} />
       </div>
       <h3 className={styles.chartTitle}>Feature work by complexity</h3>
       <div className={styles.sideBySide}>

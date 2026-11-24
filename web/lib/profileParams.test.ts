@@ -96,6 +96,7 @@ function analytics(overrides: Partial<Analytics> = {}): Analytics {
     person: { personId: 7, displayName: "ada" },
     quarter: "2026-Q3",
     workClassification: { distribution: distribution(), coverage: NO_COVERAGE },
+    bugsFixed: count(),
     workComplexity: { coverage: NO_COVERAGE, person: distribution(), restOfRepository: distribution() },
     workLevel: { person: NO_WORK_LEVEL, restOfRepository: NO_WORK_LEVEL, line: 1 / 3, coverage: NO_COVERAGE },
     reviewParticipation: {
@@ -277,6 +278,10 @@ describe("itemIdsOnPage", () => {
     );
 
     expect(ids).toEqual([]);
+  });
+
+  it("lists the Bug fix items of the Bugs fixed tile", () => {
+    expect(itemIdsOnPage(analytics({ bugsFixed: count([81, 82]) }), scores([]))).toEqual([81, 82]);
   });
 
   it("lists every item id the page can open once, in the order met", () => {

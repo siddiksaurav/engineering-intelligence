@@ -56,6 +56,7 @@ function analytics(overrides: Partial<Analytics> = {}): Analytics {
     person: PERSON,
     quarter: "2026-Q3",
     workClassification: { distribution: EMPTY_DISTRIBUTION, coverage: NO_COVERAGE },
+    bugsFixed: count(),
     workComplexity: { coverage: NO_COVERAGE, person: EMPTY_DISTRIBUTION, restOfRepository: EMPTY_DISTRIBUTION },
     workLevel: { person: NO_WORK_LEVEL, restOfRepository: NO_WORK_LEVEL, line: 1 / 3, coverage: NO_COVERAGE },
     reviewParticipation: {
@@ -321,6 +322,7 @@ describe("ProfilePage", () => {
       scores("L2", []),
       analytics({
         workClassification: { distribution: workTypes, coverage: NO_COVERAGE },
+        bugsFixed: count([30, 31], [41, 42]),
         workComplexity: {
           coverage: NO_COVERAGE,
           person: { total: 2, slices: [{ name: "low", count: count([], [5, 6]), share: 1 }] },
@@ -334,7 +336,8 @@ describe("ProfilePage", () => {
     expect(html).toContain("Feature: 2 (50%)");
     expect(html).toMatch(/>2<\/span> Feature work items/);
     expect(html).toMatch(/>4<\/span> PRs merged/);
-    expect(html).toMatch(/>1<\/span> Bugs fixed/);
+    expect(html).toMatch(/>2<\/span> Bugs fixed/);
+    expect(html).toContain('href="/items/41"');
     expect(html).toContain('href="https://github.com/opf/openproject/pull/23"');
     expect(html).toContain('href="/items/5"');
     expect(html).toContain('href="/items/7"');
