@@ -152,7 +152,7 @@ function ProfileHeader({ analytics, scores }: { analytics: Analytics; scores: Di
       <span className={styles.quarter}>
         Based on {judged} of {total} PRs judged
       </span>
-      <Link href={`/developers/${personId}`}>Evidence list</Link>
+      <Link href={`/developers/${personId}?quarter=${scores.quarter}&level=${scores.level}`}>Evidence list</Link>
     </PageHeader>
   );
 }

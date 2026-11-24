@@ -7,11 +7,8 @@
 .summary {
   display: grid;
   gap: 12px;
-  padding: 18px 20px;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
+  padding: 16px 0;
+  border-bottom: 1px solid var(--line);
 }
 
 .summaryTotal {
@@ -115,7 +112,6 @@
 
 .card:hover {
   border-color: var(--sky-400);
-  box-shadow: var(--shadow);
 }
 
 .cardHeader {
@@ -158,6 +154,17 @@
   border-radius: 999px;
   background: var(--sky-100);
   color: var(--navy-800);
+}
+
+.headerQuarter {
+  display: inline-block;
+  margin-right: 12px;
+  padding: 1px 10px;
+  border-radius: 999px;
+  font-family: var(--font-data);
+  font-size: 0.82rem;
+  border: 1px solid rgb(125 211 252 / 40%);
+  color: var(--sky-300);
 }
 
 .tierReason {

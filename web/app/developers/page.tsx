@@ -124,7 +124,7 @@ function DeveloperRow({
             {developer.displayName}
           </Link>
           <span className={styles.links}>
-            <Link href={`/developers/${developer.personId}`}>Evidence list</Link>
+            <Link href={`/developers/${developer.personId}?quarter=${quarter}&level=${level}`}>Evidence list</Link>
             <Link href={`/developers/compare?a=${developer.personId}&quarter=${quarter}&level=${level}`}>Compare</Link>
           </span>
         </div>

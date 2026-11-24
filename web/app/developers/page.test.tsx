@@ -106,7 +106,7 @@ describe("DevelopersPage", () => {
     const html = await render({ level: "L1" });
 
     expect(html).toMatch(/<a[^>]*href="\/developers\/7\/profile\?quarter=2026-Q3&amp;level=L1"[^>]*>ada<\/a>/);
-    expect(html).toContain('href="/developers/7"');
+    expect(html).toContain('href="/developers/7?quarter=2026-Q3&amp;level=L1"');
     expect(html).toContain('href="/developers/compare?a=7&amp;quarter=2026-Q3&amp;level=L1"');
   });
 

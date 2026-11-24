@@ -352,7 +352,7 @@ describe("ProfilePage", () => {
     expect(html).toContain('href="/developers/7/profile?quarter=2026-Q3&amp;level=L1"');
     expect(html).toContain('href="/developers/7/profile?quarter=2026-Q3&amp;level=L3"');
     expect(html).toMatch(/aria-current="page"[^>]*>L2</);
-    expect(html).toContain('href="/developers/7"');
+    expect(html).toContain('href="/developers/7?quarter=2026-Q3&amp;level=L2"');
     expect(html).toContain('href="/developers"');
   });
 
