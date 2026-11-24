@@ -621,6 +621,18 @@ describe("ProfilePage", () => {
     expect(table).toContain("To score 2");
     expect(table).toContain("Works at T3. L2 expects T2: 2.");
     expect(table).toContain("Not assessed in the pilot");
+    for (const name of [
+      "Design and architecture",
+      "Planning and execution",
+      "Collaboration",
+      "Mentoring",
+      "Knowledge sharing",
+      "Hiring",
+      "Pre-sales",
+      "Client delivery",
+    ]) {
+      expect(table).toContain(name);
+    }
     expect(table).toContain("13 lead-rated dimensions");
     expect(table).toContain("Not rated: no lead input in the pilot");
   });

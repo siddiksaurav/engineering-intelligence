@@ -5,7 +5,7 @@ import { nextStepLine, whyLine } from "@/lib/profileText";
 import styles from "./profile.module.css";
 
 const NOT_ASSESSED =
-  "Design and architecture, Collaboration, Mentoring, Knowledge sharing, Hiring, Pre-sales, Client delivery";
+  "Design and architecture, Planning and execution, Collaboration, Mentoring, Knowledge sharing, Hiring, Pre-sales, Client delivery";
 
 const LEAD_RATED_COUNT = 13;
 
