@@ -1,0 +1,31 @@
+.line {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.score {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-small);
+  font-family: var(--font-data);
+  font-weight: 600;
+  color: #fff;
+  background: var(--step-3);
+}
+
+.score[data-score="0"] {
+  background: var(--sky-100);
+  color: var(--ink);
+}
+
+.score[data-score="2"] {
+  background: var(--step-5);
+}
+
+.noTier {
+  font-size: 0.85rem;
+  color: var(--ink-3);
+}

@@ -5,6 +5,8 @@ import {
   fetchDimensionScores,
   type Analytics,
   type Count,
+  type Coverage,
+  type WeightedWorkLevel,
   type Distribution,
   type EvidenceTypeTrail,
   type GateResult,
@@ -28,8 +30,20 @@ function count(pullRequestNumbers: number[] = [], evidenceItemIds: number[] = []
 
 const EMPTY_DISTRIBUTION: Distribution = { total: 0, slices: [] };
 
+const NO_COVERAGE: Coverage = { judged: 0, total: 0 };
+
+const NO_WORK_LEVEL: WeightedWorkLevel = {
+  weightedTotal: 0,
+  weightedAtT2OrAbove: 0,
+  shareAtT2OrAbove: null,
+  weightedAtT3: 0,
+  shareAtT3: null,
+};
+
 const BREAKDOWN = {
   substantive: count(),
+  notSubstantive: count(),
+  coverage: NO_COVERAGE,
   byCommentType: EMPTY_DISTRIBUTION,
   byTier: EMPTY_DISTRIBUTION,
   notJudgedYet: count(),
@@ -41,8 +55,10 @@ function analytics(overrides: Partial<Analytics> = {}): Analytics {
   return {
     person: PERSON,
     quarter: "2026-Q3",
-    workClassification: EMPTY_DISTRIBUTION,
-    workComplexity: { person: EMPTY_DISTRIBUTION, repository: EMPTY_DISTRIBUTION },
+    workClassification: { distribution: EMPTY_DISTRIBUTION, coverage: NO_COVERAGE },
+    bugsFixed: count(),
+    workComplexity: { coverage: NO_COVERAGE, person: EMPTY_DISTRIBUTION, restOfRepository: EMPTY_DISTRIBUTION },
+    workLevel: { person: NO_WORK_LEVEL, restOfRepository: NO_WORK_LEVEL, line: 1 / 3, coverage: NO_COVERAGE },
     reviewParticipation: {
       pullRequestsReviewed: count(),
       authorsReviewed: count(),
@@ -51,6 +67,7 @@ function analytics(overrides: Partial<Analytics> = {}): Analytics {
     },
     reviewFindingsReceived: { pullRequests: count(), comments: BREAKDOWN, substantivePerPullRequest: null },
     testingContribution: {
+      coverage: NO_COVERAGE,
       featureAndFixPullRequests: TEST_SHARE,
       withoutDigest: count(),
       bugFixPullRequests: TEST_SHARE,
@@ -227,10 +244,8 @@ describe("ProfilePage", () => {
 
     expect(levelOne).toContain(DESIGN);
     expect(levelOne).toContain("Works at T2. L1 expects T1: 2.");
-    expect(levelOne).toContain("Strength");
     expect(levelThree).toContain("Works at T2. L3 expects T3: 0.");
     expect(levelThree).toContain("No working tier. L3 expects T3: 0.");
-    expect(levelThree).toContain("Gap");
     expect(fetchDimensionScores).toHaveBeenLastCalledWith(undefined, 7, "2026-Q3", "L3");
   });
 
@@ -244,30 +259,103 @@ describe("ProfilePage", () => {
     expect(html.match(/To score/g)).toHaveLength(1);
   });
 
-  it("separates the score from the working tier in the text", async () => {
-    answeringWith(scores("L2", [dimension("design", DESIGN, "T2", 1)]));
+  it("shows the two dimension scores in the header", async () => {
+    answeringWith(
+      scores("L2", [dimension("design", DESIGN, "T2", 1), dimension("engineering", ENGINEERING, null, 2)]),
+      analytics({
+        workClassification: { distribution: EMPTY_DISTRIBUTION, coverage: { judged: 17, total: 20 } },
+      }),
+    );
 
-    expect(await render({ quarter: "2026-Q3" })).toContain("1</strong> of 2, <span");
+    const html = await render({ quarter: "2026-Q3" });
+
+    const header = html.slice(html.indexOf("<header"), html.indexOf("</header>"));
+    expect(header).toContain(DESIGN);
+    expect(header).toContain(ENGINEERING);
+    expect(header).toContain("1 of 2");
+    expect(header).toContain("2 of 2");
+    expect(header).toContain("works at T2");
+    expect(header).toContain("no working tier");
+    expect(header).toContain("Based on 17 of 20 PRs judged");
   });
 
-  it("shows no working tier for a dimension without one", async () => {
-    answeringWith(scores("L2", [dimension("design", DESIGN, null, 0)]));
+  it("shows the work level against the rest of the repository with one sentence that reads it", async () => {
+    const level = (atT2OrAbove: number, atT3: number): WeightedWorkLevel => ({
+      ...NO_WORK_LEVEL,
+      weightedTotal: 10,
+      shareAtT2OrAbove: atT2OrAbove,
+      shareAtT3: atT3,
+    });
+    answeringWith(
+      scores("L2", []),
+      analytics({
+        workLevel: {
+          person: level(0.83, 0.14),
+          restOfRepository: level(0.7, 0.18),
+          line: 1 / 3,
+          coverage: { judged: 7, total: 8 },
+        },
+      }),
+    );
 
-    expect(await render({ quarter: "2026-Q3" })).toContain("no working tier");
+    const html = await render({ quarter: "2026-Q3" });
+
+    expect(html).toContain("Medium or harder: ada 83%, Rest of repository 70%");
+    expect(html).toContain("High: ada 14%, Rest of repository 18%");
+    expect(html).toContain("Line to clear: 33%");
+    expect(html).toContain(
+      "83% of ada&#x27;s Feature work was Medium or harder, at or above the one-third line, so it counts at T2.",
+    );
+    expect(html).toContain("Judged Feature work: 7 of 8");
   });
 
-  it("shows the header with the name, quarter, hygiene and level links that keep the quarter", async () => {
+  it("shows the work types as a donut with the three delivery tiles, each opening to its items", async () => {
+    const workTypes: Distribution = {
+      total: 4,
+      slices: [
+        { name: "feature", count: count([21, 22]), share: 0.5 },
+        { name: "fix", count: count([23]), share: 0.25 },
+        { name: "docs", count: count([24]), share: 0.25 },
+      ],
+    };
+    answeringWith(
+      scores("L2", []),
+      analytics({
+        workClassification: { distribution: workTypes, coverage: NO_COVERAGE },
+        bugsFixed: count([30, 31], [41, 42]),
+        workComplexity: {
+          coverage: NO_COVERAGE,
+          person: { total: 2, slices: [{ name: "low", count: count([], [5, 6]), share: 1 }] },
+          restOfRepository: { total: 1, slices: [{ name: "high", count: count([], [7]), share: 1 }] },
+        },
+      }),
+    );
+
+    const html = await render({ quarter: "2026-Q3" });
+
+    expect(html).toContain("Feature: 2 (50%)");
+    expect(html).toMatch(/>2<\/span> Feature work items/);
+    expect(html).toMatch(/>4<\/span> PRs merged/);
+    expect(html).toMatch(/>2<\/span> Bugs fixed/);
+    expect(html).toContain('href="/items/41"');
+    expect(html).toContain('href="https://github.com/opf/openproject/pull/23"');
+    expect(html).toContain('href="/items/5"');
+    expect(html).toContain('href="/items/7"');
+    expect(html).toContain("Low: 2");
+    expect(html).toContain("High: 1");
+  });
+
+  it("shows the header with the name, quarter and level links that keep the quarter", async () => {
     answeringWith(scores("L2", [dimension("design", DESIGN, "T2", 1)]));
 
     const html = await render({ quarter: "2026-Q3", level: "L2" });
 
     expect(html).toContain("ada");
     expect(html).toContain("2026-Q3");
-    expect(html).toContain("63%");
     expect(html).toContain('href="/developers/7/profile?quarter=2026-Q3&amp;level=L1"');
     expect(html).toContain('href="/developers/7/profile?quarter=2026-Q3&amp;level=L3"');
     expect(html).toMatch(/aria-current="page"[^>]*>L2</);
-    expect(html).toContain('href="/developers/7"');
+    expect(html).toContain('href="/developers/7?quarter=2026-Q3&amp;level=L2"');
     expect(html).toContain('href="/developers"');
   });
 
@@ -280,15 +368,6 @@ describe("ProfilePage", () => {
     expect(classOf("L2")).toBeDefined();
     expect(classOf("L2")).not.toEqual(classOf("L1"));
     expect(classOf("L1")).toEqual(classOf("L3"));
-  });
-
-  it("says no PRs for a hygiene share that is null", async () => {
-    answeringWith(
-      scores("L2", []),
-      analytics({ hygiene: { total: 0, linked: count(), notLinked: count(), share: null } }),
-    );
-
-    expect(await render({ quarter: "2026-Q3" })).toContain("no PRs");
   });
 
   it("takes the default quarter from DEFAULT_QUARTER and the level L2", async () => {
@@ -317,7 +396,7 @@ describe("ProfilePage", () => {
 
     expect(html).toContain("No scores for 2026-Q3 yet");
     expect(html).toContain("dimension-scoring");
-    expect(html).toContain("63%");
+    expect(html).toContain("<h1");
   });
 
   it("warns that the numbers will change when pull requests or items are not judged yet", async () => {
@@ -325,8 +404,11 @@ describe("ProfilePage", () => {
       scores("L2", [dimension("design", DESIGN, "T2", 1)]),
       analytics({
         workClassification: {
-          total: 3,
-          slices: [{ name: "not_judged_yet", count: count([11, 12]), share: 0.5 }],
+          distribution: {
+            total: 3,
+            slices: [{ name: "not_judged_yet", count: count([11, 12]), share: 0.5 }],
+          },
+          coverage: NO_COVERAGE,
         },
         reviewParticipation: {
           pullRequestsReviewed: count(),
@@ -346,7 +428,10 @@ describe("ProfilePage", () => {
     answeringWith(
       scores("L2", [dimension("design", DESIGN, "T2", 1)]),
       analytics({
-        workClassification: { total: 1, slices: [{ name: "not_judged_yet", count: count([11]), share: 1 }] },
+        workClassification: {
+          distribution: { total: 1, slices: [{ name: "not_judged_yet", count: count([11]), share: 1 }] },
+          coverage: NO_COVERAGE,
+        },
         reviewParticipation: {
           pullRequestsReviewed: count(),
           authorsReviewed: count(),
@@ -364,8 +449,9 @@ describe("ProfilePage", () => {
       scores("L2", [dimension("design", DESIGN, "T2", 1)]),
       analytics({
         workComplexity: {
+          coverage: NO_COVERAGE,
           person: EMPTY_DISTRIBUTION,
-          repository: { total: 2, slices: [{ name: "not_judged_yet", count: count([], [5, 6]), share: 1 }] },
+          restOfRepository: { total: 2, slices: [{ name: "not_judged_yet", count: count([], [5, 6]), share: 1 }] },
         },
       }),
     );
@@ -373,20 +459,30 @@ describe("ProfilePage", () => {
     expect(await render({ quarter: "2026-Q3" })).not.toContain("are not judged yet");
   });
 
-  it("shows the header, the notice, the dimension cards, the gates panel and then the analytics", async () => {
+  it("shows the header, the notice and the sections in order", async () => {
     const engineering = withTrail(dimension("engineering", ENGINEERING, "T2", 1), {}, [gate("G1")]);
     answeringWith(
       scores("L2", [dimension("design", DESIGN, "T2", 1), engineering]),
       analytics({
-        workClassification: { total: 1, slices: [{ name: "not_judged_yet", count: count([11]), share: 1 }] },
+        workClassification: {
+          distribution: { total: 1, slices: [{ name: "not_judged_yet", count: count([11]), share: 1 }] },
+          coverage: NO_COVERAGE,
+        },
       }),
     );
 
     const html = await render({ quarter: "2026-Q3" });
 
-    const positions = ["<h1", "are not judged yet", DESIGN, ENGINEERING, "Quality gates", "Work classification"].map(
-      (text) => html.indexOf(text),
-    );
+    const positions = [
+      "<h1",
+      "are not judged yet",
+      "1 · Level of the work",
+      "2 · What kind of work",
+      "3 · Dimensions",
+      "4 · Quality checks",
+      "5 · Reviews",
+      "Details: every item",
+    ].map((text) => html.indexOf(text));
     expect(positions).not.toContain(-1);
     expect(positions).toEqual([...positions].sort((first, second) => first - second));
   });
@@ -422,7 +518,7 @@ describe("ProfilePage", () => {
   it("shows no notice when everything is judged", async () => {
     answeringWith(scores("L2", [dimension("design", DESIGN, "T2", 1)]));
 
-    expect(await render({ quarter: "2026-Q3" })).not.toContain("not judged yet");
+    expect(await render({ quarter: "2026-Q3" })).not.toContain("are not judged yet");
   });
 
   it("a trail item opens to its item page and its pull request on GitHub", async () => {
@@ -434,7 +530,7 @@ describe("ProfilePage", () => {
     const html = await render({ quarter: "2026-Q3" });
 
     expect(html).toContain("<details");
-    expect(html).toContain("Trail");
+    expect(html).toContain("Details: every item");
     expect(html).toContain('href="/items/41"');
     expect(html).toContain("Single sign-on");
     expect(html).toContain('href="https://github.com/opf/openproject/pull/141"');
@@ -514,197 +610,111 @@ describe("ProfilePage", () => {
     }
   });
 
-  it("shows the gates panel once, with the shares, the limits and the PR lists that open", async () => {
+  it("shows the dimensions in a table with the next step, and one row each for the others", async () => {
+    answeringWith(scores("L2", [dimension("design", DESIGN, "T2", 1), dimension("engineering", ENGINEERING, "T3", 2)]));
+
+    const html = await render({ quarter: "2026-Q3" });
+
+    const table = html.slice(html.indexOf("<table"), html.indexOf("</table>"));
+    expect(table).toContain(DESIGN);
+    expect(table).toContain("Works at T2. L2 expects T2: 1.");
+    expect(table).toContain("To score 2");
+    expect(table).toContain("Works at T3. L2 expects T2: 2.");
+    expect(table).toContain("Not assessed in the pilot");
+    for (const name of [
+      "Design and architecture",
+      "Planning and execution",
+      "Collaboration",
+      "Mentoring",
+      "Knowledge sharing",
+      "Hiring",
+      "Pre-sales",
+      "Client delivery",
+    ]) {
+      expect(table).toContain(name);
+    }
+    expect(table).toContain("13 lead-rated dimensions");
+    expect(table).toContain("Not rated: no lead input in the pilot");
+  });
+
+  it("shows gates G1 and G2 as pass, close miss or far miss and G4 with the rest as unverified", async () => {
     const engineering = withTrail(dimension("engineering", ENGINEERING, "T2", 1), {}, [
       gate("G1", { outcome: "CLOSE_MISS" }),
-      gate("G2"),
+      gate("G2", { outcome: "FAR_MISS", personTestedPullRequests: [], personPullRequests: [205] }),
       gate("G4", { outcome: "UNVERIFIED", unverifiedReason: "NOT_CALCULATED" }),
     ]);
-    answeringWith(scores("L2", [dimension("design", DESIGN, "T2", 1), engineering]), analytics());
+    answeringWith(scores("L2", [dimension("design", DESIGN, "T2", 1), engineering]));
 
     const html = await render({ quarter: "2026-Q3" });
 
-    expect(html.match(/Quality gates/g)).toHaveLength(1);
-    expect(html).toContain("G1");
-    expect(html).toContain("close miss");
-    expect(html).toContain("G2");
-    expect(html).toContain("66.7%");
-    expect(html).toContain("4 developers");
-    expect(html).toContain('href="https://github.com/opf/openproject/pull/201"');
-    expect(html).toContain('href="https://github.com/opf/openproject/pull/301"');
-    expect(html).toContain("G4");
-    expect(html).toContain("gate unverified");
+    const quality = html.slice(html.indexOf("4 · Quality checks"), html.indexOf("5 · Reviews"));
+    expect(quality).toContain("Tests with features");
+    expect(quality).toContain("2 of 3 feature PRs have tests");
+    expect(quality).toContain("repository 50%");
+    expect(quality).toContain("Close miss");
+    expect(quality).toContain("Tests with bug fixes");
+    expect(quality).toContain("0 of 1 bug fix PRs change tests");
+    expect(quality).toContain("Far miss");
+    expect(quality).toContain("G4, escaped defects and sprint commitment: unverified, no data in the pilot");
+    expect(quality).toContain('href="https://github.com/opf/openproject/pull/201"');
+    expect(quality).toContain('href="https://github.com/opf/openproject/pull/301"');
   });
 
-  it("shows no gates panel when no dimension has gates", async () => {
-    answeringWith(scores("L2", [dimension("design", DESIGN, "T2", 1)]), analytics());
-
-    expect(await render({ quarter: "2026-Q3" })).not.toContain("Quality gates");
-  });
-
-  it("every analytics number on the page equals the API value", async () => {
-    const slices = (total: number, parts: [string, number][]): Distribution => ({
-      total,
-      slices: parts.map(([name, size]) => ({
-        name,
-        count: count(
-          [],
-          Array.from({ length: size }, (_, index) => 900 + index),
-        ),
-        share: total === 0 ? null : size / total,
-      })),
-    });
-    const breakdown = (
-      substantive: number,
-      types: [string, number][],
-      tiers: [string, number][],
-      unjudged: number,
-    ) => ({
-      substantive: count(
-        [],
-        Array.from({ length: substantive }, (_, index) => 800 + index),
-      ),
-      byCommentType: slices(
-        types.reduce((sum, [, size]) => sum + size, 0),
-        types,
-      ),
-      byTier: slices(
-        tiers.reduce((sum, [, size]) => sum + size, 0),
-        tiers,
-      ),
-      notJudgedYet: count(
-        [],
-        Array.from({ length: unjudged }, (_, index) => 700 + index),
-      ),
-    });
-    const full = analytics({
-      workClassification: slices(7, [
-        ["feature_work", 3],
-        ["bug_fix", 2],
-        ["test_change", 1],
-        ["not_judged_yet", 1],
-      ]),
-      workComplexity: {
-        person: slices(8, [
-          ["low", 1],
-          ["medium", 2],
-          ["high", 3],
-          ["very_high", 1],
-          ["not_judged_yet", 1],
-        ]),
-        repository: slices(9, [
-          ["low", 4],
-          ["medium", 2],
-          ["high", 1],
-          ["very_high", 1],
-          ["not_judged_yet", 1],
-        ]),
-      },
-      reviewParticipation: {
-        pullRequestsReviewed: count([501, 502, 503, 504, 505]),
-        authorsReviewed: count([], [601, 602, 603, 604]),
-        comments: breakdown(
-          5,
-          [
-            ["suggestion", 3],
-            ["question", 2],
-          ],
-          [
-            ["T1", 1],
-            ["T2", 4],
-          ],
-          6,
-        ),
-        substantivePerPullRequestReviewed: 1.25,
-      },
-      reviewFindingsReceived: {
-        pullRequests: count([511, 512, 513, 514, 515, 516, 517]),
-        comments: breakdown(2, [["defect", 2]], [["T3", 2]], 7),
-        substantivePerPullRequest: 0.5,
-      },
-      testingContribution: {
-        featureAndFixPullRequests: {
-          total: 8,
-          tested: count([521, 522, 523, 524, 525]),
-          untested: count([531, 532, 533]),
-          share: 5 / 8,
-          testedByTier: slices(5, [
-            ["T1", 3],
-            ["T2", 2],
-          ]),
-        },
-        withoutDigest: count([541, 542, 543, 544, 545, 546, 547, 548]),
-        bugFixPullRequests: {
-          total: 3,
-          tested: count([551, 552]),
-          untested: count([561]),
-          share: 2 / 3,
-          testedByTier: slices(2, [["T1", 2]]),
-        },
-      },
-      hygiene: {
-        total: 11,
-        linked: count([571, 572, 573, 574, 575, 576, 577, 578, 579]),
-        notLinked: count([581, 582]),
-        share: 9 / 11,
-      },
-    });
-    answeringWith(scores("L2", [dimension("design", DESIGN, "T2", 1)]), full);
+  it("says why a gate is unverified instead of giving an outcome", async () => {
+    const engineering = withTrail(dimension("engineering", ENGINEERING, "T2", 1), {}, [
+      gate("G1", { outcome: "UNVERIFIED", unverifiedReason: "TOO_FEW_DEVELOPERS" }),
+    ]);
+    answeringWith(scores("L2", [engineering]));
 
     const html = await render({ quarter: "2026-Q3" });
 
-    for (const text of [
-      "Feature work: 3",
-      "Bug fix: 2",
-      "Test change: 1",
-      "43%",
-      "29%",
-      "14%",
-      "Low: 1",
-      "Very high: 1",
-      "Not judged yet: 1",
-      "Low: 4",
-      "44%",
-      "22%",
-      "11%",
-      "PRs reviewed: 5",
-      "Authors reviewed: 4",
-      "1.25",
-      "Substantive comments: 5",
-      "Suggestion: 3",
-      "Question: 2",
-      "60%",
-      "40%",
-      "T1: 1",
-      "T2: 4",
-      "20%",
-      "80%",
-      "Not judged yet: 6",
-      "Own PRs merged: 7",
-      "Defect: 2",
-      "100%",
-      "T3: 2",
-      "Not judged yet: 7",
-      "0.5",
-      "Tested: 5",
-      "63%",
-      "T1: 3",
-      "T2: 2",
-      "Not tested: 3",
-      "PRs without digest: 8",
-      "Bug fix PRs tested: 2",
-      "67%",
-      "T1: 2",
-      "Linked to a work item: 9",
-      "82%",
-      "Not linked: 2",
-      "18%",
-    ]) {
-      expect(html).toContain(text);
-    }
-    const classification = html.slice(html.indexOf("Work classification"), html.indexOf("Work complexity"));
-    const percents = [...classification.matchAll(/>(\d+)%</g)].map((match) => Number(match[1]));
-    expect(percents.reduce((sum, value) => sum + value, 0)).toBe(100);
+    expect(html).toContain("Fewer than 3 developers have pull requests of this kind");
+    expect(html).toContain("Unverified");
+  });
+
+  it("shows written comments with not substantive and not judged counts", async () => {
+    const tier = (name: string, ids: number[]) => ({ name, count: count([], ids), share: ids.length / 3 });
+    answeringWith(
+      scores("L2", []),
+      analytics({
+        reviewParticipation: {
+          pullRequestsReviewed: count(),
+          authorsReviewed: count(),
+          comments: {
+            ...BREAKDOWN,
+            substantive: count([], [41, 42, 43]),
+            notSubstantive: count([], [44]),
+            notJudgedYet: count([], [45, 46]),
+            coverage: { judged: 4, total: 6 },
+            byTier: { total: 3, slices: [tier("T1", [41]), tier("T2", [42, 43])] },
+          },
+          substantivePerPullRequestReviewed: null,
+        },
+      }),
+    );
+
+    const html = await render({ quarter: "2026-Q3" });
+
+    const reviews = html.slice(html.indexOf("5 · Reviews"));
+    expect(reviews).toContain("6 review comments written");
+    expect(reviews).toContain("1 not substantive, 2 not judged yet");
+    expect(reviews).toContain("Judged substantive: T1 1, T2 2, T3 0, total 3");
+    expect(reviews).toContain("T2 · Logic, edge case or readability: 2");
+    expect(reviews).toContain('href="/items/42"');
+    expect(reviews).toContain('href="/items/44"');
+  });
+
+  it("folds the trail of every dimension at the end", async () => {
+    const design = withTrail(dimension("design", DESIGN, "T2", 1), {
+      evidenceTypes: [typeTrail({ counted: [trailItem(41)] })],
+    });
+    answeringWith(scores("L2", [design]), analytics(), [summary(41)]);
+
+    const html = await render({ quarter: "2026-Q3" });
+
+    const fold = html.indexOf("Details: every item, tier and check behind the scores");
+    expect(fold).toBeGreaterThan(html.indexOf("5 · Reviews"));
+    expect(html.indexOf('href="/items/41"')).toBeGreaterThan(fold);
   });
 
   it("opens the items and pull requests behind an analytics number, the repository's too", async () => {
@@ -713,8 +723,9 @@ describe("ProfilePage", () => {
       scores("L2", []),
       analytics({
         workComplexity: {
+          coverage: NO_COVERAGE,
           person: EMPTY_DISTRIBUTION,
-          repository: { total: 2, slices: [{ name: "low", count: withPullRequests, share: 1 }] },
+          restOfRepository: { total: 2, slices: [{ name: "low", count: withPullRequests, share: 1 }] },
         },
       }),
     );
@@ -722,112 +733,6 @@ describe("ProfilePage", () => {
     const html = await render({ quarter: "2026-Q3" });
 
     expect(html).toContain('href="https://github.com/opf/openproject/pull/801"');
-  });
-
-  it("says no PRs and draws no bar for a share that is null", async () => {
-    answeringWith(
-      scores("L2", []),
-      analytics({ hygiene: { total: 0, linked: count(), notLinked: count(), share: null } }),
-    );
-
-    const html = await render({ quarter: "2026-Q3" });
-
-    expect(html).toContain("Tested: 0");
-    expect(html.match(/no PRs/g)?.length).toBeGreaterThanOrEqual(2);
-    expect(html).not.toContain('role="meter"');
-  });
-
-  it("shows four figures of the analytics in the header", async () => {
-    answeringWith(
-      scores("L2", []),
-      analytics({
-        reviewParticipation: {
-          pullRequestsReviewed: count([1, 2, 3, 4, 5]),
-          authorsReviewed: count(),
-          comments: { ...BREAKDOWN, substantive: count([], [41, 42, 43]) },
-          substantivePerPullRequestReviewed: null,
-        },
-        reviewFindingsReceived: {
-          pullRequests: count([11, 12, 13, 14, 15, 16, 17]),
-          comments: BREAKDOWN,
-          substantivePerPullRequest: null,
-        },
-      }),
-    );
-
-    const html = await render({ quarter: "2026-Q3" });
-
-    const figure = (label: string) => html.match(new RegExp(`>([^<]*)</span><span[^>]*>${label}<`))?.[1];
-    expect(figure("Repository hygiene: pull requests linked to a work item")).toBe("63%");
-    expect(figure("Own pull requests merged")).toBe("7");
-    expect(figure("Pull requests reviewed")).toBe("5");
-    expect(figure("Substantive comments written")).toBe("3");
-  });
-
-  it("draws the tier steps of a dimension with the step the level expects, and a pip per score point", async () => {
-    answeringWith(scores("L3", [dimension("design", DESIGN, "T2", 1)]));
-
-    const html = await render({ quarter: "2026-Q3", level: "L3" });
-
-    expect(html).toContain('aria-label="Works at T2; L3 expects T3"');
-    expect(html.match(/data-reached="true"/g)).toHaveLength(1);
-    expect(html.match(/data-filled="true"/g)).toHaveLength(2);
-  });
-
-  it("draws ordered distributions as one segmented bar and class lists as a bar per row", async () => {
-    const complexity: Distribution = {
-      total: 4,
-      slices: [
-        { name: "low", count: count([], [1, 2, 3]), share: 0.75 },
-        { name: "high", count: count([], [4]), share: 0.25 },
-      ],
-    };
-    const workTypes: Distribution = {
-      total: 4,
-      slices: [
-        { name: "fix", count: count([21, 22, 23]), share: 0.75 },
-        { name: "enhancement", count: count([24]), share: 0.25 },
-      ],
-    };
-    answeringWith(
-      scores("L2", []),
-      analytics({
-        workClassification: workTypes,
-        workComplexity: { person: complexity, repository: EMPTY_DISTRIBUTION },
-      }),
-    );
-
-    const html = await render({ quarter: "2026-Q3" });
-
-    expect(html).toContain('aria-label="Person: Low 3, High 1"');
-    expect(html).not.toContain('aria-label="Repository:');
-    const classification = html.slice(html.indexOf("Work classification"), html.indexOf("Work complexity"));
-    expect(classification.match(/role="meter"/g)).toHaveLength(2);
-    expect(classification).toContain('title="Fix: 3, 75%"');
-    expect(classification).not.toContain('role="img"');
-    const person = html.slice(html.indexOf("Work complexity"), html.indexOf("Review participation"));
-    expect(person).not.toContain('role="meter"');
-    expect(person.match(/background:var\(--step-1\)/g)).toHaveLength(2);
-  });
-
-  it("draws the tested shares and the hygiene share as ring meters", async () => {
-    const tested = { total: 8, tested: count([1, 2, 3, 4, 5]), untested: count([6, 7, 8]), share: 5 / 8 };
-    answeringWith(
-      scores("L2", []),
-      analytics({
-        testingContribution: {
-          featureAndFixPullRequests: { ...tested, testedByTier: EMPTY_DISTRIBUTION },
-          withoutDigest: count(),
-          bugFixPullRequests: TEST_SHARE,
-        },
-      }),
-    );
-
-    const html = await render({ quarter: "2026-Q3" });
-
-    expect(html).toMatch(/role="meter" aria-label="Tested"[^>]*aria-valuenow="63"/);
-    expect(html).toMatch(/role="meter" aria-label="Linked to a work item"[^>]*aria-valuenow="63"/);
-    expect(html).not.toContain('aria-label="Bug fix PRs tested"');
   });
 
   it("says the backend is down when either call fails", async () => {

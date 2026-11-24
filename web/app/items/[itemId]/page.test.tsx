@@ -69,7 +69,8 @@ describe("ItemPage", () => {
     expect(html).toContain("Single sign-on");
     expect(html).toContain("Feature work");
     expect(html).toContain("2026-07-03");
-    expect(html).toContain('href="/developers/7/profile"');
+    expect(html).toContain('href="/developers/7/profile?quarter=2026-Q3"');
+    expect(html).toContain('href="/developers/7?quarter=2026-Q3"');
     expect(html).toContain("ada");
     expect(html).toContain('href="https://github.com/opf/openproject/pull/101"');
     expect(html).toContain('href="https://community.openproject.org/wp/10"');

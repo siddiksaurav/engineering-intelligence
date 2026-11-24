@@ -40,7 +40,10 @@ export default async function ItemPage({ params }: { params: Promise<{ itemId: s
   return (
     <main>
       <PageHeader
-        crumbs={[...CRUMBS, { href: `/developers/${item.person.personId}`, label: item.person.displayName }]}
+        crumbs={[
+          ...CRUMBS,
+          { href: `/developers/${item.person.personId}?quarter=${item.quarter}`, label: item.person.displayName },
+        ]}
         title={item.title}
       >
         <span className={styles.meta}>
@@ -51,7 +54,10 @@ export default async function ItemPage({ params }: { params: Promise<{ itemId: s
           <span className={styles.date}>{item.date}</span>
           <span className={styles.date}>{item.quarter}</span>
           <span>
-            by <Link href={`/developers/${item.person.personId}/profile`}>{item.person.displayName}</Link>
+            by{" "}
+            <Link href={`/developers/${item.person.personId}/profile?quarter=${item.quarter}`}>
+              {item.person.displayName}
+            </Link>
           </span>
         </span>
       </PageHeader>

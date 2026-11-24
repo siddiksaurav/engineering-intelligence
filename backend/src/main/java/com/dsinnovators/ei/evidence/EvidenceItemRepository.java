@@ -1,5 +1,6 @@
 package com.dsinnovators.ei.evidence;
 
+import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -41,10 +42,14 @@ interface EvidenceItemRepository extends Repository<EvidenceItem, Long> {
     @Query("""
             select e from EvidenceItem e
             where e.personId = :personId and e.withdrawn = false
+              and e.occurredOn between :firstDay and :lastDay
               and not exists (select 1 from EvidenceItem s where s.supersedesId = e.id)
             order by e.occurredOn desc, e.id desc
             """)
-    List<EvidenceItem> findCurrentOfPerson(@Param("personId") long personId);
+    List<EvidenceItem> findCurrentOfPersonBetween(
+            @Param("personId") long personId,
+            @Param("firstDay") LocalDate firstDay,
+            @Param("lastDay") LocalDate lastDay);
 
     /** The rows with these ids, whatever their state. */
     List<EvidenceItem> findAllById(Iterable<Long> ids);

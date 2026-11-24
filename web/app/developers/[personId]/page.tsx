@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Avatar } from "@/components/Avatar";
-import { Swatch, TypeBar } from "@/components/EvidenceTypes";
+import { Swatch } from "@/components/EvidenceTypes";
 import { PageContent, PageHeader } from "@/components/Page";
 import { Notice } from "@/components/Panel";
-import { fetchEvidenceItems, type EvidenceItem, type TypeCounts } from "@/lib/evidence";
+import { fetchEvidenceItems, type EvidenceItem } from "@/lib/evidence";
 import { EVIDENCE_SECTIONS } from "@/lib/evidenceSections";
 import { typeColor } from "@/lib/palette";
+import { profileParams } from "@/lib/profileParams";
 import { PullRequestItemSection } from "./PullRequestItemSection";
 import { ReviewCommentSection } from "./ReviewCommentSection";
 import { WorkItemSection } from "./WorkItemSection";
@@ -15,12 +16,36 @@ import styles from "./developer.module.css";
 // Read on every request, on the server. The browser never calls the backend.
 export const dynamic = "force-dynamic";
 
-export default async function DeveloperPage({ params }: { params: Promise<{ personId: string }> }) {
+type SearchParams = Record<string, string | string[] | undefined>;
+
+export default async function DeveloperPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ personId: string }>;
+  searchParams: Promise<SearchParams>;
+}) {
   const { personId } = await params;
+  const query = await searchParams;
   if (!/^\d+$/.test(personId)) {
     notFound();
   }
-  const result = await fetchEvidenceItems(process.env.BACKEND_URL, Number(personId));
+  const defaultQuarter = process.env.DEFAULT_QUARTER || undefined;
+  if (query.quarter === undefined && defaultQuarter === undefined) {
+    return (
+      <main>
+        <PageHeader crumbs={[{ href: "/developers", label: "Developers" }]} title="Evidence list" />
+        <PageContent>
+          <Notice>No quarter is given and DEFAULT_QUARTER is not set in the web environment.</Notice>
+        </PageContent>
+      </main>
+    );
+  }
+  const selection = profileParams(query, defaultQuarter);
+  if (!selection.valid) {
+    notFound();
+  }
+  const result = await fetchEvidenceItems(process.env.BACKEND_URL, Number(personId), selection.quarter);
   if (result.status === "not-found") {
     notFound();
   }
@@ -39,8 +64,11 @@ export default async function DeveloperPage({ params }: { params: Promise<{ pers
           </span>
         }
       >
-        Evidence list: every current evidence item, with its sources.{" "}
-        <Link href={`/developers/${personId}/profile`}>Profile</Link>
+        <span className={styles.headerQuarter}>{selection.quarter}</span>
+        Every current evidence item of the quarter, with its sources.{" "}
+        <Link href={`/developers/${personId}/profile?quarter=${selection.quarter}&level=${selection.level}`}>
+          Profile
+        </Link>
       </PageHeader>
       <PageContent>
         {result.status === "down" ? (
@@ -49,7 +77,7 @@ export default async function DeveloperPage({ params }: { params: Promise<{ pers
           <Notice>No evidence items</Notice>
         ) : (
           <>
-            <TypeSummary name={name} items={result.data.items} />
+            <TypeSummary items={result.data.items} />
             <Sections items={result.data.items} />
           </>
         )}
@@ -62,20 +90,16 @@ function ofType(items: EvidenceItem[], type: EvidenceItem["type"]): EvidenceItem
   return items.filter((item) => item.type === type);
 }
 
-/** The items per type as one bar and a list; a type that has items links to its section further down. */
-function TypeSummary({ name, items }: { name: string; items: EvidenceItem[] }) {
-  const counts = Object.fromEntries(
-    EVIDENCE_SECTIONS.map((section) => [section.countKey, ofType(items, section.type).length]),
-  ) as TypeCounts;
+/** The number of items and the count per type; a type that has items links to its section further down. */
+function TypeSummary({ items }: { items: EvidenceItem[] }) {
   return (
     <nav className={styles.summary} aria-label="Evidence types">
       <p className={styles.summaryTotal}>
         <strong>{items.length}</strong> evidence items
       </p>
-      <TypeBar label={`Evidence of ${name}`} counts={counts} />
       <ul className={styles.summaryTypes}>
         {EVIDENCE_SECTIONS.map((section) => {
-          const count = counts[section.countKey];
+          const count = ofType(items, section.type).length;
           const entry = (
             <>
               <Swatch color={typeColor(section.type)} />

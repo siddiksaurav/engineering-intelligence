@@ -1,12 +1,4 @@
-import type {
-  Analytics,
-  Count,
-  DimensionScores,
-  Distribution,
-  Level,
-  ReviewCommentBreakdown,
-  TestShare,
-} from "./profile";
+import type { Analytics, Count, DimensionScores, Distribution, Level, ReviewCommentBreakdown } from "./profile";
 
 /** The slice name of a distribution that holds the items with no judgment yet. */
 const NOT_JUDGED_YET = "not_judged_yet";
@@ -49,7 +41,7 @@ function valueOf(parameter: string | string[] | undefined): string | undefined {
  */
 export function notJudgedYet(analytics: Analytics, scores: DimensionScores): { pullRequests: number; items: number } {
   const pullRequests = new Set<number>([
-    ...notJudgedSlices(analytics.workClassification).flatMap((count) => count.pullRequestNumbers),
+    ...notJudgedSlices(analytics.workClassification.distribution).flatMap((count) => count.pullRequestNumbers),
     ...analytics.testingContribution.withoutDigest.pullRequestNumbers,
     ...scores.dimensions.flatMap((dimension) =>
       [...dimension.gates, ...dimension.trail.gates].flatMap((gate) => gate.pullRequestsWithoutDigest),
@@ -89,22 +81,14 @@ function notJudgedIds(distribution: Distribution): number[] {
   return notJudgedSlices(distribution).flatMap((count) => count.evidenceItemIds);
 }
 
+/** The counts of the analytics the page shows: the work types, the Feature work and the review comments. */
 function analyticsCounts(analytics: Analytics): Count[] {
-  const { reviewParticipation, reviewFindingsReceived, testingContribution, hygiene } = analytics;
   return [
-    ...sliceCounts(analytics.workClassification),
+    ...sliceCounts(analytics.workClassification.distribution),
+    analytics.bugsFixed,
     ...sliceCounts(analytics.workComplexity.person),
-    ...sliceCounts(analytics.workComplexity.repository),
-    reviewParticipation.pullRequestsReviewed,
-    reviewParticipation.authorsReviewed,
-    ...breakdownCounts(reviewParticipation.comments),
-    reviewFindingsReceived.pullRequests,
-    ...breakdownCounts(reviewFindingsReceived.comments),
-    ...testShareCounts(testingContribution.featureAndFixPullRequests),
-    testingContribution.withoutDigest,
-    ...testShareCounts(testingContribution.bugFixPullRequests),
-    hygiene.linked,
-    hygiene.notLinked,
+    ...sliceCounts(analytics.workComplexity.restOfRepository),
+    ...breakdownCounts(analytics.reviewParticipation.comments),
   ];
 }
 
@@ -113,14 +97,5 @@ function sliceCounts(distribution: Distribution): Count[] {
 }
 
 function breakdownCounts(breakdown: ReviewCommentBreakdown): Count[] {
-  return [
-    breakdown.substantive,
-    ...sliceCounts(breakdown.byCommentType),
-    ...sliceCounts(breakdown.byTier),
-    breakdown.notJudgedYet,
-  ];
-}
-
-function testShareCounts(share: TestShare): Count[] {
-  return [share.tested, share.untested, ...sliceCounts(share.testedByTier)];
+  return [breakdown.substantive, breakdown.notSubstantive, ...sliceCounts(breakdown.byTier), breakdown.notJudgedYet];
 }

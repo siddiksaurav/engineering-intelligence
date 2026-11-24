@@ -32,7 +32,8 @@ class WorkClassificationTest extends DatabaseTest {
         rows.pullRequest(5, 1, 12, "grace", "2026-07-06T10:00:00Z");
         rows.digest(5, "docs", null);
 
-        Distribution result = classification.of(ada, QUARTER);
+        WorkClassification.Result classified = classification.of(ada, QUARTER);
+        Distribution result = classified.distribution();
 
         assertEquals(4, result.total());
         assertEquals(
@@ -44,15 +45,18 @@ class WorkClassificationTest extends DatabaseTest {
         assertEquals(List.of(4), result.slices().get(2).count().pullRequestNumbers());
         assertEquals(0.5, result.slices().get(0).share());
         assertEquals(1.0, result.slices().stream().mapToDouble(Slice::share).sum());
+        assertEquals(new Coverage(3, 4), classified.coverage());
     }
 
     @Test
     void aPersonWithNoPullRequestHasNoSlices() {
         long ada = new AnalyticsRows(jdbc).person(11, "ada");
 
-        Distribution result = classification.of(ada, QUARTER);
+        WorkClassification.Result classified = classification.of(ada, QUARTER);
+        Distribution result = classified.distribution();
 
         assertEquals(0, result.total());
         assertEquals(List.of(), result.slices());
+        assertEquals(new Coverage(0, 0), classified.coverage());
     }
 }

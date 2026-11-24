@@ -103,8 +103,10 @@ public class TestingContribution {
      * @param featureAndFixPullRequests the person's pull requests of feature, enhancement and fix work
      * @param withoutDigest the person's pull requests without a digest, which are left out of the share
      * @param bugFixPullRequests the pull requests of the person's Bug fix items
+     * @param coverage the person's pull requests with a digest, of all of them; the digest decides which pull requests are feature and fix work
      */
-    public record Result(Share featureAndFixPullRequests, Count withoutDigest, Share bugFixPullRequests) {}
+    public record Result(
+            Share featureAndFixPullRequests, Count withoutDigest, Share bugFixPullRequests, Coverage coverage) {}
 
     @Transactional(readOnly = true)
     public Result of(long personId, Quarter quarter) {
@@ -119,7 +121,14 @@ public class TestingContribution {
                 .param("personId", personId)
                 .query(TestingContribution::rowOf)
                 .list();
-        return new Result(shareOf(featureAndFixRows), countOf(featureAndFixRows, WITHOUT_DIGEST), shareOf(bugFixRows));
+        Count withoutDigest = countOf(featureAndFixRows, WITHOUT_DIGEST);
+        long pullRequests =
+                featureAndFixRows.stream().mapToLong(row -> row.count().count()).sum();
+        return new Result(
+                shareOf(featureAndFixRows),
+                withoutDigest,
+                shareOf(bugFixRows),
+                new Coverage(pullRequests - withoutDigest.count(), pullRequests));
     }
 
     private record Row(String category, String tier, Count count) {}

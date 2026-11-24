@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
-import type { Developer, TypeCounts } from "./evidence";
+import type { TypeCounts } from "./evidence";
 import type { DimensionScores } from "./profile";
-import { fetchTeamScores, teamSummary, totalOf, type TeamScores } from "./team";
+import { fetchTeamAnalytics, dimensionSummaries, fetchTeamScores, totalOf, type TeamScores } from "./team";
 
 const NO_COUNTS: TypeCounts = {
   featureWork: 0,
@@ -13,10 +13,6 @@ const NO_COUNTS: TypeCounts = {
   infraRelease: 0,
   documentation: 0,
 };
-
-function developer(personId: number, displayName: string, counts: Partial<TypeCounts> = {}): Developer {
-  return { personId, displayName, counts: { ...NO_COUNTS, ...counts } };
-}
 
 function scoresOf(personId: number, dimensions: [string, 0 | 1 | 2, "T1" | "T2" | "T3" | null][]): DimensionScores {
   return {
@@ -62,24 +58,8 @@ describe("fetchTeamScores", () => {
   });
 });
 
-describe("teamSummary", () => {
-  const developers = [
-    developer(1, "ada", { featureWork: 2, bugFix: 1 }),
-    developer(2, "grace", { reviewCommentWritten: 5 }),
-    developer(3, "linus"),
-  ];
-
-  it("adds up the evidence items of the team per type and in total", () => {
-    const summary = teamSummary(developers, new Map());
-
-    expect(summary.developers).toBe(3);
-    expect(summary.evidenceItems).toBe(8);
-    expect(summary.byType.featureWork).toBe(2);
-    expect(summary.byType.reviewCommentWritten).toBe(5);
-    expect(summary.byType.security).toBe(0);
-  });
-
-  it("counts the developers at each score and each working tier per dimension", () => {
+describe("dimensionSummaries", () => {
+  it("counts the developers at each score per dimension, in the order the dimensions first appear", () => {
     const scores: TeamScores = new Map([
       [
         1,
@@ -91,27 +71,39 @@ describe("teamSummary", () => {
       [2, [{ key: "coding", name: "Coding", score: 2, workingTier: "T2" }]],
     ]);
 
-    const summary = teamSummary(developers, scores);
-
-    expect(summary.scoredDevelopers).toBe(2);
-    expect(summary.dimensions.map((dimension) => dimension.key)).toEqual(["coding", "standards"]);
-    expect(summary.dimensions[0].byScore).toEqual([0, 0, 2]);
-    expect(summary.dimensions[0].byWorkingTier).toEqual({ T1: 0, T2: 1, T3: 1, none: 0 });
-    expect(summary.dimensions[1].byScore).toEqual([1, 0, 0]);
-    expect(summary.dimensions[1].byWorkingTier).toEqual({ T1: 0, T2: 0, T3: 0, none: 1 });
+    expect(dimensionSummaries(scores)).toEqual([
+      { key: "coding", name: "Coding", byScore: [0, 0, 2] },
+      { key: "standards", name: "Standards", byScore: [1, 0, 0] },
+    ]);
   });
 
-  it("lists the developers with the most evidence first, as many as asked, and none without evidence", () => {
-    expect(teamSummary(developers, new Map(), 1).mostEvidence.map((entry) => entry.displayName)).toEqual(["grace"]);
-    expect(teamSummary(developers, new Map(), 8).mostEvidence.map((entry) => entry.displayName)).toEqual([
-      "grace",
-      "ada",
-    ]);
+  it("is empty when nobody is scored", () => {
+    expect(dimensionSummaries(new Map())).toEqual([]);
   });
 });
 
 describe("totalOf", () => {
   it("adds the counts of all types", () => {
     expect(totalOf({ ...NO_COUNTS, featureWork: 2, security: 3 })).toBe(5);
+  });
+});
+
+describe("fetchTeamAnalytics", () => {
+  it("asks the team analytics of the quarter", async () => {
+    const body = { quarter: "2026-Q3" };
+    const fetchFn = vi.fn(async () => new Response(JSON.stringify(body))) as unknown as typeof fetch;
+
+    const result = await fetchTeamAnalytics("http://localhost:8080", "2026-Q3", fetchFn);
+
+    expect(result).toEqual({ status: "ok", data: body });
+    expect(vi.mocked(fetchFn).mock.calls[0][0]).toBe("http://localhost:8080/api/team/analytics?quarter=2026-Q3");
+  });
+
+  it("says the backend is down when it answers an error", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const fetchFn = vi.fn(async () => new Response("{}", { status: 400 })) as unknown as typeof fetch;
+
+    expect(await fetchTeamAnalytics("http://localhost:8080", "2026-Q3", fetchFn)).toEqual({ status: "down" });
+    warn.mockRestore();
   });
 });

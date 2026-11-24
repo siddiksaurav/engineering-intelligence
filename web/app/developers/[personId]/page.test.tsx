@@ -1,5 +1,5 @@
 import { renderToStaticMarkup } from "react-dom/server";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fetchEvidenceItems, type DeveloperEvidence, type EvidenceItem } from "@/lib/evidence";
 import DeveloperPage from "./page";
 
@@ -82,11 +82,17 @@ function answering(items: EvidenceItem[]): DeveloperEvidence {
   return { person: PERSON, items };
 }
 
-async function render(personId = "7"): Promise<string> {
-  return renderToStaticMarkup(await DeveloperPage({ params: Promise.resolve({ personId }) }));
+async function render(personId = "7", searchParams: Record<string, string> = {}): Promise<string> {
+  return renderToStaticMarkup(
+    await DeveloperPage({ params: Promise.resolve({ personId }), searchParams: Promise.resolve(searchParams) }),
+  );
 }
 
 describe("DeveloperPage", () => {
+  beforeEach(() => {
+    vi.stubEnv("DEFAULT_QUARTER", "2026-Q3");
+  });
+
   afterEach(() => {
     vi.mocked(fetchEvidenceItems).mockReset();
     vi.unstubAllEnvs();
@@ -121,7 +127,7 @@ describe("DeveloperPage", () => {
 
     const html = await render();
 
-    expect(html).toContain('aria-label="Evidence of ada: Feature work 1, Bug fix 1, Review comment written 1"');
+    expect(html).toContain("<strong>3</strong> evidence items");
     expect(html).toMatch(/<a[^>]*href="#bug_fix"[^>]*>.*?Bug fix.*?<\/a>/);
     expect(html).toContain('id="bug_fix"');
     expect(html).not.toContain('href="#security"');
@@ -180,10 +186,32 @@ describe("DeveloperPage", () => {
     expect(html).toContain("No evidence items");
   });
 
-  it("links to the profile of the developer", async () => {
+  it("links to the profile of the developer with the quarter and the level of the page", async () => {
     vi.mocked(fetchEvidenceItems).mockResolvedValue({ status: "ok", data: answering([FEATURE]) });
 
-    expect(await render()).toContain('href="/developers/7/profile"');
+    const html = await render("7", { quarter: "2026-Q4", level: "L3" });
+
+    expect(html).toContain('href="/developers/7/profile?quarter=2026-Q4&amp;level=L3"');
+  });
+
+  it("links to the profile with the default quarter and level L2 when the URL gives neither", async () => {
+    vi.mocked(fetchEvidenceItems).mockResolvedValue({ status: "ok", data: answering([FEATURE]) });
+
+    expect(await render()).toContain('href="/developers/7/profile?quarter=2026-Q3&amp;level=L2"');
+  });
+
+  it("evidence list asks for the quarter of the page", async () => {
+    vi.mocked(fetchEvidenceItems).mockResolvedValue({ status: "ok", data: answering([]) });
+
+    await render("7", { quarter: "2026-Q4" });
+
+    expect(fetchEvidenceItems).toHaveBeenCalledWith(undefined, 7, "2026-Q4");
+  });
+
+  it("is not found for a quarter or a level that does not exist, without asking the backend", async () => {
+    await expect(render("7", { quarter: "next" })).rejects.toThrow("NEXT_HTTP_ERROR_FALLBACK;404");
+    await expect(render("7", { level: "L9" })).rejects.toThrow("NEXT_HTTP_ERROR_FALLBACK;404");
+    expect(fetchEvidenceItems).not.toHaveBeenCalled();
   });
 
   it("says the backend is down when it cannot be read", async () => {
@@ -198,6 +226,15 @@ describe("DeveloperPage", () => {
     await expect(render("99")).rejects.toThrow("NEXT_HTTP_ERROR_FALLBACK;404");
   });
 
+  it("says a quarter is needed, without asking the backend, when neither the URL nor DEFAULT_QUARTER gives one", async () => {
+    vi.stubEnv("DEFAULT_QUARTER", "");
+
+    const html = await render("7");
+
+    expect(html).toContain("DEFAULT_QUARTER");
+    expect(fetchEvidenceItems).not.toHaveBeenCalled();
+  });
+
   it("is not found for an id that is no number, without asking the backend", async () => {
     await expect(render("ada")).rejects.toThrow("NEXT_HTTP_ERROR_FALLBACK;404");
     expect(fetchEvidenceItems).not.toHaveBeenCalled();
@@ -209,6 +246,6 @@ describe("DeveloperPage", () => {
 
     await render("7");
 
-    expect(fetchEvidenceItems).toHaveBeenCalledWith("http://backend.test:9000", 7);
+    expect(fetchEvidenceItems).toHaveBeenCalledWith("http://backend.test:9000", 7, "2026-Q3");
   });
 });

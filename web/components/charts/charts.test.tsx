@@ -1,8 +1,10 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { MeterBar } from "./MeterBar";
-import { RingMeter } from "./RingMeter";
+import { axisTicks, formatValue } from "./chartFormat";
+import { DonutChart } from "./DonutChart";
+import { GroupedBarChart } from "./GroupedBarChart";
 import { SegmentedBar } from "./SegmentedBar";
+import { StackedBarChart } from "./StackedBarChart";
 
 describe("SegmentedBar", () => {
   const segments = [
@@ -37,40 +39,134 @@ describe("SegmentedBar", () => {
   });
 });
 
-describe("RingMeter", () => {
-  it("is a meter with the whole percent, written in its middle", () => {
-    const html = renderToStaticMarkup(<RingMeter label="Tested" share={5 / 8} />);
+describe("DonutChart", () => {
+  const slices = [
+    { key: "feature_work", label: "Feature work", value: 3, color: "blue" },
+    { key: "bug_fix", label: "Bug fix", value: 1, color: "orange" },
+    { key: "documentation", label: "Documentation", value: 0, color: "pink" },
+  ];
 
-    expect(html).toContain('role="meter"');
-    expect(html).toContain('aria-valuenow="63"');
-    expect(html).toContain('aria-label="Tested"');
-    expect(html).toContain(">63%<");
-    expect(html).toContain('stroke-dasharray="62.5 100"');
+  it("DonutChart lists each slice with its count and share", () => {
+    const html = renderToStaticMarkup(<DonutChart label="Pull requests by work type" slices={slices} />);
+
+    expect(html).toContain("Pull requests by work type");
+    expect(html).toContain("Feature work: 3 (75%)");
+    expect(html).toContain("Bug fix: 1 (25%)");
+    expect(html).toContain("Documentation: 0 (0%)");
   });
 
-  it("says no PRs and is no meter for a share that is null", () => {
-    const html = renderToStaticMarkup(<RingMeter label="Tested" share={null} />);
+  it("rounds a share as the profile text does, so 14.5% reads 15%", () => {
+    const html = renderToStaticMarkup(
+      <DonutChart
+        label="Pull requests"
+        slices={[
+          { key: "a", label: "A", value: 29, color: "blue" },
+          { key: "b", label: "B", value: 171, color: "orange" },
+        ]}
+      />,
+    );
 
-    expect(html).toContain("no PRs");
-    expect(html).not.toContain('role="meter"');
-    expect(html).not.toContain("<svg");
+    expect(html).toContain("A: 29 (15%)");
+  });
+
+  it("says there is no data for a total of 0", () => {
+    const html = renderToStaticMarkup(<DonutChart label="Pull requests" slices={[{ ...slices[0], value: 0 }]} />);
+
+    expect(html).toContain("No data");
+    expect(html).not.toContain("(0%)");
+  });
+
+  it("shows the label of the centre when it is given", () => {
+    const html = renderToStaticMarkup(<DonutChart label="Pull requests" slices={slices} centerLabel="4 PRs" />);
+
+    expect(html).toContain("4 PRs");
   });
 });
 
-describe("MeterBar", () => {
-  it("is a meter filled to the share, with the count and the percent in its title", () => {
-    const html = renderToStaticMarkup(<MeterBar label="Fix" count={6} share={0.24} color="blue" />);
+describe("GroupedBarChart", () => {
+  const series = [
+    { key: "person", label: "Person", color: "blue" },
+    { key: "rest", label: "Rest of repository", color: "grey" },
+  ];
+  const categories = [
+    { key: "t2", label: "T2 or above", values: { person: 0.5, rest: 0.25 } },
+    { key: "t3", label: "T3", values: { person: null, rest: 0.1 } },
+  ];
 
-    expect(html).toContain('role="meter"');
-    expect(html).toContain('aria-valuenow="24"');
-    expect(html).toContain('title="Fix: 6, 24%"');
-    expect(html).toContain("width:24%");
+  it("lists every value of every group, as a percentage for the percent unit, and none for a missing one", () => {
+    const html = renderToStaticMarkup(
+      <GroupedBarChart label="Feature work level" series={series} categories={categories} unit="percent" />,
+    );
+
+    expect(html).toContain("T2 or above: Person 50%, Rest of repository 25%");
+    expect(html).toContain("T3: Person no data, Rest of repository 10%");
   });
 
-  it("stays an empty track for a share of 0", () => {
-    const html = renderToStaticMarkup(<MeterBar label="Fix" count={0} share={0} color="blue" />);
+  it("names the reference line in the summary", () => {
+    const html = renderToStaticMarkup(
+      <GroupedBarChart
+        label="Feature work level"
+        series={series}
+        categories={categories}
+        unit="percent"
+        referenceLine={{ value: 1 / 3, label: "One third" }}
+      />,
+    );
 
-    expect(html).toContain('aria-valuenow="0"');
-    expect(html).not.toContain("width:");
+    expect(html).toContain("One third: 33%");
+  });
+
+  it("lists plain counts for the count unit", () => {
+    const html = renderToStaticMarkup(
+      <GroupedBarChart
+        label="Complexity"
+        series={series}
+        categories={[{ key: "low", label: "Low", values: { person: 2, rest: 7 } }]}
+        unit="count"
+      />,
+    );
+
+    expect(html).toContain("Low: Person 2, Rest of repository 7");
+  });
+});
+
+describe("StackedBarChart", () => {
+  const segments = [
+    { key: "T1", label: "T1", color: "light" },
+    { key: "T2", label: "T2", color: "mid" },
+  ];
+
+  it("lists every bar with its segments and total", () => {
+    const html = renderToStaticMarkup(
+      <StackedBarChart
+        label="Substantive comments by tier"
+        segments={segments}
+        bars={[{ key: "ada", label: "Ada", values: { T1: 2, T2: 3 } }]}
+      />,
+    );
+
+    expect(html).toContain("Ada: T1 2, T2 3, total 5");
+  });
+});
+
+describe("formatValue", () => {
+  it("rounds a share as the profile text does", () => {
+    expect(formatValue(0.145, "percent")).toBe("15%");
+    expect(formatValue(0.825, "percent")).toBe("83%");
+  });
+
+  it("shows a count as it is and a missing value as no data", () => {
+    expect(formatValue(7, "count")).toBe("7");
+    expect(formatValue(null, "percent")).toBe("no data");
+  });
+});
+
+describe("axisTicks", () => {
+  it("puts the ticks of a percent axis at every quarter", () => {
+    expect(axisTicks("percent")).toEqual([0, 0.25, 0.5, 0.75, 1]);
+  });
+
+  it("leaves the ticks of a count axis to the chart", () => {
+    expect(axisTicks("count")).toBeUndefined();
   });
 });

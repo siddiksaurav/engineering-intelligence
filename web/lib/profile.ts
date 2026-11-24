@@ -23,11 +23,33 @@ export type Distribution = {
   slices: Slice[];
 };
 
+/** How much of what an analytic counts the model has judged: "judged N of M". */
+export type Coverage = { judged: number; total: number };
+
 export type ReviewCommentBreakdown = {
   substantive: Count;
+  notSubstantive: Count;
   byCommentType: Distribution;
   byTier: Distribution;
   notJudgedYet: Count;
+  coverage: Coverage;
+};
+
+/** The weighted Feature work of one group; the shares are null when the weighted total is 0. */
+export type WeightedWorkLevel = {
+  weightedTotal: number;
+  weightedAtT2OrAbove: number;
+  shareAtT2OrAbove: number | null;
+  weightedAtT3: number;
+  shareAtT3: number | null;
+};
+
+/** The Feature work of the person and of the rest of the repository against the line a share must reach. */
+export type WorkLevel = {
+  person: WeightedWorkLevel;
+  restOfRepository: WeightedWorkLevel;
+  line: number;
+  coverage: Coverage;
 };
 
 export type TestShare = {
@@ -44,8 +66,11 @@ export type PersonSummary = { personId: number; displayName: string };
 export type Analytics = {
   person: PersonSummary;
   quarter: string;
-  workClassification: Distribution;
-  workComplexity: { person: Distribution; repository: Distribution };
+  workClassification: { distribution: Distribution; coverage: Coverage };
+  /** The person's Bug fix items of the quarter; a Bug is decided by the tracker type, not by the model. */
+  bugsFixed: Count;
+  workComplexity: { person: Distribution; restOfRepository: Distribution; coverage: Coverage };
+  workLevel: WorkLevel;
   reviewParticipation: {
     pullRequestsReviewed: Count;
     authorsReviewed: Count;
@@ -61,6 +86,7 @@ export type Analytics = {
     featureAndFixPullRequests: TestShare;
     withoutDigest: Count;
     bugFixPullRequests: TestShare;
+    coverage: Coverage;
   };
   hygiene: { total: number; linked: Count; notLinked: Count; share: number | null };
 };

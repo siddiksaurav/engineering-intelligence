@@ -1,61 +1,75 @@
+import { sortedByName } from "@/lib/people";
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 import { Avatar } from "@/components/Avatar";
 import { TypeBar, TypeLegend } from "@/components/EvidenceTypes";
+import { LevelSwitch } from "@/components/LevelSwitch";
 import { PageContent, PageHeader } from "@/components/Page";
 import { Notice } from "@/components/Panel";
-import { TierSteps } from "@/components/TierSteps";
+import { ScoreLine } from "@/components/ScoreLine";
 import { fetchDevelopers, type Developer } from "@/lib/evidence";
-import { fetchTeamScores, totalOf, type DeveloperScore, type TeamScores } from "@/lib/team";
+import type { Level } from "@/lib/profile";
+import { profileParams } from "@/lib/profileParams";
+import { fetchTeamScores, totalOf, type DeveloperScore } from "@/lib/team";
 import styles from "./developers.module.css";
 
 // Read on every request, on the server. The browser never calls the backend.
 export const dynamic = "force-dynamic";
 
-/** The level the roster reads the scores at: the level a profile opens with (decision 247). */
-const ROSTER_LEVEL = "L2";
+type SearchParams = Record<string, string | string[] | undefined>;
 
-export default async function DevelopersPage() {
+export default async function DevelopersPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
+  const query = await searchParams;
+  const defaultQuarter = process.env.DEFAULT_QUARTER || undefined;
+  if (query.quarter === undefined && defaultQuarter === undefined) {
+    return (
+      <Roster
+        lead="The developers need a quarter."
+        notice="Set DEFAULT_QUARTER in the web environment, for example 2026-Q3."
+      />
+    );
+  }
+  const selection = profileParams(query, defaultQuarter);
+  if (!selection.valid) {
+    notFound();
+  }
+  const { quarter, level } = selection;
   const backendUrl = process.env.BACKEND_URL;
-  const quarter = process.env.DEFAULT_QUARTER || undefined;
-  const result = await fetchDevelopers(backendUrl);
+  const controls = <LevelSwitch selected={level} hrefFor={(each) => `/developers?quarter=${quarter}&level=${each}`} />;
+  const result = await fetchDevelopers(backendUrl, quarter);
   if (result.status !== "ok") {
-    return <Roster lead="The developers could not be read." notice="backend down" />;
+    return <Roster lead="The developers could not be read." notice="backend down" controls={controls} />;
   }
-  const developers = result.data;
-  if (developers.length === 0) {
-    return <Roster lead="Persons made of the stored GitHub accounts." notice="No developers" />;
+  if (result.data.length === 0) {
+    return <Roster lead="Persons made of the stored GitHub accounts." notice="No developers" controls={controls} />;
   }
-  const scores =
-    quarter === undefined
-      ? null
-      : await fetchTeamScores(
-          backendUrl,
-          developers.map((developer) => developer.personId),
-          quarter,
-          ROSTER_LEVEL,
-        );
-  const mostItems = Math.max(...developers.map((developer) => totalOf(developer.counts)));
-  const lead =
-    quarter === undefined
-      ? `${developers.length} developers.`
-      : `${developers.length} developers. Scores of ${quarter}, read at ${ROSTER_LEVEL}.`;
+  const developers = sortedByName(result.data);
+  const scores = await fetchTeamScores(
+    backendUrl,
+    developers.map((developer) => developer.personId),
+    quarter,
+    level,
+  );
   return (
-    <Roster lead={lead}>
-      {scores === null && (
-        <Notice>
-          Scores need a quarter: set <code>DEFAULT_QUARTER</code> in the web environment, for example{" "}
-          <code>2026-Q3</code>.
-        </Notice>
-      )}
+    <Roster
+      lead={`${developers.length} developers by name. Scores of ${quarter}, read at ${level}.`}
+      controls={controls}
+    >
       <section className={styles.roster}>
         <header className={styles.rosterHead}>
           <TypeLegend />
+          <Link href={`/developers/compare?quarter=${quarter}&level=${level}`}>Compare two developers</Link>
         </header>
-        {scores !== null && <ColumnTitles scores={scores} />}
         <ul className={styles.rows}>
           {developers.map((developer) => (
-            <DeveloperRow key={developer.personId} developer={developer} mostItems={mostItems} scores={scores} />
+            <DeveloperRow
+              key={developer.personId}
+              developer={developer}
+              scores={scores.get(developer.personId)}
+              quarter={quarter}
+              level={level}
+            />
           ))}
         </ul>
       </section>
@@ -63,10 +77,20 @@ export default async function DevelopersPage() {
   );
 }
 
-function Roster({ lead, notice, children }: { lead: string; notice?: string; children?: ReactNode }) {
+function Roster({
+  lead,
+  notice,
+  controls,
+  children,
+}: {
+  lead: string;
+  notice?: string;
+  controls?: ReactNode;
+  children?: ReactNode;
+}) {
   return (
     <main>
-      <PageHeader crumbs={[{ href: "/", label: "Overview" }]} title="Developers">
+      <PageHeader crumbs={[{ href: "/", label: "Overview" }]} title="Developers" controls={controls}>
         {lead}
       </PageHeader>
       <PageContent>
@@ -77,15 +101,16 @@ function Roster({ lead, notice, children }: { lead: string; notice?: string; chi
   );
 }
 
-/** One developer; the evidence bar is as long as the developer's share of the largest total, so rows compare. */
 function DeveloperRow({
   developer,
-  mostItems,
   scores,
+  quarter,
+  level,
 }: {
   developer: Developer;
-  mostItems: number;
-  scores: TeamScores | null;
+  scores: DeveloperScore[] | undefined;
+  quarter: string;
+  level: Level;
 }) {
   const total = totalOf(developer.counts);
   return (
@@ -93,45 +118,26 @@ function DeveloperRow({
       <div className={styles.who}>
         <Avatar name={developer.displayName} />
         <div className={styles.whoText}>
-          <Link href={`/developers/${developer.personId}/profile`} className={styles.name}>
+          <Link
+            href={`/developers/${developer.personId}/profile?quarter=${quarter}&level=${level}`}
+            className={styles.name}
+          >
             {developer.displayName}
           </Link>
-          <Link href={`/developers/${developer.personId}`} className={styles.evidenceLink}>
-            Evidence list
-          </Link>
+          <span className={styles.links}>
+            <Link href={`/developers/${developer.personId}?quarter=${quarter}&level=${level}`}>Evidence list</Link>
+            <Link href={`/developers/compare?a=${developer.personId}&quarter=${quarter}&level=${level}`}>Compare</Link>
+          </span>
         </div>
       </div>
-      <div className={styles.evidence}>
+      <Scores scores={scores} />
+      <div className={styles.items}>
         <p className={styles.total}>
           <strong>{total}</strong> items
         </p>
-        {total > 0 && (
-          <div style={{ width: `${(total / mostItems) * 100}%` }} className={styles.evidenceBar}>
-            <TypeBar label={`Evidence of ${developer.displayName}`} counts={developer.counts} size="thin" />
-          </div>
-        )}
+        {total > 0 && <TypeBar label={`Items of ${developer.displayName}`} counts={developer.counts} />}
       </div>
-      {scores !== null && <Scores scores={scores.get(developer.personId)} />}
     </li>
-  );
-}
-
-/**
- * The titles of the columns on a wide screen, where the rows leave the dimension names out. Hidden from a screen
- * reader, which reads the name of the dimension in every row.
- */
-function ColumnTitles({ scores }: { scores: TeamScores }) {
-  const dimensions = scores.values().next().value ?? [];
-  return (
-    <div className={styles.columnTitles} aria-hidden="true">
-      <span>Developer</span>
-      <span>Evidence items</span>
-      <span className={styles.scores}>
-        {dimensions.map((dimension) => (
-          <span key={dimension.key}>{dimension.name}</span>
-        ))}
-      </span>
-    </div>
   );
 }
 
@@ -142,15 +148,9 @@ function Scores({ scores }: { scores: DeveloperScore[] | undefined }) {
   return (
     <ul className={styles.scores}>
       {scores.map((dimension) => (
-        <li key={dimension.key} className={styles.score} data-score={dimension.score}>
+        <li key={dimension.key} className={styles.score}>
           <span className={styles.dimension}>{dimension.name}</span>
-          <span className={styles.scoreLine}>
-            <span className={styles.scoreValue}>
-              <strong>{dimension.score}</strong> of 2
-            </span>
-            <TierSteps workingTier={dimension.workingTier} size="small" />
-            <span className={styles.tier}>{dimension.workingTier ?? "no working tier"}</span>
-          </span>
+          <ScoreLine score={dimension.score} workingTier={dimension.workingTier} />
         </li>
       ))}
     </ul>

@@ -1,8 +1,7 @@
 package com.dsinnovators.ei.evidence;
 
+import com.dsinnovators.ei.common.Quarter;
 import java.util.Collection;
-import java.util.EnumMap;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -19,21 +18,10 @@ public class CurrentEvidenceItems {
         this.items = items;
     }
 
-    /** The current items of a person, newest date first. */
+    /** The current items of a person dated in the quarter, newest date first. */
     @Transactional(readOnly = true)
-    public List<EvidenceItem> ofPerson(long personId) {
-        return items.findCurrentOfPerson(personId);
-    }
-
-    /** For each person with a current item, the number of current items per type. */
-    @Transactional(readOnly = true)
-    public Map<Long, Map<EvidenceType, Long>> countsPerPerson() {
-        Map<Long, Map<EvidenceType, Long>> counts = new HashMap<>();
-        for (EvidenceItem item : items.findAllCurrent()) {
-            counts.computeIfAbsent(item.getPersonId(), person -> new EnumMap<>(EvidenceType.class))
-                    .merge(item.getEvidenceType(), 1L, Long::sum);
-        }
-        return counts;
+    public List<EvidenceItem> ofPerson(long personId, Quarter quarter) {
+        return items.findCurrentOfPersonBetween(personId, quarter.firstDay(), quarter.lastDay());
     }
 
     /** The rows with these ids, current or not: an id from an old trail still names its row. */

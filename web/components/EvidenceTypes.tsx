@@ -5,14 +5,14 @@ import { SegmentedBar } from "./charts/SegmentedBar";
 import styles from "./EvidenceTypes.module.css";
 
 /** The evidence items of one developer or of the team as one bar, a segment per type. */
-export function TypeBar({ label, counts, size }: { label: string; counts: TypeCounts; size?: "thin" | "regular" }) {
+export function TypeBar({ label, counts }: { label: string; counts: TypeCounts }) {
   const segments = EVIDENCE_SECTIONS.map((section) => ({
     key: section.type,
     label: section.title,
     value: counts[section.countKey],
     color: typeColor(section.type),
   }));
-  return <SegmentedBar label={label} segments={segments} size={size} />;
+  return <SegmentedBar label={label} segments={segments} />;
 }
 
 /** A dot in the colour of a series, next to the text that names it. Text never takes the series colour itself. */

@@ -66,19 +66,23 @@ export type DeveloperEvidence = {
   items: EvidenceItem[];
 };
 
-/** The developers with their counts of current evidence items. Never throws. */
+/** The developers of a quarter with their counts of current evidence items in it. Never throws. */
 export async function fetchDevelopers(
   baseUrl: string | undefined,
+  quarter: string,
   fetchFn: typeof fetch = fetch,
 ): Promise<BackendResult<Developer[]>> {
-  return readBackend<Developer[]>(baseUrl, "/api/developers", fetchFn);
+  const query = new URLSearchParams({ quarter });
+  return readBackend<Developer[]>(baseUrl, `/api/developers?${query}`, fetchFn);
 }
 
-/** The current evidence items of one developer, newest first. Never throws. */
+/** The current evidence items of one developer in a quarter, newest first. Never throws. */
 export async function fetchEvidenceItems(
   baseUrl: string | undefined,
   personId: number,
+  quarter: string,
   fetchFn: typeof fetch = fetch,
 ): Promise<BackendResult<DeveloperEvidence>> {
-  return readBackend<DeveloperEvidence>(baseUrl, `/api/developers/${personId}/evidence-items`, fetchFn);
+  const query = new URLSearchParams({ quarter });
+  return readBackend<DeveloperEvidence>(baseUrl, `/api/developers/${personId}/evidence-items?${query}`, fetchFn);
 }

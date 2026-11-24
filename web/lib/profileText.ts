@@ -1,4 +1,5 @@
-import type { DimensionScore, GateResult, Level, Tier, UnverifiedReason } from "./profile";
+import { typeTitle } from "./evidenceSections";
+import type { DimensionScore, GateResult, Level, Tier, UnverifiedReason, WorkLevel } from "./profile";
 import { TIER_TABLE } from "./tierTable";
 
 const TIERS_ASCENDING: Tier[] = ["T1", "T2", "T3"];
@@ -18,11 +19,6 @@ const OUTCOME_WORDS = {
 
 const NO_PULL_REQUESTS = "no PRs";
 
-/** The tier a level expects: L1 expects T1, L2 expects T2, L3 expects T3. */
-export function expectedTier(level: Level): Tier {
-  return LEVEL_TIER[level];
-}
-
 /** A share as a whole percent; "no PRs" when the share is null (decision 234). */
 export function percent(share: number | null): string {
   if (share === null) {
@@ -30,14 +26,6 @@ export function percent(share: number | null): string {
   }
   // The precision step removes floating point noise, so 0.145 rounds to 15 and not to 14.
   return `${Math.round(Number((share * 100).toPrecision(12)))}%`;
-}
-
-/** The mark of a dimension card: a strength at 2, a gap at 0 (decision 251). */
-export function badgeOf(dimension: DimensionScore): "strength" | "gap" | null {
-  if (dimension.score === 2) {
-    return "strength";
-  }
-  return dimension.score === 0 ? "gap" : null;
 }
 
 /** Why the dimension has this score at the level: the working tier, the level's tier and the gates (decision 236). */
@@ -188,4 +176,35 @@ function points(value: number): string {
 /** A gate share in percent with at most one decimal (decision 260); "no PRs" when there is none. */
 export function sharePoints(percentValue: number | null): string {
   return percentValue === null ? NO_PULL_REQUESTS : `${points(percentValue)}%`;
+}
+
+/** A snake case name in plain words: "very_high" becomes "Very high"; a work type uses its screen title. */
+export function plainName(name: string): string {
+  const words = name.replaceAll("_", " ");
+  return typeTitle(name) ?? words.charAt(0).toUpperCase() + words.slice(1);
+}
+
+/** The line a share must reach, in words: "one-third" for a third, else a whole percent. */
+function lineWords(line: number): string {
+  return Math.abs(line - 1 / 3) < 1e-9 ? "one-third" : percent(line);
+}
+
+/**
+ * One sentence that reads the work-level chart: the share at Medium or harder and at High against the line, and what
+ * that means for the working tier (decision 285). Says so when no Feature work is judged yet.
+ */
+export function workLevelSentence(name: string, workLevel: WorkLevel): string {
+  const { person, line } = workLevel;
+  if (person.shareAtT2OrAbove === null || person.shareAtT3 === null) {
+    return `${name} has no judged Feature work in this quarter yet, so there is no level to read.`;
+  }
+  const words = lineWords(line);
+  const atT2 = person.shareAtT2OrAbove >= line;
+  const atT3 = person.shareAtT3 >= line;
+  return (
+    `${percent(person.shareAtT2OrAbove)} of ${name}'s Feature work was Medium or harder, ` +
+    `${atT2 ? "at or above" : "below"} the ${words} line, so ${atT2 ? "it counts at T2" : "not yet T2"}. ` +
+    `High work is ${percent(person.shareAtT3)}, ${atT3 ? "at or above" : "below"} the line, ` +
+    `so ${atT3 ? "it counts at T3" : "not yet T3"}.`
+  );
 }

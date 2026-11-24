@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.dsinnovators.ei.DatabaseTest;
 import com.dsinnovators.ei.source.github.GitHubAccount;
-import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,11 +39,10 @@ class PersonDirectoryTest extends DatabaseTest {
     }
 
     @Test
-    void everyPersonIsListedByDisplayNameAndFoundById() {
+    void aPersonIsFoundById() {
         long grace = persons.ensure(new GitHubAccount(2, "grace", "User")).personId();
         long ada = persons.ensure(new GitHubAccount(1, "ada", "User")).personId();
 
-        assertEquals(List.of(new PersonSummary(ada, "ada"), new PersonSummary(grace, "grace")), directory.all());
         assertEquals(Optional.of(new PersonSummary(ada, "ada")), directory.find(ada));
         assertEquals(Optional.empty(), directory.find(ada + grace));
     }

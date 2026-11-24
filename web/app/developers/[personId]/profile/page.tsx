@@ -1,22 +1,23 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { type Analytics, type DimensionScores, fetchAnalytics, fetchDimensionScores, type Level } from "@/lib/profile";
+import { type Analytics, type DimensionScores, fetchAnalytics, fetchDimensionScores } from "@/lib/profile";
 import { fetchItemSummaries } from "@/lib/items";
 import { itemIdsOnPage, notJudgedYet, profileParams } from "@/lib/profileParams";
-import { percent } from "@/lib/profileText";
 import { Avatar } from "@/components/Avatar";
+import { LevelSwitch } from "@/components/LevelSwitch";
 import { HeaderFigure, PageContent, PageHeader } from "@/components/Page";
 import { Notice } from "@/components/Panel";
-import { AnalyticsSection } from "./AnalyticsSection";
-import { DimensionCard } from "./DimensionCard";
-import { GatesPanel } from "./GatesPanel";
+import { DimensionsSection } from "./DimensionsSection";
 import type { SummariesById } from "./ItemReferences";
+import { QualityChecksSection } from "./QualityChecksSection";
+import { ReviewsSection } from "./ReviewsSection";
 import styles from "./profile.module.css";
+import { TrailSection } from "./TrailSection";
+import { WorkKindSection } from "./WorkKindSection";
+import { WorkLevelSection } from "./WorkLevelSection";
 
 // Read on every request, on the server. The browser never calls the backend.
 export const dynamic = "force-dynamic";
-
-const LEVELS: Level[] = ["L1", "L2", "L3"];
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
@@ -99,24 +100,20 @@ function Profile({
             will change.
           </Notice>
         )}
+        <div className={styles.sections}>
+          <WorkLevelSection analytics={analytics} />
+          <WorkKindSection analytics={analytics} summariesById={summariesById} />
+        </div>
         {scores.scored ? (
-          <>
-            <div className={styles.dimensions}>
-              {scores.dimensions.map((dimension) => (
-                <DimensionCard
-                  key={dimension.key}
-                  dimension={dimension}
-                  level={scores.level}
-                  summariesById={summariesById}
-                />
-              ))}
-            </div>
-            {gates.length > 0 && <GatesPanel gates={gates} summariesById={summariesById} />}
-          </>
+          <DimensionsSection dimensions={scores.dimensions} level={scores.level} />
         ) : (
           <NoScores quarter={scores.quarter} />
         )}
-        <AnalyticsSection analytics={analytics} summariesById={summariesById} />
+        <div className={styles.sections}>
+          {scores.scored && <QualityChecksSection gates={gates} summariesById={summariesById} />}
+          <ReviewsSection comments={analytics.reviewParticipation.comments} summariesById={summariesById} />
+        </div>
+        {scores.scored && <TrailSection dimensions={scores.dimensions} summariesById={summariesById} />}
       </PageContent>
     </main>
   );
@@ -124,7 +121,7 @@ function Profile({
 
 function ProfileHeader({ analytics, scores }: { analytics: Analytics; scores: DimensionScores }) {
   const { personId, displayName } = analytics.person;
-  const { hygiene, reviewParticipation, reviewFindingsReceived } = analytics;
+  const { judged, total } = analytics.workClassification.coverage;
   return (
     <PageHeader
       crumbs={[
@@ -137,43 +134,26 @@ function ProfileHeader({ analytics, scores }: { analytics: Analytics; scores: Di
           {displayName}
         </span>
       }
-      controls={<LevelControl personId={personId} quarter={scores.quarter} selected={scores.level} />}
-      figures={
-        <>
-          <HeaderFigure
-            value={percent(hygiene.share)}
-            label="Repository hygiene: pull requests linked to a work item"
-          />
-          <HeaderFigure value={reviewFindingsReceived.pullRequests.count} label="Own pull requests merged" />
-          <HeaderFigure value={reviewParticipation.pullRequestsReviewed.count} label="Pull requests reviewed" />
-          <HeaderFigure value={reviewParticipation.comments.substantive.count} label="Substantive comments written" />
-        </>
+      controls={
+        <LevelSwitch
+          selected={scores.level}
+          hrefFor={(level) => `/developers/${personId}/profile?quarter=${scores.quarter}&level=${level}`}
+        />
       }
+      figures={scores.dimensions.map((dimension) => (
+        <HeaderFigure
+          key={dimension.key}
+          value={`${dimension.score} of 2`}
+          label={`${dimension.name}, ${dimension.workingTier ? `works at ${dimension.workingTier}` : "no working tier"}`}
+        />
+      ))}
     >
       <span className={styles.quarter}>{scores.quarter}</span>
-      <Link href={`/developers/${personId}`}>Evidence list</Link>
+      <span className={styles.quarter}>
+        Based on {judged} of {total} PRs judged
+      </span>
+      <Link href={`/developers/${personId}?quarter=${scores.quarter}&level=${scores.level}`}>Evidence list</Link>
     </PageHeader>
-  );
-}
-
-/** The level the scores are read against; each level is a link, so the choice lives in the URL. */
-function LevelControl({ personId, quarter, selected }: { personId: number; quarter: string; selected: Level }) {
-  return (
-    <div className={styles.levelControl}>
-      <span className={styles.levelCaption}>Read at level</span>
-      <nav className={styles.levels} aria-label="Level">
-        {LEVELS.map((level) => (
-          <Link
-            key={level}
-            href={`/developers/${personId}/profile?quarter=${quarter}&level=${level}`}
-            className={level === selected ? styles.levelSelected : styles.level}
-            aria-current={level === selected ? "page" : undefined}
-          >
-            {level}
-          </Link>
-        ))}
-      </nav>
-    </div>
   );
 }
 
