@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.dsinnovators.ei.DatabaseTest;
 import com.dsinnovators.ei.JobEndpointClient;
+import com.dsinnovators.ei.analytics.AnalyticsRows;
 import java.net.http.HttpResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -249,6 +250,22 @@ class DeveloperControllerTest extends DatabaseTest {
                 0,
                 JobEndpointClient.json(client.get("/api/developers?quarter=2026-Q3"))
                         .size());
+    }
+
+    @Test
+    void aPersonWithOnlyAHumanPullRequestMergedInTheQuarterIsListedWithoutItems() throws Exception {
+        AnalyticsRows rows = new AnalyticsRows(jdbc);
+        long grace = rows.person(12, "grace");
+        rows.pullRequest(1, 1, 12, "grace", "2026-07-02T10:00:00Z");
+        rows.person(13, "hopper");
+        rows.pullRequest(2, 1, 13, "hopper", "2026-06-30T10:00:00Z");
+        rows.botPullRequest(3, 14, "dependabot", "2026-07-03T10:00:00Z");
+
+        JsonNode developers = JobEndpointClient.json(client.get("/api/developers?quarter=2026-Q3"));
+
+        assertEquals(1, developers.size());
+        assertEquals(grace, developers.get(0).get("personId").longValue());
+        assertEquals(0, developers.get(0).get("counts").get("featureWork").longValue());
     }
 
     @Test
