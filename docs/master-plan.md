@@ -92,11 +92,11 @@ The tables are described in `poc-plan.md` section 3.4. Adding a data source late
 
 These are left out on purpose (`poc-plan.md` 3.1). No feature builds them. If a session thinks one is needed, it stops and asks.
 
-- Gates G3 and G5. G4 is shown only as "gate unverified". On Planning and execution (F15) G3 and G5 are shown as "check unverified".
+- Gates G3 and G5. G4 is shown only as "gate unverified".
 - The clean-delivery rule (spec 9.2).
-- Dimensions other than Coding and code quality, Engineering standards and system health, and Planning and execution (added by F15, decision 274). The other evidence-backed dimensions are shown as "Not assessed".
+- Dimensions other than Coding and code quality and Engineering standards and system health. Planning and execution needs Planning items and sprint data (gate G3) that are not imported (decision 281). The other dimensions are shown as "Not assessed".
 - Tiers for Bug fix and Documentation items. They are captured and counted only.
-- Confidence (spec 9.4), the opportunity profile (spec 6.6), lead-rated dimensions (spec 8.5, 9.5). The weighted overall score is built from the evidence part only (F15, decision 274); lead-rated rows are shown as "not rated".
+- Confidence (spec 9.4), the opportunity profile (spec 6.6), lead-rated dimensions (spec 8.5, 9.5). The weighted overall score and the growth-area sub-scores (decision 281).
 - The screen where a lead corrects a judgment (spec 9.7 row 1). The data model already supports corrections.
 - Authentication and roles.
 - A scheduler or daily run.
@@ -121,8 +121,7 @@ These are left out on purpose (`poc-plan.md` 3.1). No feature builds them. If a 
 | F12 | Profile page | F11 | One page per developer where every number opens down to a PR |
 | F13 | Accuracy measurement (dropped, decision 80) | F12 | An accuracy page with the measures of `poc-plan.md` section 4 |
 | F14 | Interface redesign with charts | F12 | An overview dashboard, a developer roster with scores and a profile with charts, in one design system |
-| F15 | Analytics and score for the deck | F14 | Planning and execution, one overall score with growth-area sub-scores, the work-level share for the window and a team endpoint |
-| F16 | Deck-style pages | F15 | Profile, team list, compare view and overview shaped like the v1.5 deck, with pie, line and bar charts |
+| F15 | Deck-style pages on existing data | F14 | Counts fixed to the quarter, then profile, team list and overview shaped like the v1.5 deck with real charts, on the two existing scores and the analytics |
 
 Each block below gives a new session enough to start the deep dive. "Open questions" are the points the deep dive must answer; they are not decided here.
 
@@ -400,40 +399,21 @@ Every count is split by tier (spec 7).
 
 ---
 
-### F15 Analytics and score for the deck
+### F15 Deck-style pages on existing data
 
-**Goal.** The numbers behind the pages of the v1.5 deck (`Engineering_Intelligence_Developer_Performance_Evaluation_v1.5.pptx`, slides 3 to 10 and 28): one score per developer, its growth areas, and the work-level share. Backend only. Decisions 273 to 278 and 280. The two weeks of data (1 to 14 Jul 2026) are enough: the aim is to validate that it works; more data is pulled later.
-
-**Builds.**
-- **Planning and execution** as a third evidence-backed dimension (spec 8.3): Feature work with its plain tier, weights 1, 2 and 4, frequent-type presence. No clean-delivery rule. G3 and G5 are shown as "check unverified". Planning item is not built. Seed rows in `dimension` and `dimension_evidence_type`.
-- **Overall score** (spec 10.1), from the evidence part only: the weighted average of the scored evidence-backed dimensions, with weights per level in `setting` (Coding 3/3/3, Engineering standards 2/3/3, Planning 3/3/3). With no lead part, the evidence part is the whole score. Calculated by the scoring job at L1, L2 and L3 and stored with a trail ("21 / 19 = 1.11").
-- **Growth-area sub-scores**: the same formula per growth area (growth area of each dimension in `setting`). Engineering Skills and Leadership have a sub-score; the others are "not assessed in the PoC".
-- **Work-level share** (spec 11.1, one point for the whole window, decision 280): the person's share of weighted Feature work at Low, Medium and High, the same for the project (the repository without the person), and the one-third line from `setting`. It equals the share on the Planning and execution trail. Part of the analytics API; nothing stored. No time series.
-- **Analytics fixes**: every count limited to the quarter (also the per-developer counts of `/api/developers`); Work complexity gives shares and leaves the person out of the project bars; each analytic reports judged out of total ("based on 41 of 52 PRs"); delivery numbers: Feature work items closed, PRs merged, bugs fixed.
-- **Team endpoint** `GET /api/team/scores?quarter=&level=`: every developer's score, sub-scores, dimension scores and working tiers in one call.
-
-**Before it starts.** Nothing. The judging of 1 to 14 Jul is complete on `ei_latest` (24 Nov 2026).
-
-**Read first.** Spec 8.1, 8.3, 10.1, 10.2, 11.1. `docs/features/F10-analytics/notes.md`, `docs/features/F11-scoring/notes.md`. The deck.
-
-**Done when.** Unit tests reproduce the deck's examples: 21 / 19 = 1.11, and 2 Low and 5 Medium give 83% at T2. The work-level share equals the Planning and execution share on its trail. Changing a weight in `setting` changes the score without a code change. The team endpoint equals the per-developer endpoints.
-
----
-
-### F16 Deck-style pages
-
-**Goal.** Pages a manager understands at a glance: one idea per section, real pie, line and bar charts, less on screen. Decisions 273 to 278.
+**Goal.** Pages a manager understands at a glance, shaped like the v1.5 deck (`Engineering_Intelligence_Developer_Performance_Evaluation_v1.5.pptx`, slides 3 to 10 and 28): one idea per section, real pie, bar and donut charts, less on screen. Built on the data that exists today: the two dimension scores of F11 and the analytics of F10. No new dimension, no overall score, no growth-area sub-scores (decision 281). One session: first the fixes to the numbers, then the pages (decision 282). The two weeks of data (1 to 14 Jul 2026) are enough.
 
 **Builds.**
-- Recharts behind shared wrappers in `web/components/charts/` (donut, line, bar, stacked bar), coloured from `web/lib/palette.ts`. The CSS chart pieces nothing uses any more are removed.
-- **Profile**, top to bottom: header with the score, level switch, "works at" and the judged coverage; "Is the feature work at the level?": one bar chart of the person's weighted Feature work at Low, Medium and High next to the project, with the one-third line and one sentence that reads it (slide 3 as a single bar chart, decision 280); score by growth area as bars against 1.0 and "how the score is built" (slide 4); the dimensions table with works at, score and why or next step, other dimensions greyed "Not assessed" (slide 5); work delivery: a donut of work classification, complexity bars of the person next to the project, three number tiles (slide 7); quality: the checks as pass, close miss, far miss or unverified, review comments written by tier (slide 8); the trail and the drill-down lists folded at the end.
-- **Team** (`/developers`): the developers at the selected level sorted by score, with growth-area bars and the working tier; a compare view of two developers side by side (slides 9 and 10).
-- **Overview** (`/`): score distribution, work by type, complexity of the team, hygiene and judged coverage, all for one quarter.
+- **Number fixes (backend, first).** Every count limited to the quarter (also the per-developer counts of `/api/developers`, which the overview and the roster show next to quarter scores); Work complexity gives shares and leaves the person out of the project bars; each analytic reports judged out of total ("based on 41 of 52 PRs"). No new table, no new score.
+- **Charts.** Recharts behind shared wrappers in `web/components/charts/` (donut, bar, stacked bar), coloured from `web/lib/palette.ts` (decision 278). The CSS chart pieces nothing uses any more are removed.
+- **Profile**: header with level switch and judged coverage; the two dimension scores with working tier and the next step; Feature work at Low, Medium and High next to the project as one bar chart (decision 280); work delivery: a donut of work classification and the complexity bars; quality: gates G1 and G2 as pass, close miss or far miss, G4 unverified, review comments written by tier; every other dimension greyed "Not assessed"; the trail and the drill-down lists folded at the end.
+- **Team** (`/developers`): the developers at the selected level with their two scores and working tiers.
+- **Overview** (`/`): work by type, complexity of the team, hygiene and judged coverage, for one quarter.
 - Evidence list and item page keep their content in the calmer style.
 
-**Read first.** The approved mock-up of the profile, `docs/mockups/profile.dc.html` (sample data; approved by the user on 24 Nov 2026, also at https://claude.ai/artifact/VTEJB7UcCRvtggAX6HFvJt): the profile follows its sections, order and look, drawn with Recharts. `docs/features/F14-interface-redesign/design.md` and `notes.md`. The deck, slides 3 to 10 and 28. The `dataviz` skill.
+**Read first.** The deck, slides 3 to 10 and 28. The mock-up `docs/mockups/profile.dc.html` (sample data, approved 24 Nov 2026): its layout and look stand, but its overall score, growth-area bars and Planning and execution row are dropped (decision 281). `docs/features/F10-analytics/notes.md`, `docs/features/F11-scoring/notes.md`, `docs/features/F14-interface-redesign/design.md` and `notes.md`. The `dataviz` skill.
 
-**Done when.** The pages render on desktop and phone width with real data. The numbers equal the F15 API. A viewer clicks from the score down to a PR on GitHub. The palette passes the colour-blind check. Web format check, lint, type check, tests and build are green.
+**Done when.** Every count on the overview, the roster and the profile is for the selected quarter (tested). The project bars leave the person out (tested). Each analytic shows judged out of total. The pages render on desktop and phone width with the real data of `ei_latest`. A viewer clicks from a score down to a PR on GitHub. The palette passes the colour-blind check. Backend build and web format check, lint, type check, tests and build are green.
 
 ## 6. Order
 
@@ -464,8 +444,7 @@ Update this table when a feature changes state. States: not started, in design, 
 | F12 | Profile page | done | `docs/features/F12-profile-page/design.md` | `docs/features/F12-profile-page/plan.md` |
 | F13 | Accuracy measurement | dropped (decision 80) | | |
 | F14 | Interface redesign with charts | done | `docs/features/F14-interface-redesign/design.md` | `docs/features/F14-interface-redesign/plan.md` |
-| F15 | Analytics and score for the deck | not started | | |
-| F16 | Deck-style pages | not started | | |
+| F15 | Deck-style pages on existing data | in design | | |
 
 ## 8. Glossary
 
