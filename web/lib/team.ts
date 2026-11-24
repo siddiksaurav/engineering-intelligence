@@ -1,5 +1,5 @@
 import { type BackendResult, readBackend } from "./backend";
-import type { Developer, TypeCounts } from "./evidence";
+import type { TypeCounts } from "./evidence";
 import { type Count, type Coverage, fetchDimensionScores, type Distribution, type Level, type Tier } from "./profile";
 
 /** One dimension of one developer as the overview and the roster show it. */
@@ -13,19 +13,7 @@ export type DimensionSummary = {
   name: string;
   /** The number of developers at score 0, 1 and 2. */
   byScore: [number, number, number];
-  byWorkingTier: Record<Tier | "none", number>;
 };
-
-export type TeamSummary = {
-  developers: number;
-  evidenceItems: number;
-  scoredDevelopers: number;
-  byType: TypeCounts;
-  dimensions: DimensionSummary[];
-  mostEvidence: Developer[];
-};
-
-const DEFAULT_MOST_EVIDENCE = 8;
 
 /** The analytics of every developer together in one quarter (F15). */
 export type TeamAnalytics = {
@@ -76,45 +64,8 @@ export function totalOf(counts: TypeCounts): number {
   return Object.values(counts).reduce((sum, count) => sum + count, 0);
 }
 
-/** The numbers of the whole team: evidence per type, developers per score and working tier, and who has the most evidence. */
-export function teamSummary(
-  developers: Developer[],
-  scores: TeamScores,
-  mostEvidenceCount: number = DEFAULT_MOST_EVIDENCE,
-): TeamSummary {
-  return {
-    developers: developers.length,
-    evidenceItems: developers.reduce((sum, developer) => sum + totalOf(developer.counts), 0),
-    scoredDevelopers: scores.size,
-    byType: sumPerType(developers),
-    dimensions: summariseDimensions(scores),
-    mostEvidence: developers
-      .filter((developer) => totalOf(developer.counts) > 0)
-      .sort((first, second) => totalOf(second.counts) - totalOf(first.counts))
-      .slice(0, mostEvidenceCount),
-  };
-}
-
-function sumPerType(developers: Developer[]): TypeCounts {
-  const sums: TypeCounts = {
-    featureWork: 0,
-    bugFix: 0,
-    reviewCommentWritten: 0,
-    testChange: 0,
-    refactorPerformance: 0,
-    security: 0,
-    infraRelease: 0,
-    documentation: 0,
-  };
-  for (const developer of developers) {
-    for (const type of Object.keys(sums) as (keyof TypeCounts)[]) {
-      sums[type] += developer.counts[type];
-    }
-  }
-  return sums;
-}
-
-function summariseDimensions(scores: TeamScores): DimensionSummary[] {
+/** The number of developers at each score, per dimension, in the order the dimensions first appear. */
+export function dimensionSummaries(scores: TeamScores): DimensionSummary[] {
   const summaries = new Map<string, DimensionSummary>();
   for (const dimensions of scores.values()) {
     for (const dimension of dimensions) {
@@ -122,10 +73,8 @@ function summariseDimensions(scores: TeamScores): DimensionSummary[] {
         key: dimension.key,
         name: dimension.name,
         byScore: [0, 0, 0],
-        byWorkingTier: { T1: 0, T2: 0, T3: 0, none: 0 },
       };
       summary.byScore[dimension.score] += 1;
-      summary.byWorkingTier[dimension.workingTier ?? "none"] += 1;
       summaries.set(dimension.key, summary);
     }
   }

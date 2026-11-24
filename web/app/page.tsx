@@ -1,32 +1,41 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
-import { Avatar } from "@/components/Avatar";
-import { MeterBar } from "@/components/charts/MeterBar";
-import { SegmentedBar, type Segment } from "@/components/charts/SegmentedBar";
-import { Swatch, TypeBar } from "@/components/EvidenceTypes";
+import { DonutChart } from "@/components/charts/DonutChart";
+import { GroupedBarChart } from "@/components/charts/GroupedBarChart";
+import { StackedBarChart } from "@/components/charts/StackedBarChart";
+import { LevelSwitch } from "@/components/LevelSwitch";
 import { HeaderFigure, PageContent, PageHeader } from "@/components/Page";
 import { Notice, Panel } from "@/components/Panel";
-import { fetchDevelopers, type Developer } from "@/lib/evidence";
-import { EVIDENCE_SECTIONS } from "@/lib/evidenceSections";
+import { sliceCount } from "@/lib/counts";
+import { fetchDevelopers } from "@/lib/evidence";
 import { checkBackend, type BackendStatus } from "@/lib/health";
-import { NOT_JUDGED_COLOR, orderedColor, scoreColor, typeColor } from "@/lib/palette";
-import { percent } from "@/lib/profileText";
-import { fetchTeamScores, teamSummary, totalOf, type DimensionSummary, type TeamSummary } from "@/lib/team";
+import { SINGLE_HUE_COLOR, scoreColor, workTypeColor } from "@/lib/palette";
+import type { Level } from "@/lib/profile";
+import { profileParams } from "@/lib/profileParams";
+import { percent, plainName } from "@/lib/profileText";
+import {
+  dimensionSummaries,
+  fetchTeamAnalytics,
+  fetchTeamScores,
+  type DimensionSummary,
+  type TeamAnalytics,
+} from "@/lib/team";
 import styles from "./overview.module.css";
 
 // Asked on every request, on the server. The browser never calls the backend.
 export const dynamic = "force-dynamic";
 
-/** The level the team numbers are read at: the level a profile opens with (decision 247). */
-const TEAM_LEVEL = "L2";
+type SearchParams = Record<string, string | string[] | undefined>;
 
 const SCORES = [0, 1, 2] as const;
-const TIERS = ["T1", "T2", "T3"] as const;
+const COMPLEXITIES = ["low", "medium", "high", "very_high", "not_judged_yet"] as const;
 
-export default async function Home() {
+export default async function Home({ searchParams }: { searchParams: Promise<SearchParams> }) {
+  const query = await searchParams;
   const backendUrl = process.env.BACKEND_URL;
-  const quarter = process.env.DEFAULT_QUARTER || undefined;
-  if (quarter === undefined) {
+  const defaultQuarter = process.env.DEFAULT_QUARTER || undefined;
+  if (query.quarter === undefined && defaultQuarter === undefined) {
     return (
       <Overview status={await checkBackend(backendUrl)}>
         <Notice>
@@ -36,17 +45,27 @@ export default async function Home() {
       </Overview>
     );
   }
-  const [status, developers] = await Promise.all([checkBackend(backendUrl), fetchDevelopers(backendUrl, quarter)]);
-  if (developers.status !== "ok") {
+  const selection = profileParams(query, defaultQuarter);
+  if (!selection.valid) {
+    notFound();
+  }
+  const { quarter, level } = selection;
+  const [status, developers, analytics] = await Promise.all([
+    checkBackend(backendUrl),
+    fetchDevelopers(backendUrl, quarter),
+    fetchTeamAnalytics(backendUrl, quarter),
+  ]);
+  const levelSwitch = <LevelSwitch selected={level} hrefFor={(each) => `/?quarter=${quarter}&level=${each}`} />;
+  if (developers.status !== "ok" || analytics.status !== "ok") {
     return (
-      <Overview status={status}>
+      <Overview status={status} controls={levelSwitch}>
         <Notice>backend down</Notice>
       </Overview>
     );
   }
   if (developers.data.length === 0) {
     return (
-      <Overview status={status}>
+      <Overview status={status} controls={levelSwitch}>
         <Notice>No developers. Run the import jobs and then identity-build and evidence-build.</Notice>
       </Overview>
     );
@@ -55,111 +74,87 @@ export default async function Home() {
     backendUrl,
     developers.data.map((developer) => developer.personId),
     quarter,
-    TEAM_LEVEL,
+    level,
   );
-  const summary = teamSummary(developers.data, scores);
   return (
-    <Overview status={status} figures={<TeamFigures summary={summary} />}>
+    <Overview
+      status={status}
+      controls={levelSwitch}
+      figures={<TeamFigures developers={developers.data.length} analytics={analytics.data} />}
+      quarter={quarter}
+      level={level}
+    >
       <div className={styles.grid}>
-        <EvidenceByType summary={summary} />
-        <MostEvidence developers={summary.mostEvidence} />
-        <TeamScoresPanels summary={summary} quarter={quarter} />
+        <ScorePanel dimensions={dimensionSummaries(scores)} quarter={quarter} level={level} />
+        <WorkTypePanel analytics={analytics.data} />
+        <ComplexityPanel analytics={analytics.data} />
       </div>
     </Overview>
   );
 }
 
-function Overview({ status, figures, children }: { status: BackendStatus; figures?: ReactNode; children: ReactNode }) {
+function Overview({
+  status,
+  controls,
+  figures,
+  quarter,
+  level,
+  children,
+}: {
+  status: BackendStatus;
+  controls?: ReactNode;
+  figures?: ReactNode;
+  quarter?: string;
+  level?: Level;
+  children: ReactNode;
+}) {
   return (
     <main>
       <PageHeader
         title="Engineering Intelligence"
         controls={
-          <span className={styles.status} data-status={status}>
-            backend {status}
-          </span>
+          <div className={styles.controls}>
+            <span className={styles.status} data-status={status}>
+              backend {status}
+            </span>
+            {controls}
+          </div>
         }
         figures={figures}
       >
-        What a team leaves in Git and OpenProject, judged by AI. Every score opens down to the pull request behind it.{" "}
-        <Link href="/developers">See the developers</Link>
+        What a team leaves in Git and OpenProject, judged by AI. Every score opens down to the pull request behind it.
+        {quarter !== undefined && level !== undefined && (
+          <span className={styles.links}>
+            <Link href={`/developers?quarter=${quarter}&level=${level}`}>See the developers</Link>
+            <Link href={`/developers/compare?quarter=${quarter}&level=${level}`}>Compare two developers</Link>
+          </span>
+        )}
       </PageHeader>
       <PageContent>{children}</PageContent>
     </main>
   );
 }
 
-function TeamFigures({ summary }: { summary: TeamSummary }) {
+function TeamFigures({ developers, analytics }: { developers: number; analytics: TeamAnalytics }) {
+  const { workClassification, workComplexity, hygiene } = analytics;
   return (
     <>
-      <HeaderFigure value={summary.developers} label="Developers" />
-      <HeaderFigure value={summary.evidenceItems} label="Evidence items" />
-      <HeaderFigure value={summary.byType.reviewCommentWritten} label="Review comments written" />
-      <HeaderFigure value={`${summary.scoredDevelopers} of ${summary.developers}`} label="Developers scored" />
+      <HeaderFigure value={developers} label="Developers" />
+      <HeaderFigure
+        value={`${workClassification.coverage.judged} of ${workClassification.coverage.total}`}
+        label="PRs judged"
+      />
+      <HeaderFigure
+        value={`${workComplexity.coverage.judged} of ${workComplexity.coverage.total}`}
+        label="Feature work judged"
+      />
+      <HeaderFigure value={percent(hygiene.share)} label="PRs linked to a work item" />
     </>
   );
 }
 
-function EvidenceByType({ summary }: { summary: TeamSummary }) {
-  const ranked = EVIDENCE_SECTIONS.map((section) => ({ ...section, count: summary.byType[section.countKey] })).sort(
-    (first, second) => second.count - first.count,
-  );
-  return (
-    <Panel title="Evidence by type" note="Current evidence items of the whole team." className={styles.wide}>
-      <ul className={styles.ranked}>
-        {ranked.map((section) => {
-          const share = summary.evidenceItems === 0 ? null : section.count / summary.evidenceItems;
-          return (
-            <li key={section.type} className={styles.rankedRow}>
-              <span className={styles.rankedName}>
-                <Swatch color={typeColor(section.type)} />
-                {section.title}
-              </span>
-              {share !== null && (
-                <MeterBar label={section.title} count={section.count} share={share} color={typeColor(section.type)} />
-              )}
-              <span className={styles.count}>{section.count}</span>
-              <span className={styles.share}>{percent(share)}</span>
-            </li>
-          );
-        })}
-      </ul>
-    </Panel>
-  );
-}
-
-function MostEvidence({ developers }: { developers: Developer[] }) {
-  const most = developers.length === 0 ? 0 : totalOf(developers[0].counts);
-  return (
-    <Panel title="Most evidence" note="A segment per evidence type." className={styles.narrow}>
-      <ul className={styles.people}>
-        {developers.map((developer) => {
-          const total = totalOf(developer.counts);
-          return (
-            <li key={developer.personId} className={styles.person}>
-              <Avatar name={developer.displayName} />
-              <div className={styles.personBody}>
-                <div className={styles.personLine}>
-                  <Link href={`/developers/${developer.personId}/profile`}>{developer.displayName}</Link>
-                  <span className={styles.count}>{total}</span>
-                </div>
-                <div style={{ width: `${(total / most) * 100}%` }}>
-                  <TypeBar label={`Evidence of ${developer.displayName}`} counts={developer.counts} size="thin" />
-                </div>
-              </div>
-            </li>
-          );
-        })}
-      </ul>
-      <p className={styles.more}>
-        <Link href="/developers">All developers</Link>
-      </p>
-    </Panel>
-  );
-}
-
-function TeamScoresPanels({ summary, quarter }: { summary: TeamSummary; quarter: string }) {
-  if (summary.dimensions.length === 0) {
+function ScorePanel({ dimensions, quarter, level }: { dimensions: DimensionSummary[]; quarter: string; level: Level }) {
+  if (dimensions.length === 0) {
     return (
       <div className={styles.full}>
         <Notice>
@@ -170,53 +165,64 @@ function TeamScoresPanels({ summary, quarter }: { summary: TeamSummary; quarter:
     );
   }
   return (
-    <>
-      {summary.dimensions.map((dimension) => (
-        <DimensionPanel key={dimension.key} dimension={dimension} quarter={quarter} />
-      ))}
-    </>
-  );
-}
-
-function DimensionPanel({ dimension, quarter }: { dimension: DimensionSummary; quarter: string }) {
-  const scores: Segment[] = SCORES.map((score) => ({
-    key: String(score),
-    label: `Score ${score}`,
-    value: dimension.byScore[score],
-    color: scoreColor(score),
-  }));
-  const tiers: Segment[] = [
-    ...TIERS.map((tier) => ({
-      key: tier,
-      label: tier,
-      value: dimension.byWorkingTier[tier],
-      color: orderedColor(tier) ?? NOT_JUDGED_COLOR,
-    })),
-    { key: "none", label: "No working tier", value: dimension.byWorkingTier.none, color: NOT_JUDGED_COLOR },
-  ];
-  return (
-    <Panel title={dimension.name} note={`Developers in ${quarter}, read at ${TEAM_LEVEL}.`} className={styles.half}>
-      <Split title="Score, of 2" label="Scores" segments={scores} />
-      <Split title="Working tier" label="Working tiers" segments={tiers} />
+    <Panel
+      title="Developers by score"
+      note={`How many developers score 0, 1 and 2 in each dimension, ${quarter} read at ${level}.`}
+      className={styles.full}
+    >
+      <StackedBarChart
+        label="Developers by score"
+        segments={SCORES.map((score) => ({ key: String(score), label: `Score ${score}`, color: scoreColor(score) }))}
+        bars={dimensions.map((dimension) => ({
+          key: dimension.key,
+          label: dimension.name,
+          values: Object.fromEntries(SCORES.map((score) => [String(score), dimension.byScore[score]])),
+        }))}
+      />
     </Panel>
   );
 }
 
-/** One segmented bar with the list of its parts under it: a swatch, the name and the number of developers. */
-function Split({ title, label, segments }: { title: string; label: string; segments: Segment[] }) {
+function WorkTypePanel({ analytics }: { analytics: TeamAnalytics }) {
+  const { distribution } = analytics.workClassification;
   return (
-    <div className={styles.split}>
-      <h3 className={styles.splitTitle}>{title}</h3>
-      <SegmentedBar label={label} segments={segments} />
-      <ul className={styles.splitParts}>
-        {segments.map((segment) => (
-          <li key={segment.key}>
-            <Swatch color={segment.color} />
-            {segment.label}
-            <span className={styles.count}>{segment.value}</span>
-          </li>
-        ))}
-      </ul>
-    </div>
+    <Panel
+      title="Work by type"
+      note={`${distribution.total} pull requests merged by the team.`}
+      className={styles.half}
+    >
+      <DonutChart
+        label="Pull requests by work type"
+        centerLabel={`${distribution.total} PRs`}
+        slices={distribution.slices.map((slice) => ({
+          key: slice.name,
+          label: plainName(slice.name),
+          value: slice.count.count,
+          color: workTypeColor(slice.name),
+        }))}
+      />
+    </Panel>
+  );
+}
+
+function ComplexityPanel({ analytics }: { analytics: TeamAnalytics }) {
+  const { distribution } = analytics.workComplexity;
+  return (
+    <Panel
+      title="Feature work by complexity"
+      note={`${distribution.total} Feature work items of the team.`}
+      className={styles.half}
+    >
+      <GroupedBarChart
+        label="Feature work by complexity"
+        unit="count"
+        series={[{ key: "items", label: "Feature work items", color: SINGLE_HUE_COLOR }]}
+        categories={COMPLEXITIES.map((name) => ({
+          key: name,
+          label: plainName(name),
+          values: { items: sliceCount(distribution, name).count },
+        }))}
+      />
+    </Panel>
   );
 }

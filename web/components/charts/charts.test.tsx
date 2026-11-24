@@ -2,8 +2,6 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { DonutChart } from "./DonutChart";
 import { GroupedBarChart } from "./GroupedBarChart";
-import { MeterBar } from "./MeterBar";
-import { RingMeter } from "./RingMeter";
 import { SegmentedBar } from "./SegmentedBar";
 import { StackedBarChart } from "./StackedBarChart";
 
@@ -37,44 +35,6 @@ describe("SegmentedBar", () => {
 
     expect(html).toContain('aria-label="Evidence: none"');
     expect(html).not.toContain("flex-grow");
-  });
-});
-
-describe("RingMeter", () => {
-  it("is a meter with the whole percent, written in its middle", () => {
-    const html = renderToStaticMarkup(<RingMeter label="Tested" share={5 / 8} />);
-
-    expect(html).toContain('role="meter"');
-    expect(html).toContain('aria-valuenow="63"');
-    expect(html).toContain('aria-label="Tested"');
-    expect(html).toContain(">63%<");
-    expect(html).toContain('stroke-dasharray="62.5 100"');
-  });
-
-  it("says no PRs and is no meter for a share that is null", () => {
-    const html = renderToStaticMarkup(<RingMeter label="Tested" share={null} />);
-
-    expect(html).toContain("no PRs");
-    expect(html).not.toContain('role="meter"');
-    expect(html).not.toContain("<svg");
-  });
-});
-
-describe("MeterBar", () => {
-  it("is a meter filled to the share, with the count and the percent in its title", () => {
-    const html = renderToStaticMarkup(<MeterBar label="Fix" count={6} share={0.24} color="blue" />);
-
-    expect(html).toContain('role="meter"');
-    expect(html).toContain('aria-valuenow="24"');
-    expect(html).toContain('title="Fix: 6, 24%"');
-    expect(html).toContain("width:24%");
-  });
-
-  it("stays an empty track for a share of 0", () => {
-    const html = renderToStaticMarkup(<MeterBar label="Fix" count={0} share={0} color="blue" />);
-
-    expect(html).toContain('aria-valuenow="0"');
-    expect(html).not.toContain("width:");
   });
 });
 
