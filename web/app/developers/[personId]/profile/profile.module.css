@@ -666,3 +666,49 @@
     flex-wrap: wrap;
   }
 }
+
+/* Sections of the profile */
+
+.sections {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 460px), 1fr));
+  gap: 20px;
+  align-items: start;
+}
+
+.reading {
+  margin: 16px 0 0;
+  padding: 12px 14px;
+  border-radius: var(--radius-small);
+  background: var(--sky-50);
+}
+
+.coverage {
+  margin: 8px 0 0;
+  color: var(--ink-3);
+  font-size: 0.85rem;
+}
+
+.rows {
+  margin-top: 12px;
+}
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 120px), 1fr));
+  gap: 12px;
+  margin: 18px 0;
+}
+
+.tile {
+  padding: 12px;
+  border-radius: var(--radius-small);
+  background: var(--sky-50);
+}
+
+.figureCount {
+  display: block;
+  font-family: var(--font-data);
+  font-size: 1.6rem;
+  font-weight: 500;
+}

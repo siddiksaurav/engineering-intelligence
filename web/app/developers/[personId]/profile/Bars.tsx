@@ -1,18 +1,11 @@
 import { MeterBar } from "@/components/charts/MeterBar";
 import { SegmentedBar } from "@/components/charts/SegmentedBar";
-import { typeTitle } from "@/lib/evidenceSections";
 import { orderedColor, SINGLE_HUE_COLOR } from "@/lib/palette";
 import type { Count, Distribution } from "@/lib/profile";
-import { percent } from "@/lib/profileText";
+import { percent, plainName } from "@/lib/profileText";
 import { Drill } from "./Drill";
 import type { SummariesById } from "./ItemReferences";
 import styles from "./profile.module.css";
-
-/** A snake case name in plain words: "very_high" becomes "Very high"; a work type uses its screen title. */
-function plainName(name: string): string {
-  const words = name.replaceAll("_", " ");
-  return typeTitle(name) ?? words.charAt(0).toUpperCase() + words.slice(1);
-}
 
 /** Tiers, complexities and "not judged yet" have a place in an order and a colour for it; other classes share one hue. */
 function colorOf(name: string): string {

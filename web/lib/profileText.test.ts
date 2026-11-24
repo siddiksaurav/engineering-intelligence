@@ -1,6 +1,25 @@
 import { describe, expect, it } from "vitest";
-import type { DimensionScore, EvidenceTypeTrail, GateOutcome, GateResult, Level, Tier, TierPresence } from "./profile";
-import { badgeOf, expectedTier, gateWords, nextStepLine, percent, whyLine } from "./profileText";
+import type {
+  DimensionScore,
+  WeightedWorkLevel,
+  WorkLevel,
+  EvidenceTypeTrail,
+  GateOutcome,
+  GateResult,
+  Level,
+  Tier,
+  TierPresence,
+} from "./profile";
+import {
+  badgeOf,
+  expectedTier,
+  gateWords,
+  nextStepLine,
+  percent,
+  plainName,
+  whyLine,
+  workLevelSentence,
+} from "./profileText";
 
 function presence(...present: Tier[]): TierPresence[] {
   return (["T1", "T2", "T3"] as const).map((tier) => ({
@@ -345,5 +364,46 @@ describe("gateWords", () => {
       outcome: "unverified",
       detail: words,
     });
+  });
+});
+
+describe("plainName", () => {
+  it("writes a snake case name in words and uses the screen title of a work type", () => {
+    expect(plainName("very_high")).toBe("Very high");
+    expect(plainName("feature_work")).toBe("Feature work");
+    expect(plainName("fix")).toBe("Fix");
+  });
+});
+
+describe("workLevelSentence", () => {
+  const share = (atT2OrAbove: number | null, atT3: number | null): WeightedWorkLevel => ({
+    weightedTotal: atT2OrAbove === null ? 0 : 10,
+    weightedAtT2OrAbove: 0,
+    shareAtT2OrAbove: atT2OrAbove,
+    weightedAtT3: 0,
+    shareAtT3: atT3,
+  });
+  const workLevel = (person: WeightedWorkLevel): WorkLevel => ({
+    person,
+    restOfRepository: share(0.7, 0.18),
+    line: 1 / 3,
+    coverage: { judged: 7, total: 7 },
+  });
+
+  it("reads both shares against the line", () => {
+    expect(workLevelSentence("ada", workLevel(share(0.83, 0.14)))).toBe(
+      "83% of ada's Feature work was Medium or harder, at or above the one-third line, so it counts at T2. " +
+        "High work is 14%, below the line, so not yet T3.",
+    );
+  });
+
+  it("says not yet T2 for a share below the line", () => {
+    expect(workLevelSentence("ada", workLevel(share(0.2, 0)))).toContain("below the one-third line, so not yet T2");
+  });
+
+  it("says there is no level to read without judged Feature work", () => {
+    expect(workLevelSentence("ada", workLevel(share(null, null)))).toBe(
+      "ada has no judged Feature work in this quarter yet, so there is no level to read.",
+    );
   });
 });

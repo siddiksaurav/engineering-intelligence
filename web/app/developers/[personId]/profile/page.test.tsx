@@ -272,14 +272,97 @@ describe("ProfilePage", () => {
     expect(await render({ quarter: "2026-Q3" })).toContain("no working tier");
   });
 
-  it("shows the header with the name, quarter, hygiene and level links that keep the quarter", async () => {
+  it("shows the two dimension scores in the header", async () => {
+    answeringWith(
+      scores("L2", [dimension("design", DESIGN, "T2", 1), dimension("engineering", ENGINEERING, null, 2)]),
+      analytics({
+        workClassification: { distribution: EMPTY_DISTRIBUTION, coverage: { judged: 17, total: 20 } },
+      }),
+    );
+
+    const html = await render({ quarter: "2026-Q3" });
+
+    const header = html.slice(html.indexOf("<header"), html.indexOf("</header>"));
+    expect(header).toContain(DESIGN);
+    expect(header).toContain(ENGINEERING);
+    expect(header).toContain("1 of 2");
+    expect(header).toContain("2 of 2");
+    expect(header).toContain("works at T2");
+    expect(header).toContain("no working tier");
+    expect(header).toContain("Based on 17 of 20 PRs judged");
+  });
+
+  it("shows the work level against the rest of the repository with one sentence that reads it", async () => {
+    const level = (atT2OrAbove: number, atT3: number): WeightedWorkLevel => ({
+      ...NO_WORK_LEVEL,
+      weightedTotal: 10,
+      shareAtT2OrAbove: atT2OrAbove,
+      shareAtT3: atT3,
+    });
+    answeringWith(
+      scores("L2", []),
+      analytics({
+        workLevel: {
+          person: level(0.83, 0.14),
+          restOfRepository: level(0.7, 0.18),
+          line: 1 / 3,
+          coverage: { judged: 7, total: 8 },
+        },
+      }),
+    );
+
+    const html = await render({ quarter: "2026-Q3" });
+
+    expect(html).toContain("Medium or harder: ada 83%, Rest of repository 70%");
+    expect(html).toContain("High: ada 14%, Rest of repository 18%");
+    expect(html).toContain("Line to clear: 33%");
+    expect(html).toContain(
+      "83% of ada&#x27;s Feature work was Medium or harder, at or above the one-third line, so it counts at T2.",
+    );
+    expect(html).toContain("Judged Feature work: 7 of 8");
+  });
+
+  it("shows the work types as a donut with the three delivery tiles, each opening to its items", async () => {
+    const workTypes: Distribution = {
+      total: 4,
+      slices: [
+        { name: "feature", count: count([21, 22]), share: 0.5 },
+        { name: "fix", count: count([23]), share: 0.25 },
+        { name: "docs", count: count([24]), share: 0.25 },
+      ],
+    };
+    answeringWith(
+      scores("L2", []),
+      analytics({
+        workClassification: { distribution: workTypes, coverage: NO_COVERAGE },
+        workComplexity: {
+          coverage: NO_COVERAGE,
+          person: { total: 2, slices: [{ name: "low", count: count([], [5, 6]), share: 1 }] },
+          restOfRepository: { total: 1, slices: [{ name: "high", count: count([], [7]), share: 1 }] },
+        },
+      }),
+    );
+
+    const html = await render({ quarter: "2026-Q3" });
+
+    expect(html).toContain("Feature: 2 (50%)");
+    expect(html).toMatch(/>2<\/span> Feature work items/);
+    expect(html).toMatch(/>4<\/span> PRs merged/);
+    expect(html).toMatch(/>1<\/span> Bugs fixed/);
+    expect(html).toContain('href="https://github.com/opf/openproject/pull/23"');
+    expect(html).toContain('href="/items/5"');
+    expect(html).toContain('href="/items/7"');
+    expect(html).toContain("Low: 2");
+    expect(html).toContain("High: 1");
+  });
+
+  it("shows the header with the name, quarter and level links that keep the quarter", async () => {
     answeringWith(scores("L2", [dimension("design", DESIGN, "T2", 1)]));
 
     const html = await render({ quarter: "2026-Q3", level: "L2" });
 
     expect(html).toContain("ada");
     expect(html).toContain("2026-Q3");
-    expect(html).toContain("63%");
     expect(html).toContain('href="/developers/7/profile?quarter=2026-Q3&amp;level=L1"');
     expect(html).toContain('href="/developers/7/profile?quarter=2026-Q3&amp;level=L3"');
     expect(html).toMatch(/aria-current="page"[^>]*>L2</);
@@ -333,7 +416,7 @@ describe("ProfilePage", () => {
 
     expect(html).toContain("No scores for 2026-Q3 yet");
     expect(html).toContain("dimension-scoring");
-    expect(html).toContain("63%");
+    expect(html).toContain("<h1");
   });
 
   it("warns that the numbers will change when pull requests or items are not judged yet", async () => {
@@ -396,7 +479,7 @@ describe("ProfilePage", () => {
     expect(await render({ quarter: "2026-Q3" })).not.toContain("are not judged yet");
   });
 
-  it("shows the header, the notice, the dimension cards, the gates panel and then the analytics", async () => {
+  it("shows the header, the notice, the work sections, the gates panel and then the analytics", async () => {
     const engineering = withTrail(dimension("engineering", ENGINEERING, "T2", 1), {}, [gate("G1")]);
     answeringWith(
       scores("L2", [dimension("design", DESIGN, "T2", 1), engineering]),
@@ -410,9 +493,14 @@ describe("ProfilePage", () => {
 
     const html = await render({ quarter: "2026-Q3" });
 
-    const positions = ["<h1", "are not judged yet", DESIGN, ENGINEERING, "Quality gates", "Work classification"].map(
-      (text) => html.indexOf(text),
-    );
+    const positions = [
+      "<h1",
+      "are not judged yet",
+      "Level of the work",
+      "What kind of work",
+      "Quality gates",
+      "Work classification",
+    ].map((text) => html.indexOf(text));
     expect(positions).not.toContain(-1);
     expect(positions).toEqual([...positions].sort((first, second) => first - second));
   });
@@ -769,33 +857,6 @@ describe("ProfilePage", () => {
     expect(html).toContain("Tested: 0");
     expect(html.match(/no PRs/g)?.length).toBeGreaterThanOrEqual(2);
     expect(html).not.toContain('role="meter"');
-  });
-
-  it("shows four figures of the analytics in the header", async () => {
-    answeringWith(
-      scores("L2", []),
-      analytics({
-        reviewParticipation: {
-          pullRequestsReviewed: count([1, 2, 3, 4, 5]),
-          authorsReviewed: count(),
-          comments: { ...BREAKDOWN, substantive: count([], [41, 42, 43]) },
-          substantivePerPullRequestReviewed: null,
-        },
-        reviewFindingsReceived: {
-          pullRequests: count([11, 12, 13, 14, 15, 16, 17]),
-          comments: BREAKDOWN,
-          substantivePerPullRequest: null,
-        },
-      }),
-    );
-
-    const html = await render({ quarter: "2026-Q3" });
-
-    const figure = (label: string) => html.match(new RegExp(`>([^<]*)</span><span[^>]*>${label}<`))?.[1];
-    expect(figure("Repository hygiene: pull requests linked to a work item")).toBe("63%");
-    expect(figure("Own pull requests merged")).toBe("7");
-    expect(figure("Pull requests reviewed")).toBe("5");
-    expect(figure("Substantive comments written")).toBe("3");
   });
 
   it("draws the tier steps of a dimension with the step the level expects, and a pip per score point", async () => {

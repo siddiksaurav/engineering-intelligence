@@ -44,6 +44,14 @@ export type WeightedWorkLevel = {
   shareAtT3: number | null;
 };
 
+/** The Feature work of the person and of the rest of the repository against the line a share must reach. */
+export type WorkLevel = {
+  person: WeightedWorkLevel;
+  restOfRepository: WeightedWorkLevel;
+  line: number;
+  coverage: Coverage;
+};
+
 export type TestShare = {
   total: number;
   tested: Count;
@@ -60,7 +68,7 @@ export type Analytics = {
   quarter: string;
   workClassification: { distribution: Distribution; coverage: Coverage };
   workComplexity: { person: Distribution; restOfRepository: Distribution; coverage: Coverage };
-  workLevel: { person: WeightedWorkLevel; restOfRepository: WeightedWorkLevel; line: number; coverage: Coverage };
+  workLevel: WorkLevel;
   reviewParticipation: {
     pullRequestsReviewed: Count;
     authorsReviewed: Count;

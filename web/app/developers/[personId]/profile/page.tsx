@@ -3,7 +3,6 @@ import { notFound } from "next/navigation";
 import { type Analytics, type DimensionScores, fetchAnalytics, fetchDimensionScores, type Level } from "@/lib/profile";
 import { fetchItemSummaries } from "@/lib/items";
 import { itemIdsOnPage, notJudgedYet, profileParams } from "@/lib/profileParams";
-import { percent } from "@/lib/profileText";
 import { Avatar } from "@/components/Avatar";
 import { HeaderFigure, PageContent, PageHeader } from "@/components/Page";
 import { Notice } from "@/components/Panel";
@@ -12,6 +11,8 @@ import { DimensionCard } from "./DimensionCard";
 import { GatesPanel } from "./GatesPanel";
 import type { SummariesById } from "./ItemReferences";
 import styles from "./profile.module.css";
+import { WorkKindSection } from "./WorkKindSection";
+import { WorkLevelSection } from "./WorkLevelSection";
 
 // Read on every request, on the server. The browser never calls the backend.
 export const dynamic = "force-dynamic";
@@ -99,6 +100,10 @@ function Profile({
             will change.
           </Notice>
         )}
+        <div className={styles.sections}>
+          <WorkLevelSection analytics={analytics} />
+          <WorkKindSection analytics={analytics} summariesById={summariesById} />
+        </div>
         {scores.scored ? (
           <>
             <div className={styles.dimensions}>
@@ -124,7 +129,7 @@ function Profile({
 
 function ProfileHeader({ analytics, scores }: { analytics: Analytics; scores: DimensionScores }) {
   const { personId, displayName } = analytics.person;
-  const { hygiene, reviewParticipation, reviewFindingsReceived } = analytics;
+  const { judged, total } = analytics.workClassification.coverage;
   return (
     <PageHeader
       crumbs={[
@@ -138,19 +143,18 @@ function ProfileHeader({ analytics, scores }: { analytics: Analytics; scores: Di
         </span>
       }
       controls={<LevelControl personId={personId} quarter={scores.quarter} selected={scores.level} />}
-      figures={
-        <>
-          <HeaderFigure
-            value={percent(hygiene.share)}
-            label="Repository hygiene: pull requests linked to a work item"
-          />
-          <HeaderFigure value={reviewFindingsReceived.pullRequests.count} label="Own pull requests merged" />
-          <HeaderFigure value={reviewParticipation.pullRequestsReviewed.count} label="Pull requests reviewed" />
-          <HeaderFigure value={reviewParticipation.comments.substantive.count} label="Substantive comments written" />
-        </>
-      }
+      figures={scores.dimensions.map((dimension) => (
+        <HeaderFigure
+          key={dimension.key}
+          value={`${dimension.score} of 2`}
+          label={`${dimension.name}, ${dimension.workingTier ? `works at ${dimension.workingTier}` : "no working tier"}`}
+        />
+      ))}
     >
       <span className={styles.quarter}>{scores.quarter}</span>
+      <span className={styles.quarter}>
+        Based on {judged} of {total} PRs judged
+      </span>
       <Link href={`/developers/${personId}`}>Evidence list</Link>
     </PageHeader>
   );
