@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { formatValue } from "./chartFormat";
+import { axisTicks, formatValue } from "./chartFormat";
 import { DonutChart } from "./DonutChart";
 import { GroupedBarChart } from "./GroupedBarChart";
 import { SegmentedBar } from "./SegmentedBar";
@@ -158,5 +158,15 @@ describe("formatValue", () => {
   it("shows a count as it is and a missing value as no data", () => {
     expect(formatValue(7, "count")).toBe("7");
     expect(formatValue(null, "percent")).toBe("no data");
+  });
+});
+
+describe("axisTicks", () => {
+  it("puts the ticks of a percent axis at every quarter", () => {
+    expect(axisTicks("percent")).toEqual([0, 0.25, 0.5, 0.75, 1]);
+  });
+
+  it("leaves the ticks of a count axis to the chart", () => {
+    expect(axisTicks("count")).toBeUndefined();
   });
 });

@@ -2,7 +2,7 @@
 
 import { Bar, BarChart, CartesianGrid, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { CHART_AXIS_COLOR, CHART_GRID_COLOR, CHART_REFERENCE_COLOR } from "@/lib/palette";
-import { formatValue, type ChartUnit } from "./chartFormat";
+import { axisTicks, formatValue, type ChartUnit } from "./chartFormat";
 import { ChartFrame, type LegendItem } from "./ChartFrame";
 
 export type BarSeries = LegendItem;
@@ -53,7 +53,8 @@ export function GroupedBarChart({
             tickLine={false}
             tickFormatter={format}
             domain={unit === "percent" ? [0, 1] : [0, "auto"]}
-            allowDecimals={false}
+            ticks={axisTicks(unit)}
+            allowDecimals={unit === "percent"}
           />
           <Tooltip formatter={format} />
           {series.map((item) => (
