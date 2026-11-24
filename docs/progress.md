@@ -2,6 +2,20 @@
 
 One entry per working session, newest at the top. Each entry says what was done, what is next and what is blocked. Read the top entry first.
 
+## 24 Nov 2026: plan to redesign the pages and analytics after the v1.5 deck
+
+**Done**
+- The user shared the deck `Engineering_Intelligence_Developer_Performance_Evaluation_v1.5.pptx` (slides 3 to 10 and 28 are the wanted pages). They find the F14 pages very busy and hard to understand, without real pie, line or bar charts.
+- Survey of the code. Problems behind the numbers: the overview and the roster mix all-time counts with quarter scores; counts are not split by tier; the project bars include the person; many numbers rest on items not judged yet; no overall score, growth areas or work-level chart.
+- The user chose: deck-shaped score from evidence only, with Planning and execution added; weekly points in July for the work-level chart; one level for the whole team picked by the viewer; Recharts for the charts (decisions 273 to 278).
+- Two new features in the master plan: F15 Analytics and score for the deck (backend) and F16 Deck-style pages (web). Section 4 is amended to match.
+
+**Next**
+- Finish the judging of July on `ei_latest` (see the entry below), then `/ship F15`, then `/ship F16`.
+
+**Blocked or needed from the user**
+- Nothing.
+
 ## 23 Nov 2026: model exchange, Claude Code answers the model jobs (PoC only)
 
 **Done**
