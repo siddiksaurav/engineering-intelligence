@@ -19,11 +19,6 @@ const OUTCOME_WORDS = {
 
 const NO_PULL_REQUESTS = "no PRs";
 
-/** The tier a level expects: L1 expects T1, L2 expects T2, L3 expects T3. */
-export function expectedTier(level: Level): Tier {
-  return LEVEL_TIER[level];
-}
-
 /** A share as a whole percent; "no PRs" when the share is null (decision 234). */
 export function percent(share: number | null): string {
   if (share === null) {
@@ -31,14 +26,6 @@ export function percent(share: number | null): string {
   }
   // The precision step removes floating point noise, so 0.145 rounds to 15 and not to 14.
   return `${Math.round(Number((share * 100).toPrecision(12)))}%`;
-}
-
-/** The mark of a dimension card: a strength at 2, a gap at 0 (decision 251). */
-export function badgeOf(dimension: DimensionScore): "strength" | "gap" | null {
-  if (dimension.score === 2) {
-    return "strength";
-  }
-  return dimension.score === 0 ? "gap" : null;
 }
 
 /** Why the dimension has this score at the level: the working tier, the level's tier and the gates (decision 236). */

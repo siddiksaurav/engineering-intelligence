@@ -67,133 +67,61 @@
   color: var(--navy-950);
 }
 
-/* Dimension cards */
+/* Dimensions table */
 
-.dimensions {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
-  gap: 20px;
+.tableScroll {
+  overflow-x: auto;
 }
 
-.card {
-  position: relative;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  padding: 22px 24px 18px;
-  min-width: 0;
-  overflow: hidden;
+.dimensionTable {
+  width: 100%;
+  border-collapse: collapse;
 }
 
-/* A band at the top in the blue of the score: darker for more, as everywhere on the pages. */
-.card::before {
-  content: "";
-  position: absolute;
-  inset: 0 0 auto;
-  height: 5px;
-  background: var(--step-1);
+.dimensionTable th,
+.dimensionTable td {
+  padding: 12px 10px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
 }
 
-.card[data-score="1"]::before {
-  background: var(--step-3);
+.dimensionTable thead th {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-3);
 }
 
-.card[data-score="2"]::before {
-  background: linear-gradient(90deg, var(--step-5), var(--azure-500));
-}
-
-.cardHeader {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.cardHeader h2 {
-  margin: 0;
-  font-size: 1.2rem;
-  font-weight: 650;
-}
-
-.badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  border-radius: 999px;
-  padding: 2px 12px 2px 10px;
-  font-size: 0.82rem;
+.dimensionName {
   font-weight: 600;
 }
 
-.badge::before {
-  font-size: 0.9em;
-}
-
-.strength {
-  background: var(--good-wash);
-  color: var(--good);
-}
-
-.strength::before {
-  content: "\2713";
-}
-
-.gap {
-  background: var(--critical-wash);
-  color: var(--critical);
-}
-
-.gap::before {
-  content: "\25B2";
-  font-size: 0.65em;
-}
-
-.figure {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 16px;
-  margin: 12px 0 16px;
+.notAssessed td {
+  color: var(--ink-3);
 }
 
 .score {
-  margin: 0;
-  color: var(--ink-2);
-  font-size: 1rem;
-}
-
-.score strong {
-  font-family: var(--font-display);
-  font-size: 4.6rem;
-  font-weight: 750;
-  line-height: 0.9;
-  letter-spacing: -0.04em;
-  color: var(--ink);
-  margin-right: 4px;
-}
-
-.workingTier {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-small);
+  font-family: var(--font-data);
   font-weight: 600;
+  color: #fff;
+  background: var(--step-3);
+}
+
+.score[data-score="0"] {
+  background: var(--sky-100);
   color: var(--ink);
 }
 
-.pips {
-  display: flex;
-  gap: 6px;
-  margin-top: 12px;
-}
-
-.pip {
-  width: 44px;
-  height: 6px;
-  border-radius: 3px;
-  background: var(--sky-100);
-}
-
-.pip[data-reached] {
-  background: var(--azure-600);
+.score[data-score="2"] {
+  background: var(--step-5);
 }
 
 .why {
@@ -219,7 +147,7 @@
 
 .drill > summary,
 .drillEmpty,
-.trail > summary {
+.trailFold > summary {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -228,7 +156,7 @@
 }
 
 .drill > summary::-webkit-details-marker,
-.trail > summary::-webkit-details-marker {
+.trailFold > summary::-webkit-details-marker {
   display: none;
 }
 
@@ -249,7 +177,7 @@
 
 /* The chevron after the label says the number opens; a number of 0 has none. */
 .drill > summary .drillLabel::after,
-.trail > summary::after {
+.trailFold > summary::after {
   content: "";
   display: inline-block;
   width: 6px;
@@ -263,7 +191,7 @@
 }
 
 .drill[open] > summary .drillLabel::after,
-.trail[open] > summary::after {
+.trailFold[open] > summary::after {
   transform: translateY(1px) rotate(225deg);
 }
 
@@ -361,193 +289,6 @@
   padding-left: 0;
 }
 
-/* Gates */
-
-.gates {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
-  gap: 16px;
-}
-
-.gate {
-  padding: 16px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-small);
-  background: var(--surface);
-  min-width: 0;
-}
-
-.gateHead {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  margin: 0;
-}
-
-.gateName {
-  font-family: var(--font-display);
-  font-size: 1.3rem;
-  font-weight: 700;
-}
-
-.gateOutcome {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 2px 12px 2px 10px;
-  border-radius: 999px;
-  font-family: var(--font-body);
-  font-size: 0.82rem;
-  font-weight: 600;
-  background: #e9eef3;
-  color: var(--ink-2);
-}
-
-.gateOutcome::before {
-  content: "\2013";
-}
-
-.gate[data-outcome="PASS"] .gateOutcome {
-  background: var(--good-wash);
-  color: var(--good);
-}
-
-.gate[data-outcome="PASS"] .gateOutcome::before {
-  content: "\2713";
-}
-
-.gate[data-outcome="CLOSE_MISS"] .gateOutcome {
-  background: var(--warning-wash);
-  color: var(--warning);
-}
-
-.gate[data-outcome="CLOSE_MISS"] .gateOutcome::before {
-  content: "!";
-}
-
-.gate[data-outcome="FAR_MISS"] .gateOutcome {
-  background: var(--critical-wash);
-  color: var(--critical);
-}
-
-.gate[data-outcome="FAR_MISS"] .gateOutcome::before {
-  content: "\2715";
-}
-
-.gateDetail {
-  margin: 8px 0;
-  color: var(--ink-2);
-  font-size: 0.9rem;
-}
-
-/* The person's label sits above the track, the repository's below, so the two never collide. */
-.gateChart {
-  position: relative;
-  margin: 12px 0 4px;
-  padding: 30px 0;
-}
-
-.gateTrack {
-  position: relative;
-  height: 14px;
-  border-radius: 4px;
-  background: var(--critical-wash);
-  overflow: hidden;
-}
-
-.gateZone {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-}
-
-.gateZone[data-zone="pass"] {
-  background: #bfe8cd;
-}
-
-.gateZone[data-zone="close"] {
-  background: #ffe2a3;
-}
-
-.gateMark {
-  position: absolute;
-  top: 30px;
-  width: 0;
-  height: 14px;
-}
-
-.gateMark[data-mark="repository"]::before {
-  content: "";
-  position: absolute;
-  left: -1.5px;
-  top: -5px;
-  width: 3px;
-  height: 24px;
-  border-radius: 2px;
-  background: var(--ink);
-}
-
-.gateMark[data-mark="person"]::before {
-  content: "";
-  position: absolute;
-  left: -9px;
-  top: -2px;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: var(--azure-600);
-  border: 3px solid var(--surface);
-  box-shadow: 0 1px 3px rgb(10 37 64 / 35%);
-}
-
-.gateMarkLabel {
-  position: absolute;
-  left: 0;
-  transform: translateX(-50%);
-  white-space: nowrap;
-  font-family: var(--font-data);
-  font-size: 0.76rem;
-  color: var(--ink-2);
-}
-
-.gateMark[data-mark="person"] .gateMarkLabel {
-  bottom: 22px;
-  font-weight: 500;
-  color: var(--ink);
-}
-
-.gateMark[data-mark="repository"] .gateMarkLabel {
-  top: 24px;
-}
-
-.gateMark[data-edge="start"] .gateMarkLabel {
-  transform: translateX(-10px);
-}
-
-.gateMark[data-edge="end"] .gateMarkLabel {
-  transform: translateX(calc(-100% + 10px));
-}
-
-/* Analytics */
-
-.analytics {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 460px), 1fr));
-  gap: 20px;
-  align-items: start;
-}
-
-.distribution {
-  min-width: 0;
-}
-
-.distribution + .distribution,
-.facts + .distribution,
-.ringBlock + .distribution {
-  margin-top: 18px;
-}
-
 .chartTitle {
   margin: 0 0 8px;
   font-family: var(--font-data);
@@ -556,25 +297,6 @@
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--ink-3);
-}
-
-.distribution > [role="img"] {
-  margin-bottom: 8px;
-}
-
-.noShare {
-  margin: 0;
-  color: var(--ink-3);
-}
-
-.rowBar {
-  flex: 1 1 80px;
-  min-width: 60px;
-  margin-left: auto;
-}
-
-.rowBar + .rowShare {
-  margin-left: 0;
 }
 
 .rowShare {
@@ -589,10 +311,6 @@
 }
 
 /* In a bar row the label takes a fixed share of the line, so the bars of all rows start at one edge. */
-.drill > summary:has(.rowBar) .drillLabel,
-.drillEmpty:has(.rowBar) .drillLabel {
-  flex: 0 0 46%;
-}
 
 .sideBySide {
   display: grid;
@@ -600,71 +318,12 @@
   gap: 20px 28px;
 }
 
-.sideBySide .distribution + .distribution {
-  margin-top: 0;
+.levelControl {
+  justify-items: start;
 }
 
-.sideBySide .distribution .distribution {
-  margin-top: 16px;
-}
-
-.facts {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 2px 28px;
-  margin-bottom: 4px;
-}
-
-.facts > * {
-  flex: 1 1 200px;
-}
-
-.sideBySide + .facts {
-  margin-top: 14px;
-  padding-top: 10px;
-  border-top: 1px solid var(--line);
-}
-
-.perPullRequest {
-  margin: 0;
-  min-height: 28px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--ink-2);
-}
-
-.perPullRequest strong {
-  flex: none;
-  font-family: var(--font-data);
-  font-weight: 500;
-  color: var(--ink);
-}
-
-.ringBlock {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px 20px;
-}
-
-.ringRows {
-  flex: 1 1 170px;
-  min-width: 0;
-}
-
-@media (width <= 520px) {
-  .levelControl {
-    justify-items: start;
-  }
-
-  .score strong {
-    font-size: 3.6rem;
-  }
-
-  .figure {
-    flex-wrap: wrap;
-  }
+.score strong {
+  font-size: 3.6rem;
 }
 
 /* Sections of the profile */
@@ -711,4 +370,80 @@
   font-family: var(--font-data);
   font-size: 1.6rem;
   font-weight: 500;
+}
+
+/* Quality checks */
+
+.checks {
+  display: grid;
+  gap: 10px;
+}
+
+.check {
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-small);
+}
+
+.checkHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.checkTitle {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.checkDetail {
+  margin: 4px 0 8px;
+  color: var(--ink-3);
+  font-size: 0.88rem;
+}
+
+.outcome {
+  flex: none;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  background: var(--sky-100);
+  color: var(--ink-2);
+}
+
+.check[data-outcome="PASS"] .outcome {
+  background: var(--good-wash);
+  color: var(--good);
+}
+
+.check[data-outcome="CLOSE_MISS"] .outcome {
+  background: var(--warning-wash);
+  color: var(--warning);
+}
+
+.check[data-outcome="FAR_MISS"] .outcome {
+  background: var(--critical-wash);
+  color: var(--critical);
+}
+
+.unverifiedLine {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: var(--radius-small);
+  background: var(--sky-50);
+  color: var(--ink-3);
+  font-size: 0.88rem;
+}
+
+/* Trail at the end of the page */
+
+.trailFold {
+  padding: 16px 20px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
 }

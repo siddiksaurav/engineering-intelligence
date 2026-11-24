@@ -1,6 +1,6 @@
 import { DonutChart } from "@/components/charts/DonutChart";
 import { Panel } from "@/components/Panel";
-import { mergeCounts } from "@/lib/counts";
+import { mergeCounts, sliceCount } from "@/lib/counts";
 import { orderedColor, workTypeColor } from "@/lib/palette";
 import type { Analytics, Count, Distribution } from "@/lib/profile";
 import { percent, plainName } from "@/lib/profileText";
@@ -9,12 +9,6 @@ import type { SummariesById } from "./ItemReferences";
 import styles from "./profile.module.css";
 
 const COMPLEXITIES = ["low", "medium", "high", "very_high"] as const;
-
-const NO_ITEMS: Count = { count: 0, evidenceItemIds: [], pullRequestNumbers: [] };
-
-function countOf(distribution: Distribution, name: string): Count {
-  return distribution.slices.find((slice) => slice.name === name)?.count ?? NO_ITEMS;
-}
 
 function allOf(distribution: Distribution): Count {
   return mergeCounts(distribution.slices.map((slice) => slice.count));
@@ -55,7 +49,7 @@ export function WorkKindSection({ analytics, summariesById }: { analytics: Analy
       <div className={styles.tiles}>
         <Drill figure label="Feature work items" count={allOf(person)} summariesById={summariesById} />
         <Drill figure label="PRs merged" count={allOf(distribution)} summariesById={summariesById} />
-        <Drill figure label="Bugs fixed" count={countOf(distribution, "fix")} summariesById={summariesById} />
+        <Drill figure label="Bugs fixed" count={sliceCount(distribution, "fix")} summariesById={summariesById} />
       </div>
       <h3 className={styles.chartTitle}>Feature work by complexity</h3>
       <div className={styles.sideBySide}>
@@ -82,14 +76,14 @@ function ComplexityCounts({
         <Drill
           key={name}
           label={plainName(name)}
-          count={countOf(distribution, name)}
+          count={sliceCount(distribution, name)}
           swatch={orderedColor(name)}
           summariesById={summariesById}
         />
       ))}
       <Drill
         label="Not judged yet"
-        count={countOf(distribution, "not_judged_yet")}
+        count={sliceCount(distribution, "not_judged_yet")}
         swatch={orderedColor("not_judged_yet")}
         summariesById={summariesById}
       />

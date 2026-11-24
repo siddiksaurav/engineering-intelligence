@@ -6,11 +6,12 @@ import { itemIdsOnPage, notJudgedYet, profileParams } from "@/lib/profileParams"
 import { Avatar } from "@/components/Avatar";
 import { HeaderFigure, PageContent, PageHeader } from "@/components/Page";
 import { Notice } from "@/components/Panel";
-import { AnalyticsSection } from "./AnalyticsSection";
-import { DimensionCard } from "./DimensionCard";
-import { GatesPanel } from "./GatesPanel";
+import { DimensionsSection } from "./DimensionsSection";
 import type { SummariesById } from "./ItemReferences";
+import { QualityChecksSection } from "./QualityChecksSection";
+import { ReviewsSection } from "./ReviewsSection";
 import styles from "./profile.module.css";
+import { TrailSection } from "./TrailSection";
 import { WorkKindSection } from "./WorkKindSection";
 import { WorkLevelSection } from "./WorkLevelSection";
 
@@ -105,23 +106,15 @@ function Profile({
           <WorkKindSection analytics={analytics} summariesById={summariesById} />
         </div>
         {scores.scored ? (
-          <>
-            <div className={styles.dimensions}>
-              {scores.dimensions.map((dimension) => (
-                <DimensionCard
-                  key={dimension.key}
-                  dimension={dimension}
-                  level={scores.level}
-                  summariesById={summariesById}
-                />
-              ))}
-            </div>
-            {gates.length > 0 && <GatesPanel gates={gates} summariesById={summariesById} />}
-          </>
+          <DimensionsSection dimensions={scores.dimensions} level={scores.level} />
         ) : (
           <NoScores quarter={scores.quarter} />
         )}
-        <AnalyticsSection analytics={analytics} summariesById={summariesById} />
+        <div className={styles.sections}>
+          {scores.scored && <QualityChecksSection gates={gates} summariesById={summariesById} />}
+          <ReviewsSection comments={analytics.reviewParticipation.comments} summariesById={summariesById} />
+        </div>
+        {scores.scored && <TrailSection dimensions={scores.dimensions} summariesById={summariesById} />}
       </PageContent>
     </main>
   );

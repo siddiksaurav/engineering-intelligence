@@ -261,6 +261,24 @@ describe("notJudgedYet", () => {
 });
 
 describe("itemIdsOnPage", () => {
+  it("leaves out the analytics the page does not show", () => {
+    const ids = itemIdsOnPage(
+      analytics({
+        reviewFindingsReceived: { pullRequests: count([60]), comments: breakdown(), substantivePerPullRequest: null },
+        testingContribution: {
+          coverage: NO_COVERAGE,
+          featureAndFixPullRequests: testShare(count([61])),
+          withoutDigest: count([62]),
+          bugFixPullRequests: testShare(),
+        },
+        hygiene: { total: 1, linked: count([63]), notLinked: count([64]), share: 1 },
+      }),
+      scores([]),
+    );
+
+    expect(ids).toEqual([]);
+  });
+
   it("lists every item id the page can open once, in the order met", () => {
     const ids = itemIdsOnPage(
       analytics({

@@ -4,11 +4,19 @@ import { ItemLink, PullRequestLinks, type SummariesById } from "./ItemReferences
 import styles from "./profile.module.css";
 
 /** How a dimension got its score at the level: every item it read, the presence per tier and the rules (decision 252). */
-export function Trail({ trail, summariesById }: { trail: DimensionTrail; summariesById: SummariesById }) {
+export function Trail({
+  name,
+  trail,
+  summariesById,
+}: {
+  name: string;
+  trail: DimensionTrail;
+  summariesById: SummariesById;
+}) {
   const { numerator, denominator } = trail.settings.presenceThreshold;
   return (
-    <details className={styles.trail}>
-      <summary>Trail</summary>
+    <section className={styles.trail}>
+      <h3>{name}</h3>
       {trail.evidenceTypes.map((typeTrail) => (
         <TypeTrail
           key={typeTrail.evidenceType}
@@ -34,7 +42,7 @@ export function Trail({ trail, summariesById }: { trail: DimensionTrail; summari
           ))}
         </ul>
       )}
-    </details>
+    </section>
   );
 }
 

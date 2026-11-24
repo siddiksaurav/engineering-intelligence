@@ -10,16 +10,7 @@ import type {
   Tier,
   TierPresence,
 } from "./profile";
-import {
-  badgeOf,
-  expectedTier,
-  gateWords,
-  nextStepLine,
-  percent,
-  plainName,
-  whyLine,
-  workLevelSentence,
-} from "./profileText";
+import { gateWords, nextStepLine, percent, plainName, whyLine, workLevelSentence } from "./profileText";
 
 function presence(...present: Tier[]): TierPresence[] {
   return (["T1", "T2", "T3"] as const).map((tier) => ({
@@ -109,12 +100,6 @@ function dimension(options: Options = {}): DimensionScore {
     },
   };
 }
-
-describe("expectedTier", () => {
-  it("is T1 at L1, T2 at L2 and T3 at L3", () => {
-    expect((["L1", "L2", "L3"] as const).map(expectedTier)).toEqual(["T1", "T2", "T3"]);
-  });
-});
 
 describe("percent", () => {
   it("rounds a share to a whole percent", () => {
@@ -322,14 +307,6 @@ describe("nextStepLine", () => {
     );
 
     expect(line).toBe("To score 1: a third of weighted Feature work at High complexity or higher, and two T3 items.");
-  });
-});
-
-describe("badgeOf", () => {
-  it("gives a strength at 2, a gap at 0 and nothing at 1", () => {
-    expect(badgeOf(dimension({ score: 2 }))).toBe("strength");
-    expect(badgeOf(dimension({ score: 0 }))).toBe("gap");
-    expect(badgeOf(dimension({ score: 1 }))).toBeNull();
   });
 });
 
