@@ -303,3 +303,11 @@ Every decision that shapes the PoC, newest at the bottom. A later entry override
 | 290 | 24 Nov 2026 | The profile's delivery tiles are Feature work items closed, PRs merged and bugs fixed; no tasks closed, sprint or issue-stage numbers | Deck slide 7 and 8 numbers without data are left out rather than shown empty | F15 design, session |
 | 291 | 24 Nov 2026 | The quality section shows G1 and G2 as pass, close miss or far miss and puts G4, escaped defects and sprint commitment in one "unverified, no data in the pilot" line | Master plan section 4; the mock-up already does this | F15 design, session |
 | 292 | 24 Nov 2026 | Production and test code of F15 is written by implementer subagents, one per batch, as the ship skill says | Decision 270 was F14's exception | F15 design, session |
+| 293 | 24 Nov 2026 | Q1 A: the profile's headline is the two dimension scores side by side, each with its working tier | User's choice; no overall score (decision 281) | F15 question brief, user |
+| 294 | 24 Nov 2026 | Q2 A: a compare page shows two developers side by side (deck slides 9, 10): two scores, work level, work type and complexity | User's choice | F15 question brief, user |
+| 295 | 24 Nov 2026 | Q3 A: the team list is ordered by name | User's choice; two separate scores give no single ranking | F15 question brief, user |
+| 296 | 24 Nov 2026 | Q4 A: a developer's evidence list shows the selected quarter only | User's choice; the same period as the profile (3 items of `ei_latest` are dated outside Q3) | F15 question brief, user |
+| 297 | 24 Nov 2026 | Q5 A: "review comments written" counts every comment written; the tier chart shows judged substantive ones with "N not substantive, M not judged yet" | User's choice | F15 question brief, user |
+| 298 | 24 Nov 2026 | Q6 B: the profile shows the work-level chart and also the complexity counts (Low, Medium, High, Very high) next to the rest of the repository | User's choice | F15 question brief, user |
+| 299 | 24 Nov 2026 | Q8 A: the overview's "most evidence" ranking is dropped | User's choice; item volume is not performance | F15 question brief, user |
+| 300 | 24 Nov 2026 | Q7 A: a new read `GET /api/team/analytics?quarter=` gives the team's work classification, complexity, hygiene and coverage | User's choice; one call, no double counting | F15 question brief, user |
