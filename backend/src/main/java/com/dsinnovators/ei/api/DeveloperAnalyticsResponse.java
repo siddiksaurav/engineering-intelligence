@@ -7,6 +7,7 @@ import com.dsinnovators.ei.analytics.ReviewFindingsReceived;
 import com.dsinnovators.ei.analytics.ReviewParticipation;
 import com.dsinnovators.ei.analytics.TestingContribution;
 import com.dsinnovators.ei.analytics.WorkComplexity;
+import com.dsinnovators.ei.analytics.WorkLevel;
 import com.dsinnovators.ei.common.Quarter;
 
 record DeveloperAnalyticsResponse(
@@ -14,6 +15,7 @@ record DeveloperAnalyticsResponse(
         String quarter,
         Distribution workClassification,
         WorkComplexity.Result workComplexity,
+        WorkLevel.Result workLevel,
         ReviewParticipation.Result reviewParticipation,
         ReviewFindingsReceived.Result reviewFindingsReceived,
         TestingContribution.Result testingContribution,
@@ -25,6 +27,7 @@ record DeveloperAnalyticsResponse(
                 quarter.toString(),
                 analytics.workClassification(),
                 analytics.workComplexity(),
+                analytics.workLevel(),
                 analytics.reviewParticipation(),
                 analytics.reviewFindingsReceived(),
                 analytics.testingContribution(),
