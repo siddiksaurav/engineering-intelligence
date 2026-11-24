@@ -5,13 +5,14 @@ import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-/** Turns the refusals of the developer and evidence item endpoints into problem details that say what was wrong. */
+/** Turns the refusals of the developer, team and evidence item endpoints into problem details that say what was wrong. */
 @RestControllerAdvice(
         assignableTypes = {
             DeveloperController.class,
             DeveloperAnalyticsController.class,
             DeveloperDimensionScoresController.class,
-            EvidenceItemController.class
+            EvidenceItemController.class,
+            TeamAnalyticsController.class
         })
 class DeveloperExceptionHandler {
 

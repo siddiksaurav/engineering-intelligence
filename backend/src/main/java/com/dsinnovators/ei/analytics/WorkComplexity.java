@@ -22,8 +22,9 @@ public class WorkComplexity {
 
     private static final List<String> BARS = List.of("low", "medium", "high", "very_high", Distribution.NOT_JUDGED_YET);
 
-    private static final String QUERY = AnalyticsSql.with(List.of(AnalyticsSql.CURRENT_ITEMS_AND_JUDGMENTS), """
-            select (item.person_id = :personId) as own,
+    private static final String QUERY_WITH_OWNER =
+            AnalyticsSql.with(List.of(AnalyticsSql.CURRENT_ITEMS_AND_JUDGMENTS), """
+            select (%s) as own,
                    coalesce(judgment.value ->> 'complexity', 'not_judged_yet') as complexity,
                    count(distinct item.id) as count,
                    array_agg(distinct item.id) as item_ids,
@@ -42,6 +43,11 @@ public class WorkComplexity {
             group by own, complexity
             """);
 
+    private static final String QUERY_OF_PERSON = QUERY_WITH_OWNER.formatted("item.person_id = :personId");
+
+    // Every item is the team's, so that its numbers equal the sum of the persons' (there is no item without a person).
+    private static final String QUERY_OF_TEAM = QUERY_WITH_OWNER.formatted("true");
+
     private final AnalyticsQuery analyticsQuery;
 
     WorkComplexity(AnalyticsQuery analyticsQuery) {
@@ -57,36 +63,55 @@ public class WorkComplexity {
      */
     public record Result(Distribution person, Distribution restOfRepository, Coverage coverage) {}
 
+    /**
+     * The bars of Work complexity of every person together.
+     *
+     * @param distribution the Feature work items of the quarter by complexity
+     * @param coverage the Feature work items that have a complexity, of all of them
+     */
+    public record TeamResult(Distribution distribution, Coverage coverage) {}
+
     @Transactional(readOnly = true)
     public Result of(long personId, Quarter quarter) {
-        Map<String, Count> person = emptyBars();
-        Map<String, Count> restOfRepository = emptyBars();
         List<Row> rows = analyticsQuery
-                .statement(QUERY, quarter)
+                .statement(QUERY_OF_PERSON, quarter)
                 .param("personId", personId)
                 .query(WorkComplexity::rowOf)
                 .list();
-        for (Row row : rows) {
-            Map<String, Count> bars = row.own() ? person : restOfRepository;
-            bars.merge(row.complexity(), row.count(), Count::plus);
-        }
-        Distribution personBars = Distribution.of(person);
-        long notJudgedYet = person.get(Distribution.NOT_JUDGED_YET).count();
-        return new Result(
-                personBars,
-                Distribution.of(restOfRepository),
-                new Coverage(personBars.total() - notJudgedYet, personBars.total()));
+        Distribution personBars = barsOf(rows, true);
+        return new Result(personBars, barsOf(rows, false), coverageOf(personBars));
+    }
+
+    @Transactional(readOnly = true)
+    public TeamResult ofTeam(Quarter quarter) {
+        List<Row> rows = analyticsQuery
+                .statement(QUERY_OF_TEAM, quarter)
+                .query(WorkComplexity::rowOf)
+                .list();
+        Distribution bars = barsOf(rows, true);
+        return new TeamResult(bars, coverageOf(bars));
+    }
+
+    private static Distribution barsOf(List<Row> rows, boolean own) {
+        Map<String, Count> bars = new LinkedHashMap<>();
+        BARS.forEach(bar -> bars.put(bar, Count.none()));
+        rows.stream()
+                .filter(row -> row.own() == own)
+                .forEach(row -> bars.merge(row.complexity(), row.count(), Count::plus));
+        return Distribution.of(bars);
+    }
+
+    private static Coverage coverageOf(Distribution bars) {
+        long notJudgedYet = bars.slices().stream()
+                .filter(slice -> slice.name().equals(Distribution.NOT_JUDGED_YET))
+                .mapToLong(slice -> slice.count().count())
+                .sum();
+        return new Coverage(bars.total() - notJudgedYet, bars.total());
     }
 
     private record Row(boolean own, String complexity, Count count) {}
 
     private static Row rowOf(ResultSet row, int rowNumber) throws SQLException {
         return new Row(row.getBoolean("own"), row.getString("complexity"), AnalyticsQuery.countOf(row));
-    }
-
-    private static Map<String, Count> emptyBars() {
-        Map<String, Count> bars = new LinkedHashMap<>();
-        BARS.forEach(bar -> bars.put(bar, Count.none()));
-        return bars;
     }
 }
