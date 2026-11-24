@@ -2,6 +2,24 @@
 
 One entry per working session, newest at the top. Each entry says what was done, what is next and what is blocked. Read the top entry first.
 
+## 24 Nov 2026: F15 Deck-style pages on existing data shipped
+
+**Done**
+- The user corrected the scope: no Planning and execution (it needs Planning items and sprint data we do not import), no overall score, no growth areas; only the redesign on the existing data, with the numbers fixed first, in one session. F15 and F16 merged (decisions 281, 282). Question brief answered (decisions 293 to 300); decisions 283 to 292 by the session.
+- Backend: counts and the evidence list limited to the quarter; Work complexity against the rest of the repository; new `workLevel` and `bugsFixed` analytics; judged out of total on every analytic; `GET /api/team/analytics`.
+- Web: Recharts charts; profile after the approved mock-up (two scores in the header); team list by name with a level switch; overview from the team read; new compare page.
+- One review round, 2 blocking findings and 6 follow-ups fixed. Verified on a copy of `ei_latest` (`docs/features/F15-deck-style-pages/notes.md`, "Verification").
+
+**Checks still open (waiting for the user)**
+- Look at the pages on desktop and phone: `localhost:3000`, `/developers`, `/developers/9/profile`, `/developers/compare?a=9&b=10` (backend with `POSTGRES_DB=ei_latest`, `DEFAULT_QUARTER=2026-Q3`).
+- Decide whether Review findings received and Testing contribution come back on the profile (follow-up in `notes.md`).
+
+**Next**
+- Follow-ups of F15 (package cycle analytics/scoring). Then F08 or pulling more data, as the user chooses.
+
+**Blocked or needed from the user**
+- Nothing.
+
 ## 24 Nov 2026: plan to redesign the pages and analytics after the v1.5 deck
 
 **Done**

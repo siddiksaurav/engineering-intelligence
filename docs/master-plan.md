@@ -444,7 +444,7 @@ Update this table when a feature changes state. States: not started, in design, 
 | F12 | Profile page | done | `docs/features/F12-profile-page/design.md` | `docs/features/F12-profile-page/plan.md` |
 | F13 | Accuracy measurement | dropped (decision 80) | | |
 | F14 | Interface redesign with charts | done | `docs/features/F14-interface-redesign/design.md` | `docs/features/F14-interface-redesign/plan.md` |
-| F15 | Deck-style pages on existing data | in progress | `docs/features/F15-deck-style-pages/design.md` | `docs/features/F15-deck-style-pages/plan.md` |
+| F15 | Deck-style pages on existing data | done | `docs/features/F15-deck-style-pages/design.md` | `docs/features/F15-deck-style-pages/plan.md` |
 
 ## 8. Glossary
 
