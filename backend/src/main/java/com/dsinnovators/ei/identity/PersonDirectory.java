@@ -1,7 +1,6 @@
 package com.dsinnovators.ei.identity;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
@@ -19,14 +18,6 @@ public class PersonDirectory {
     PersonDirectory(PersonIdentityRepository identities, PersonRepository people) {
         this.identities = identities;
         this.people = people;
-    }
-
-    /** Every person, by display name. */
-    @Transactional(readOnly = true)
-    public List<PersonSummary> all() {
-        return people.findAllByOrderByDisplayNameAscIdAsc().stream()
-                .map(PersonSummary::of)
-                .toList();
     }
 
     @Transactional(readOnly = true)
