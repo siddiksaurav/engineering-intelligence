@@ -7,12 +7,12 @@ One entry per working session, newest at the top. Each entry says what was done,
 **Done**
 - The user shared the deck `Engineering_Intelligence_Developer_Performance_Evaluation_v1.5.pptx` (slides 3 to 10 and 28 are the wanted pages). They find the F14 pages very busy and hard to understand, without real pie, line or bar charts.
 - Survey of the code. Problems behind the numbers: the overview and the roster mix all-time counts with quarter scores; counts are not split by tier; the project bars include the person; many numbers rest on items not judged yet; no overall score, growth areas or work-level chart.
-- The user chose: deck-shaped score from evidence only, with Planning and execution added; weekly points in July for the work-level chart; one level for the whole team picked by the viewer; Recharts for the charts (decisions 273 to 278).
+- The user chose: deck-shaped score from evidence only, with Planning and execution added; no time chart, one bar chart of the window instead (decision 280); one level for the whole team picked by the viewer; Recharts for the charts (decisions 273 to 278).
 - Two new features in the master plan: F15 Analytics and score for the deck (backend) and F16 Deck-style pages (web). Section 4 is amended to match.
 
 **Next**
 - Judging is complete on `ei_latest` (checked 24 Nov): 215 PRs merged 1 to 14 Jul 2026, 43 bot PRs, 172 digests; 42 of 42 Feature work items, 379 of 379 review comments and 126 of 126 other tiered items judged; no request waits in `model_exchange`; `dimension-scoring` run 75 came after the last judgments. The Compose `ei` database is older (migrations before F05); use `ei_latest`.
-- The data holds two weeks (1 to 14 Jul). The user chose daily points over those two weeks for the work-level chart, with no new import (decision 279).
+- The two weeks of data (1 to 14 Jul) are enough to validate that it works; more data is pulled later. No time chart for now (decision 280). The priority is pages that are easy to read with proper charts.
 - Then `/ship F15`, then `/ship F16`.
 
 **Blocked or needed from the user**

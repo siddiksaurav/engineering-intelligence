@@ -121,7 +121,7 @@ These are left out on purpose (`poc-plan.md` 3.1). No feature builds them. If a 
 | F12 | Profile page | F11 | One page per developer where every number opens down to a PR |
 | F13 | Accuracy measurement (dropped, decision 80) | F12 | An accuracy page with the measures of `poc-plan.md` section 4 |
 | F14 | Interface redesign with charts | F12 | An overview dashboard, a developer roster with scores and a profile with charts, in one design system |
-| F15 | Analytics and score for the deck | F14 | Planning and execution, one overall score with growth-area sub-scores, a weekly work-level series and a team endpoint |
+| F15 | Analytics and score for the deck | F14 | Planning and execution, one overall score with growth-area sub-scores, the work-level share for the window and a team endpoint |
 | F16 | Deck-style pages | F15 | Profile, team list, compare view and overview shaped like the v1.5 deck, with pie, line and bar charts |
 
 Each block below gives a new session enough to start the deep dive. "Open questions" are the points the deep dive must answer; they are not decided here.
@@ -402,21 +402,21 @@ Every count is split by tier (spec 7).
 
 ### F15 Analytics and score for the deck
 
-**Goal.** The numbers behind the pages of the v1.5 deck (`Engineering_Intelligence_Developer_Performance_Evaluation_v1.5.pptx`, slides 3 to 10 and 28): one score per developer, its growth areas, and the "Work level over time" series. Backend only. Decisions 273 to 277.
+**Goal.** The numbers behind the pages of the v1.5 deck (`Engineering_Intelligence_Developer_Performance_Evaluation_v1.5.pptx`, slides 3 to 10 and 28): one score per developer, its growth areas, and the work-level share. Backend only. Decisions 273 to 278 and 280. The two weeks of data (1 to 14 Jul 2026) are enough: the aim is to validate that it works; more data is pulled later.
 
 **Builds.**
 - **Planning and execution** as a third evidence-backed dimension (spec 8.3): Feature work with its plain tier, weights 1, 2 and 4, frequent-type presence. No clean-delivery rule. G3 and G5 are shown as "check unverified". Planning item is not built. Seed rows in `dimension` and `dimension_evidence_type`.
 - **Overall score** (spec 10.1), from the evidence part only: the weighted average of the scored evidence-backed dimensions, with weights per level in `setting` (Coding 3/3/3, Engineering standards 2/3/3, Planning 3/3/3). With no lead part, the evidence part is the whole score. Calculated by the scoring job at L1, L2 and L3 and stored with a trail ("21 / 19 = 1.11").
 - **Growth-area sub-scores**: the same formula per growth area (growth area of each dimension in `setting`). Engineering Skills and Leadership have a sub-score; the others are "not assessed in the PoC".
-- **Work level over time** (spec 11.1): daily points over the data that exists, 1 to 14 Jul 2026 (decision 279). Each point is cumulative from the start of the quarter to the end of that day (decision 276): the person's share of weighted Feature work at the level's tier or above, the same at the next tier, the one-third line from `setting`, and the project (the repository without the person). A point with fewer than three items is marked hollow. Part of the analytics API; nothing stored.
+- **Work-level share** (spec 11.1, one point for the whole window, decision 280): the person's share of weighted Feature work at Low, Medium and High, the same for the project (the repository without the person), and the one-third line from `setting`. It equals the share on the Planning and execution trail. Part of the analytics API; nothing stored. No time series.
 - **Analytics fixes**: every count limited to the quarter (also the per-developer counts of `/api/developers`); Work complexity gives shares and leaves the person out of the project bars; each analytic reports judged out of total ("based on 41 of 52 PRs"); delivery numbers: Feature work items closed, PRs merged, bugs fixed.
 - **Team endpoint** `GET /api/team/scores?quarter=&level=`: every developer's score, sub-scores, dimension scores and working tiers in one call.
 
-**Before it starts.** The judging of 1 to 14 Jul is complete on `ei_latest` (24 Nov 2026). The data holds two weeks; the chart uses daily points over them (decision 279).
+**Before it starts.** Nothing. The judging of 1 to 14 Jul is complete on `ei_latest` (24 Nov 2026).
 
 **Read first.** Spec 8.1, 8.3, 10.1, 10.2, 11.1. `docs/features/F10-analytics/notes.md`, `docs/features/F11-scoring/notes.md`. The deck.
 
-**Done when.** Unit tests reproduce the deck's examples: 21 / 19 = 1.11, and 2 Low and 5 Medium give 83% at T2. The last daily point equals the Planning and execution share on its trail. Changing a weight in `setting` changes the score without a code change. The team endpoint equals the per-developer endpoints.
+**Done when.** Unit tests reproduce the deck's examples: 21 / 19 = 1.11, and 2 Low and 5 Medium give 83% at T2. The work-level share equals the Planning and execution share on its trail. Changing a weight in `setting` changes the score without a code change. The team endpoint equals the per-developer endpoints.
 
 ---
 
@@ -426,7 +426,7 @@ Every count is split by tier (spec 7).
 
 **Builds.**
 - Recharts behind shared wrappers in `web/components/charts/` (donut, line, bar, stacked bar), coloured from `web/lib/palette.ts`. The CSS chart pieces nothing uses any more are removed.
-- **Profile**, top to bottom: header with the score, level switch, "works at" and the judged coverage; the Work level over time line chart with one sentence that reads it (slide 3); score by growth area as bars against 1.0 and "how the score is built" (slide 4); the dimensions table with works at, score and why or next step, other dimensions greyed "Not assessed" (slide 5); work delivery: a donut of work classification, complexity bars of the person next to the project, three number tiles (slide 7); quality: the checks as pass, close miss, far miss or unverified, review comments written by tier (slide 8); the trail and the drill-down lists folded at the end.
+- **Profile**, top to bottom: header with the score, level switch, "works at" and the judged coverage; "Is the feature work at the level?": one bar chart of the person's weighted Feature work at Low, Medium and High next to the project, with the one-third line and one sentence that reads it (slide 3 as a single bar chart, decision 280); score by growth area as bars against 1.0 and "how the score is built" (slide 4); the dimensions table with works at, score and why or next step, other dimensions greyed "Not assessed" (slide 5); work delivery: a donut of work classification, complexity bars of the person next to the project, three number tiles (slide 7); quality: the checks as pass, close miss, far miss or unverified, review comments written by tier (slide 8); the trail and the drill-down lists folded at the end.
 - **Team** (`/developers`): the developers at the selected level sorted by score, with growth-area bars and the working tier; a compare view of two developers side by side (slides 9 and 10).
 - **Overview** (`/`): score distribution, work by type, complexity of the team, hygiene and judged coverage, all for one quarter.
 - Evidence list and item page keep their content in the calmer style.
