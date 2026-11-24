@@ -12,7 +12,7 @@ One entry per working session, newest at the top. Each entry says what was done,
 
 **Next**
 - Judging is complete on `ei_latest` (checked 24 Nov): 215 PRs merged 1 to 14 Jul 2026, 43 bot PRs, 172 digests; 42 of 42 Feature work items, 379 of 379 review comments and 126 of 126 other tiered items judged; no request waits in `model_exchange`; `dimension-scoring` run 75 came after the last judgments. The Compose `ei` database is older (migrations before F05); use `ei_latest`.
-- The data holds two weeks (1 to 14 Jul), not all of July, so weekly points give only two points. Decide before F15: import 15 to 31 Jul first (F09), or use daily points.
+- The data holds two weeks (1 to 14 Jul). The user chose daily points over those two weeks for the work-level chart, with no new import (decision 279).
 - Then `/ship F15`, then `/ship F16`.
 
 **Blocked or needed from the user**

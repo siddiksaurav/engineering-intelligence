@@ -408,15 +408,15 @@ Every count is split by tier (spec 7).
 - **Planning and execution** as a third evidence-backed dimension (spec 8.3): Feature work with its plain tier, weights 1, 2 and 4, frequent-type presence. No clean-delivery rule. G3 and G5 are shown as "check unverified". Planning item is not built. Seed rows in `dimension` and `dimension_evidence_type`.
 - **Overall score** (spec 10.1), from the evidence part only: the weighted average of the scored evidence-backed dimensions, with weights per level in `setting` (Coding 3/3/3, Engineering standards 2/3/3, Planning 3/3/3). With no lead part, the evidence part is the whole score. Calculated by the scoring job at L1, L2 and L3 and stored with a trail ("21 / 19 = 1.11").
 - **Growth-area sub-scores**: the same formula per growth area (growth area of each dimension in `setting`). Engineering Skills and Leadership have a sub-score; the others are "not assessed in the PoC".
-- **Work level over time** (spec 11.1): weekly points through July 2026. Each point is cumulative from the start of the quarter to the end of that week (decision 276): the person's share of weighted Feature work at the level's tier or above, the same at the next tier, the one-third line from `setting`, and the project (the repository without the person). A point with fewer than three items is marked hollow. Part of the analytics API; nothing stored.
+- **Work level over time** (spec 11.1): daily points over the data that exists, 1 to 14 Jul 2026 (decision 279). Each point is cumulative from the start of the quarter to the end of that day (decision 276): the person's share of weighted Feature work at the level's tier or above, the same at the next tier, the one-third line from `setting`, and the project (the repository without the person). A point with fewer than three items is marked hollow. Part of the analytics API; nothing stored.
 - **Analytics fixes**: every count limited to the quarter (also the per-developer counts of `/api/developers`); Work complexity gives shares and leaves the person out of the project bars; each analytic reports judged out of total ("based on 41 of 52 PRs"); delivery numbers: Feature work items closed, PRs merged, bugs fixed.
 - **Team endpoint** `GET /api/team/scores?quarter=&level=`: every developer's score, sub-scores, dimension scores and working tiers in one call.
 
-**Before it starts.** The judging of 1 to 14 Jul is complete on `ei_latest` (24 Nov 2026). The data holds two weeks, so weekly points give two points; the deep dive settles whether 15 to 31 Jul is imported first (F09) or the points are daily.
+**Before it starts.** The judging of 1 to 14 Jul is complete on `ei_latest` (24 Nov 2026). The data holds two weeks; the chart uses daily points over them (decision 279).
 
 **Read first.** Spec 8.1, 8.3, 10.1, 10.2, 11.1. `docs/features/F10-analytics/notes.md`, `docs/features/F11-scoring/notes.md`. The deck.
 
-**Done when.** Unit tests reproduce the deck's examples: 21 / 19 = 1.11, and 2 Low and 5 Medium give 83% at T2. The last weekly point equals the Planning and execution share on its trail. Changing a weight in `setting` changes the score without a code change. The team endpoint equals the per-developer endpoints.
+**Done when.** Unit tests reproduce the deck's examples: 21 / 19 = 1.11, and 2 Low and 5 Medium give 83% at T2. The last daily point equals the Planning and execution share on its trail. Changing a weight in `setting` changes the score without a code change. The team endpoint equals the per-developer endpoints.
 
 ---
 
