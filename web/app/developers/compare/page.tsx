@@ -1,3 +1,4 @@
+import { sortedByName } from "@/lib/people";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 import { LevelSwitch } from "@/components/LevelSwitch";
@@ -9,7 +10,13 @@ import { profileParams } from "@/lib/profileParams";
 import { compareHref } from "./compareHref";
 import styles from "./compare.module.css";
 import { Pickers } from "./Pickers";
-import { ComplexitySection, ScoresSection, WorkKindSection, WorkLevelSection, type Side } from "./Sections";
+import {
+  ComplexitySection,
+  ScoresSection,
+  ComparedWorkKindSection,
+  ComparedWorkLevelSection,
+  type Side,
+} from "./Sections";
 
 // Read on every request, on the server. The browser never calls the backend.
 export const dynamic = "force-dynamic";
@@ -49,8 +56,8 @@ export default async function ComparePage({ searchParams }: { searchParams: Prom
   return (
     <Compare controls={controls} pickers={pickers}>
       <ScoresSection sides={sides} />
-      <WorkLevelSection sides={sides} />
-      <WorkKindSection sides={sides} />
+      <ComparedWorkLevelSection sides={sides} />
+      <ComparedWorkKindSection sides={sides} />
       <ComplexitySection sides={sides} />
     </Compare>
   );
@@ -62,10 +69,6 @@ function personIdOf(parameter: string | string[] | undefined): number | undefine
     return undefined;
   }
   return typeof parameter === "string" && /^\d+$/.test(parameter) ? Number(parameter) : null;
-}
-
-function sortedByName<T extends { displayName: string }>(people: T[]): T[] {
-  return [...people].sort((first, second) => first.displayName.localeCompare(second.displayName));
 }
 
 async function readSides(

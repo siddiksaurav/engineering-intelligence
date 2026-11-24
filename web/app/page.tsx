@@ -10,10 +10,11 @@ import { Notice, Panel } from "@/components/Panel";
 import { sliceCount } from "@/lib/counts";
 import { fetchDevelopers } from "@/lib/evidence";
 import { checkBackend, type BackendStatus } from "@/lib/health";
-import { SINGLE_HUE_COLOR, scoreColor, workTypeColor } from "@/lib/palette";
+import { SINGLE_HUE_COLOR, scoreColor } from "@/lib/palette";
 import type { Level } from "@/lib/profile";
 import { profileParams } from "@/lib/profileParams";
 import { percent, plainName } from "@/lib/profileText";
+import { workTypeSlices } from "@/lib/workTypeSlices";
 import {
   dimensionSummaries,
   fetchTeamAnalytics,
@@ -194,12 +195,7 @@ function WorkTypePanel({ analytics }: { analytics: TeamAnalytics }) {
       <DonutChart
         label="Pull requests by work type"
         centerLabel={`${distribution.total} PRs`}
-        slices={distribution.slices.map((slice) => ({
-          key: slice.name,
-          label: plainName(slice.name),
-          value: slice.count.count,
-          color: workTypeColor(slice.name),
-        }))}
+        slices={workTypeSlices(distribution)}
       />
     </Panel>
   );

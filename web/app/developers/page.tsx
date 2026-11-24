@@ -1,3 +1,4 @@
+import { sortedByName } from "@/lib/people";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
@@ -43,7 +44,7 @@ export default async function DevelopersPage({ searchParams }: { searchParams: P
   if (result.data.length === 0) {
     return <Roster lead="Persons made of the stored GitHub accounts." notice="No developers" controls={controls} />;
   }
-  const developers = [...result.data].sort((first, second) => first.displayName.localeCompare(second.displayName));
+  const developers = sortedByName(result.data);
   const scores = await fetchTeamScores(
     backendUrl,
     developers.map((developer) => developer.personId),

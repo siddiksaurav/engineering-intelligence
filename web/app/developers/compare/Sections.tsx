@@ -3,9 +3,10 @@ import { GroupedBarChart } from "@/components/charts/GroupedBarChart";
 import { Panel } from "@/components/Panel";
 import { ScoreLine } from "@/components/ScoreLine";
 import { sliceCount } from "@/lib/counts";
-import { COMPARISON_COLOR, PERSON_COLOR, workTypeColor } from "@/lib/palette";
+import { COMPARISON_COLOR, PERSON_COLOR } from "@/lib/palette";
 import type { Analytics, DimensionScores } from "@/lib/profile";
 import { plainName } from "@/lib/profileText";
+import { workTypeSlices } from "@/lib/workTypeSlices";
 import styles from "./compare.module.css";
 
 const COMPLEXITIES = ["low", "medium", "high", "very_high", "not_judged_yet"] as const;
@@ -57,7 +58,7 @@ function Scores({ scores }: { scores: DimensionScores }) {
 }
 
 /** The share of Feature work at Medium or harder and at High, both developers against the line to clear. */
-export function WorkLevelSection({ sides }: { sides: [Side, Side] }) {
+export function ComparedWorkLevelSection({ sides }: { sides: [Side, Side] }) {
   const values = (pick: "shareAtT2OrAbove" | "shareAtT3") =>
     Object.fromEntries(sides.map((side, index) => [`side${index}`, side.analytics.workLevel.person[pick]]));
   return (
@@ -80,7 +81,7 @@ export function WorkLevelSection({ sides }: { sides: [Side, Side] }) {
 }
 
 /** The merged pull requests of each developer by work type, one donut each. */
-export function WorkKindSection({ sides }: { sides: [Side, Side] }) {
+export function ComparedWorkKindSection({ sides }: { sides: [Side, Side] }) {
   return (
     <Panel title="What kind of work" note="Pull requests merged, by work type.">
       <div className={styles.columns}>
@@ -92,12 +93,7 @@ export function WorkKindSection({ sides }: { sides: [Side, Side] }) {
               <DonutChart
                 label={`Pull requests of ${nameOf(side)} by work type`}
                 centerLabel={`${distribution.total} PRs`}
-                slices={distribution.slices.map((slice) => ({
-                  key: slice.name,
-                  label: plainName(slice.name),
-                  value: slice.count.count,
-                  color: workTypeColor(slice.name),
-                }))}
+                slices={workTypeSlices(distribution)}
               />
             </div>
           );

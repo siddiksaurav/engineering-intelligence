@@ -4,6 +4,7 @@ import { mergeCounts, sliceCount } from "@/lib/counts";
 import { orderedColor, workTypeColor } from "@/lib/palette";
 import type { Analytics, Count, Distribution } from "@/lib/profile";
 import { percent, plainName } from "@/lib/profileText";
+import { workTypeSlices } from "@/lib/workTypeSlices";
 import { Drill } from "./Drill";
 import type { SummariesById } from "./ItemReferences";
 import styles from "./profile.module.css";
@@ -27,12 +28,7 @@ export function WorkKindSection({ analytics, summariesById }: { analytics: Analy
       <DonutChart
         label="Pull requests by work type"
         centerLabel={`${distribution.total} PRs`}
-        slices={distribution.slices.map((slice) => ({
-          key: slice.name,
-          label: plainName(slice.name),
-          value: slice.count.count,
-          color: workTypeColor(slice.name),
-        }))}
+        slices={workTypeSlices(distribution)}
       />
       <div className={styles.rows}>
         {distribution.slices.map((slice) => (
