@@ -156,7 +156,7 @@ docker compose exec postgres psql -U ei -d ei -c "select reject_identity_proposa
 - Tests run with the profile `test` and never read `.env`. They never call GitHub; `GitHubApiFixture` gives a client on a mock server.
 - Health: `curl -s localhost:8080/actuator/health`. The overview at `localhost:3000` shows "backend up" or "backend down" and the numbers of the team (F14).
 - Developers: `localhost:3000/developers` (after `evidence-build`), with the two scores per developer at L2 when `DEFAULT_QUARTER` is set. Evidence list of one developer: `localhost:3000/developers/9`.
-- Web design: tokens in `web/app/globals.css`, shared pieces in `web/components/`, colours of types and tiers from `web/lib/palette.ts` (`docs/features/F14-interface-redesign/design.md`). No chart library.
+- Web design: tokens in `web/app/globals.css`, shared pieces in `web/components/`, colours of types and tiers from `web/lib/palette.ts` (`docs/features/F14-interface-redesign/design.md`). Charts through Recharts, wrapped in `web/components/charts/` (decision 278).
 - Profile: `localhost:3000/developers/9/profile` (quarter from `DEFAULT_QUARTER` in `.env`, level L2; `?quarter=&level=` change them). Item page: `localhost:3000/items/42`.
 - Never start a second backend against the Compose database while a job runs: startup marks every running run as interrupted.
 - A test that needs the database extends `com.dsinnovators.ei.DatabaseTest`.
