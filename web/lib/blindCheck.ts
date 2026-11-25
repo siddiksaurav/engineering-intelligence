@@ -1,4 +1,6 @@
+import { readBackend, type BackendResult } from "./backend";
 import type { ComplexityName, ProblemVerdict } from "./items";
+import { percent } from "./profileText";
 
 /** The complexities from the lowest to the highest; the order the check counts steps in (design flow 7). */
 export const COMPLEXITIES: readonly ComplexityName[] = ["low", "medium", "high", "very_high"];
@@ -64,4 +66,49 @@ export function reasonMarkRequest(
   }
   const note = String(formData.get(NOTE_FIELD) ?? "").trim();
   return { ok: true, body: { reasonRight: reasonRight === "yes", problemMarks, note: note === "" ? null : note } };
+}
+
+/** A count of how many, with its share; the share is unrounded and null when nothing counts. */
+export type Rate = { count: number; of: number; share: number | null };
+
+export type BlindCheckNumbers = {
+  sampled: number;
+  labeled: number;
+  cannotJudge: number;
+  reasonMarked: number;
+  exactMatch: Rate;
+  withinOneStep: Rate;
+  tableExactMatch: Rate;
+  reasonRight: Rate;
+  confusion: { label: ComplexityName; ai: ComplexityName; count: number }[];
+  problemVerdicts: Record<ProblemVerdict, number>;
+  thinEvidence: { items: number; exactMatch: Rate; reasonRight: Rate };
+  targets: { exactMatch: number; withinOneStep: number; reasonRight: number };
+  reasonsToMark: { itemId: number; title: string }[];
+  disagreements: {
+    itemId: number;
+    title: string;
+    developer: string;
+    userComplexity: ComplexityName;
+    aiComplexity: ComplexityName;
+    complexityByTable: ComplexityName;
+    userNote: string | null;
+    aiReason: string;
+    reasonRight: boolean | null;
+    markNote: string | null;
+  }[];
+  cannotJudgeItems: { itemId: number; title: string; note: string | null }[];
+};
+
+/** The numbers of the blind check, counted by the backend on every call. Never throws. */
+export async function fetchBlindCheck(
+  baseUrl: string | undefined,
+  fetchFn: typeof fetch = fetch,
+): Promise<BackendResult<BlindCheckNumbers>> {
+  return readBackend<BlindCheckNumbers>(baseUrl, "/api/blind-check", fetchFn);
+}
+
+/** A rate in words: "21 of 28, 75%"; without a share only the count. */
+export function rateWords(rate: Rate): string {
+  return rate.share === null ? `${rate.count} of ${rate.of}` : `${rate.count} of ${rate.of}, ${percent(rate.share)}`;
 }

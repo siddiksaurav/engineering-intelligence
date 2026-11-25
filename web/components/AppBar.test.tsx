@@ -19,12 +19,14 @@ describe("AppBar", () => {
     expect(html).toContain("Engineering Intelligence");
     expect(html).toContain('href="/"');
     expect(html).toContain('href="/developers"');
+    expect(html).toContain('href="/blind-check"');
   });
 
   it("marks the link of the current section with aria-current", () => {
     expect(currentLinkAt("/")).toBe("Overview");
     expect(currentLinkAt("/developers")).toBe("Developers");
     expect(currentLinkAt("/developers/9/profile")).toBe("Developers");
+    expect(currentLinkAt("/blind-check")).toBe("Blind check");
   });
 
   it("counts an item page as part of the developers section", () => {

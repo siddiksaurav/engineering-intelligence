@@ -1,0 +1,169 @@
+.stack {
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+}
+
+.steps {
+  margin: 0;
+  padding-left: 22px;
+  display: grid;
+  gap: 6px;
+}
+
+.warning {
+  margin: 14px 0 0;
+  padding: 10px 14px;
+  border-radius: var(--radius-small);
+  background: var(--warning-wash);
+  color: #4d3200;
+  font-weight: 500;
+}
+
+.numbers {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.number {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 2fr) auto minmax(0, 2fr);
+  gap: 4px 16px;
+  align-items: baseline;
+  padding: 12px 14px;
+  border-radius: var(--radius-small);
+  background: var(--sky-50);
+}
+
+.numberTitle {
+  font-weight: 600;
+}
+
+.numberValue {
+  font-family: var(--font-data);
+}
+
+.verdict {
+  font-weight: 600;
+}
+
+.verdict[data-met="true"] {
+  color: var(--good);
+}
+
+.verdict[data-met="false"] {
+  color: var(--critical);
+}
+
+.progress,
+.aside {
+  color: var(--ink-3);
+}
+
+.aside {
+  margin: 12px 0 0;
+}
+
+.scroll {
+  overflow-x: auto;
+}
+
+.table {
+  border-collapse: collapse;
+  min-width: 420px;
+  width: 100%;
+}
+
+.table th,
+.table td {
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  text-align: right;
+  font-family: var(--font-data);
+}
+
+.table th {
+  background: var(--sky-50);
+  font-weight: 600;
+}
+
+.table th:first-child {
+  text-align: left;
+}
+
+.table td[data-diagonal="true"] {
+  background: var(--good-wash);
+  font-weight: 600;
+}
+
+.verdicts {
+  margin: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.verdictRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.verdictRow dt {
+  font-weight: 500;
+}
+
+.verdictRow dd {
+  margin: 0;
+  font-family: var(--font-data);
+}
+
+.subtitle {
+  margin: 20px 0 0;
+  font-size: 1rem;
+}
+
+.itemLinks {
+  margin: 0;
+  padding-left: 20px;
+  display: grid;
+  gap: 6px;
+  overflow-wrap: anywhere;
+}
+
+.disagreements {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 14px;
+}
+
+.disagreement {
+  padding: 12px 14px;
+  border-radius: var(--radius-small);
+  border-left: 3px solid var(--azure-500);
+  background: var(--sky-50);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.disagreement p {
+  margin: 6px 0 0;
+}
+
+.quote {
+  padding-left: 10px;
+  border-left: 2px solid var(--line);
+  color: var(--ink-2);
+}
+
+@media (width <= 760px) {
+  .number {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
