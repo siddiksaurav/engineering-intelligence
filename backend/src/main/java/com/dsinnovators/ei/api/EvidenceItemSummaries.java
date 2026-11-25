@@ -8,6 +8,9 @@ import com.dsinnovators.ei.identity.PersonSummary;
 import com.dsinnovators.ei.judgment.CurrentItemJudgments;
 import com.dsinnovators.ei.judgment.ItemJudgment;
 import com.dsinnovators.ei.judgment.JudgmentKind;
+import com.dsinnovators.ei.judgment.JudgmentsById;
+import com.dsinnovators.ei.review.BlindCheckReader;
+import com.dsinnovators.ei.review.ItemBlindCheck;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -25,11 +28,20 @@ class EvidenceItemSummaries {
     private final CurrentEvidenceItems evidenceItems;
     private final PersonDirectory persons;
     private final CurrentItemJudgments judgments;
+    private final JudgmentsById judgmentsById;
+    private final BlindCheckReader blindChecks;
 
-    EvidenceItemSummaries(CurrentEvidenceItems evidenceItems, PersonDirectory persons, CurrentItemJudgments judgments) {
+    EvidenceItemSummaries(
+            CurrentEvidenceItems evidenceItems,
+            PersonDirectory persons,
+            CurrentItemJudgments judgments,
+            JudgmentsById judgmentsById,
+            BlindCheckReader blindChecks) {
         this.evidenceItems = evidenceItems;
         this.persons = persons;
         this.judgments = judgments;
+        this.judgmentsById = judgmentsById;
+        this.blindChecks = blindChecks;
     }
 
     /** The summary of each id that names a row, in the order asked. An unknown id is left out. */
@@ -37,9 +49,26 @@ class EvidenceItemSummaries {
         return assemble(ids).stream().map(Assembled::summary).toList();
     }
 
-    /** The row with this id and its current judgment, or nothing when no row has the id. */
+    /**
+     * The row with this id, its judgment and its blind check state, or nothing when no row has the id. The
+     * judgment of a sample item is the one the sample fixed, and it is hidden, tier included, until the user
+     * has labeled the item.
+     */
     Optional<EvidenceItemDetailResponse> detailOf(long id) {
-        return assemble(List.of(id)).stream().findFirst().map(Assembled::detail);
+        ItemBlindCheck blindCheck = blindChecks.ofItem(id).orElse(null);
+        return assemble(List.of(id)).stream()
+                .findFirst()
+                .map(assembled -> assembled.detail(blindCheck, fixedJudgment(blindCheck)));
+    }
+
+    private ItemJudgment fixedJudgment(ItemBlindCheck blindCheck) {
+        if (blindCheck == null) {
+            return null;
+        }
+        return judgmentsById
+                .find(blindCheck.judgmentId())
+                .orElseThrow(() -> new IllegalStateException(
+                        "The judgment " + blindCheck.judgmentId() + " fixed by the blind check sample does not exist"));
     }
 
     private List<Assembled> assemble(List<Long> ids) {
@@ -85,15 +114,21 @@ class EvidenceItemSummaries {
 
     private record Assembled(EvidenceItemSummaryResponse summary, EvidenceType type, ItemJudgment judgment) {
 
-        EvidenceItemDetailResponse detail() {
-            return new EvidenceItemDetailResponse(summary, judgmentResponse());
-        }
-
-        private ItemJudgmentResponse judgmentResponse() {
+        /** @param fixedJudgment the judgment the sample fixed; null when the item is not in the sample */
+        EvidenceItemDetailResponse detail(ItemBlindCheck blindCheck, ItemJudgment fixedJudgment) {
             if (ItemJudgmentKind.of(type).isEmpty()) {
-                return ItemJudgmentResponse.notTiered();
+                return new EvidenceItemDetailResponse(summary, ItemJudgmentResponse.notTiered(), blindCheck);
             }
-            return judgment == null ? ItemJudgmentResponse.notJudgedYet() : ItemJudgmentResponse.judged(judgment);
+            if (blindCheck != null && blindCheck.label() == null) {
+                return new EvidenceItemDetailResponse(
+                        summary.withoutTier(), ItemJudgmentResponse.hiddenUntilLabeled(), blindCheck);
+            }
+            ItemJudgment shown = blindCheck == null ? judgment : fixedJudgment;
+            if (shown == null) {
+                return new EvidenceItemDetailResponse(summary, ItemJudgmentResponse.notJudgedYet(), blindCheck);
+            }
+            return new EvidenceItemDetailResponse(
+                    summary.withTier(shown.tier()), ItemJudgmentResponse.judged(shown), blindCheck);
         }
     }
 }

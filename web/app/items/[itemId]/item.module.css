@@ -28,7 +28,14 @@
   grid-column: 1 / -1;
 }
 
+.side {
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+}
+
 .judgment,
+.yourLabel,
 .sources {
   background: var(--surface);
   border: 1px solid var(--line);
@@ -38,6 +45,7 @@
 }
 
 .judgment h2,
+.yourLabel h2,
 .sources h2 {
   margin: 0 0 14px;
   font-family: var(--font-data);
@@ -218,4 +226,97 @@
 .tableLine {
   margin: 12px 0 0;
   color: var(--ink-2);
+}
+
+.labelValue {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  font-weight: 650;
+}
+
+.agreement {
+  margin: 4px 0 0;
+  color: var(--ink-2);
+  font-weight: 500;
+}
+
+.labelNote {
+  margin: 12px 0 0;
+  padding-left: 10px;
+  border-left: 2px solid var(--line);
+  color: var(--ink-2);
+  overflow-wrap: anywhere;
+}
+
+.markForm {
+  display: grid;
+  gap: 14px;
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+
+.markForm h3 {
+  margin: 0;
+}
+
+.choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-small);
+  min-width: 0;
+}
+
+.choices legend {
+  padding: 0 6px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.choice {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.noteField {
+  display: grid;
+  gap: 4px;
+  font-weight: 600;
+}
+
+.noteField textarea {
+  font: inherit;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-small);
+  min-width: 0;
+}
+
+.save {
+  justify-self: start;
+  padding: 8px 22px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--azure-600);
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.save:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.refusal {
+  margin: 0;
+  color: var(--critical);
+  font-weight: 500;
 }

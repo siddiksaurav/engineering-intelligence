@@ -14,6 +14,7 @@ const SECTIONS: Section[] = [
     // An item page is reached from a developer, so it belongs to this section.
     holds: (path) => path.startsWith("/developers") || path.startsWith("/items"),
   },
+  { href: "/blind-check", label: "Blind check", holds: (path) => path.startsWith("/blind-check") },
 ];
 
 /** The links to the sections; the one that holds the current path is marked (decision 269). */

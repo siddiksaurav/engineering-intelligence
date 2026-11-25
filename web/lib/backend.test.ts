@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { readBackend } from "./backend";
+import { readBackend, writeBackend } from "./backend";
 
 const BASE_URL = "http://localhost:8080";
 
@@ -67,5 +67,65 @@ describe("readBackend", () => {
 
     expect(await readBackend(undefined, "/api/x", fetchFn)).toEqual({ status: "down" });
     expect(fetchFn).not.toHaveBeenCalled();
+  });
+});
+
+describe("writeBackend", () => {
+  let warn: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    warn.mockRestore();
+  });
+
+  it("sends the request as given and returns the JSON answer", async () => {
+    const fetchFn = answering(200, '{"a":1}');
+
+    const result = await writeBackend(BASE_URL, "/api/x", { method: "PUT", body: "{}" }, fetchFn);
+
+    expect(result).toEqual({ status: "ok", data: { a: 1 } });
+    expect(vi.mocked(fetchFn).mock.calls[0][0]).toBe("http://localhost:8080/api/x");
+    expect(vi.mocked(fetchFn).mock.calls[0][1]).toMatchObject({ method: "PUT", body: "{}" });
+  });
+
+  it("gives the detail of a problem as the refusal message", async () => {
+    const result = await writeBackend(BASE_URL, "/api/x", {}, answering(409, '{"detail":"No label yet"}'));
+
+    expect(result).toEqual({
+      status: "refused",
+      httpStatus: 409,
+      message: "No label yet",
+      body: { detail: "No label yet" },
+    });
+  });
+
+  it("gives the message of an import refusal and keeps its body", async () => {
+    const body = { message: "2 rows are wrong", problems: [{ line: 3 }] };
+
+    const result = await writeBackend(BASE_URL, "/api/x", {}, answering(400, JSON.stringify(body)));
+
+    expect(result).toEqual({ status: "refused", httpStatus: 400, message: "2 rows are wrong", body });
+  });
+
+  it("names the status when a refusal has no words", async () => {
+    const result = await writeBackend(BASE_URL, "/api/x", {}, answering(502, "<html>"));
+
+    expect(result).toMatchObject({ status: "refused", message: "The backend answered HTTP 502" });
+  });
+
+  it("says down when the connection fails or no backend URL is set", async () => {
+    const failing = vi.fn(async () => {
+      throw new TypeError("fetch failed");
+    }) as unknown as typeof fetch;
+
+    expect(await writeBackend(BASE_URL, "/api/x", {}, failing)).toEqual({ status: "down" });
+    expect(await writeBackend(undefined, "/api/x", {}, answering(200, "{}"))).toEqual({ status: "down" });
+  });
+
+  it("says down when a success is not JSON", async () => {
+    expect(await writeBackend(BASE_URL, "/api/x", {}, answering(200, "ok"))).toEqual({ status: "down" });
   });
 });

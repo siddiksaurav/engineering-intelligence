@@ -49,6 +49,21 @@ class AppendOnlyCodeTest {
     }
 
     @Test
+    void theBlindCheckItemEntityIsImmutable() {
+        entityIsImmutable("BlindCheckItem");
+    }
+
+    @Test
+    void theHumanLabelEntityIsImmutable() {
+        entityIsImmutable("HumanLabel");
+    }
+
+    @Test
+    void theReasonMarkEntityIsImmutable() {
+        entityIsImmutable("ReasonMark");
+    }
+
+    @Test
     void noRepositoryOfRawRecordCanUpdateOrDelete() {
         repositoryCannotUpdateOrDelete("RawRecord");
     }
@@ -63,10 +78,26 @@ class AppendOnlyCodeTest {
         repositoryCannotUpdateOrDelete("Judgment");
     }
 
+    @Test
+    void noRepositoryOfBlindCheckItemCanUpdateOrDelete() {
+        repositoryCannotUpdateOrDelete("BlindCheckItem");
+    }
+
+    @Test
+    void noRepositoryOfHumanLabelCanUpdateOrDelete() {
+        repositoryCannotUpdateOrDelete("HumanLabel");
+    }
+
+    @Test
+    void noRepositoryOfReasonMarkCanUpdateOrDelete() {
+        repositoryCannotUpdateOrDelete("ReasonMark");
+    }
+
     // Covers what the repository rules cannot see: SQL in JdbcTemplate calls, native queries and
     // migrations. A table name that does not exist yet costs nothing to guard from the start.
     @ParameterizedTest
-    @ValueSource(strings = {"raw_record", "evidence_item", "judgment"})
+    @ValueSource(
+            strings = {"raw_record", "evidence_item", "judgment", "blind_check_item", "human_label", "reason_mark"})
     void noProductionCodeOrMigrationUpdatesOrDeletesRowsOf(String table) throws IOException {
         Pattern changingStatement = Pattern.compile(
                 "\\b(update\\s+" + table + "\\b|delete\\s+from\\s+" + table + "\\b|truncate\\s+(table\\s+)?" + table

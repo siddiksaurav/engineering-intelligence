@@ -18,7 +18,8 @@ export type ItemSummary = {
   currentItemId: number | null;
 };
 
-export type JudgmentState = "judged" | "not_judged_yet" | "not_tiered";
+/** `hidden_until_labeled`: the item is in the blind check sample and its label is not imported yet (F08). */
+export type JudgmentState = "judged" | "not_judged_yet" | "not_tiered" | "hidden_until_labeled";
 
 export type JudgmentFact = { fact: string; link: string };
 
@@ -35,7 +36,30 @@ export type ItemJudgment = {
   judgedAt: string | null;
 };
 
-export type ItemDetail = ItemSummary & { judgment: ItemJudgment };
+export type ComplexityName = "low" | "medium" | "high" | "very_high";
+
+export type ProblemVerdict =
+  "right" | "should_be_routine" | "should_be_answer_exists" | "should_be_no_ready_answer" | "not_a_problem";
+
+/** The user's blind label; `complexity` is null exactly when the user could not judge the item. */
+export type HumanLabel = {
+  complexity: ComplexityName | null;
+  cannotJudge: boolean;
+  note: string | null;
+  labeledAt: string;
+};
+
+export type ReasonMark = {
+  reasonRight: boolean;
+  problemMarks: { name: string; verdict: ProblemVerdict }[];
+  note: string | null;
+  markedAt: string;
+};
+
+/** The blind check of an item of the sample; an item outside the sample has none. */
+export type ItemBlindCheck = { label: HumanLabel | null; reasonMark: ReasonMark | null };
+
+export type ItemDetail = ItemSummary & { judgment: ItemJudgment; blindCheck: ItemBlindCheck | null };
 
 /** The summaries of the items with these ids, in the order asked; unknown ids are left out. No call for none. */
 export async function fetchItemSummaries(

@@ -7,8 +7,8 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 /**
- * The database itself refuses to change a row of {@code raw_record}, {@code evidence_item} and
- * {@code judgment}, so the rule does not rest on the Java code alone (decision 33). The behaviour of
+ * The database itself refuses to change a row of {@code raw_record}, {@code evidence_item}, {@code
+ * judgment} and the tables of the blind check, so the rule does not rest on the Java code alone (decision 33). The behaviour of
  * the {@code raw_record} trigger is tested in {@code RawRecordStoreTest}; this test checks that every
  * such table has a trigger that fires before each update and each delete.
  */
@@ -27,6 +27,21 @@ class AppendOnlyTablesTest extends DatabaseTest {
     @Test
     void judgmentHasATriggerBeforeEveryUpdateAndDelete() {
         hasTriggerBeforeEveryUpdateAndDelete("judgment");
+    }
+
+    @Test
+    void blindCheckItemHasATriggerBeforeEveryUpdateAndDelete() {
+        hasTriggerBeforeEveryUpdateAndDelete("blind_check_item");
+    }
+
+    @Test
+    void humanLabelHasATriggerBeforeEveryUpdateAndDelete() {
+        hasTriggerBeforeEveryUpdateAndDelete("human_label");
+    }
+
+    @Test
+    void reasonMarkHasATriggerBeforeEveryUpdateAndDelete() {
+        hasTriggerBeforeEveryUpdateAndDelete("reason_mark");
     }
 
     private void hasTriggerBeforeEveryUpdateAndDelete(String table) {

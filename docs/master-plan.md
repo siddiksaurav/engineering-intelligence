@@ -473,7 +473,7 @@ Update this table when a feature changes state. States: not started, in design, 
 | F05 | Evidence builders without AI, list page | done | `docs/features/F05-evidence-builders/design.md` | `docs/features/F05-evidence-builders/plan.md` |
 | F06 | `JudgmentModel`, PR digest, AI-dependent builders | done | `docs/features/F06-pr-digest/design.md` | `docs/features/F06-pr-digest/plan.md` |
 | F07 | Feature work and review comment judgment | done | `docs/features/F07-stage-2-judgment/design.md` | `docs/features/F07-stage-2-judgment/plan.md` |
-| F08 | Blind check | not started; after F16 (decision 307) | | |
+| F08 | Blind check | in progress: tooling built and merged, waiting for the user's labels; then the report (decision 353) | `docs/features/F08-blind-check/design.md` | `docs/features/F08-blind-check/plan.md` |
 | F09 | Full-window run (one month) | not started; not needed before F08: F16 gave 13 Low, 19 Medium, 10 High (decision 307) | | |
 | F10 | Analytics and hygiene | done | `docs/features/F10-analytics/design.md` | `docs/features/F10-analytics/plan.md` |
 | F11 | Scoring | done | `docs/features/F11-scoring/design.md` | `docs/features/F11-scoring/plan.md` |

@@ -11,6 +11,9 @@ export function JudgmentView({ item }: { item: ItemDetail }) {
   if (judgment.state === "not_tiered") {
     return <p className={styles.state}>counted, not tiered</p>;
   }
+  if (judgment.state === "hidden_until_labeled") {
+    return <p className={styles.state}>hidden until your label is imported</p>;
+  }
   if (judgment.state === "not_judged_yet") {
     return <p className={styles.state}>not judged yet</p>;
   }

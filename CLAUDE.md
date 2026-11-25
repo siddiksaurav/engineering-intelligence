@@ -144,6 +144,13 @@ curl -s -X POST localhost:8080/api/jobs/dimension-scoring/runs \
 curl -s "localhost:8080/api/developers/9/dimension-scores?quarter=2026-Q3&level=L2"
                                                              the two dimension scores of developer 9 at L2, with gates and trail (F11)
 curl -s "localhost:8080/api/evidence-items/42"               one evidence item with its current AI judgment (F12); ?ids=1,2,3 on /api/evidence-items for several
+curl -s -X POST localhost:8080/api/blind-check/sample
+                                                             pick the 30 Feature work items of the blind check, once (F08); the page localhost:3000/blind-check does it on the first download
+curl -s localhost:8080/api/blind-check/sample.csv -o data/blind-check/blind-check.csv
+                                                             the label file, without the AI's answer
+curl -s -X POST localhost:8080/api/blind-check/labels -H 'Content-Type: text/csv' --data-binary @data/blind-check/blind-check.csv
+                                                             import the filled file; a wrong row stores nothing
+curl -s localhost:8080/api/blind-check                       the agreement numbers, the disagreements and the targets
 curl -s "localhost:8080/api/model-exchange/requests?promptVersion=pull-request-digest/v1&limit=10"
                                                              model requests waiting for Claude Code (backend with JUDGMENT_MODE=exchange; decision 271, run /judge)
 docker compose exec postgres psql -U ei -d ei -c "select confirm_identity_proposal(7);"
@@ -162,6 +169,7 @@ docker compose exec postgres psql -U ei -d ei -c "select reject_identity_proposa
 - Developers: `localhost:3000/developers?level=L2` (after `evidence-build`; needs `DEFAULT_QUARTER`), the two scores per developer at the chosen level. Evidence list of one developer for the quarter: `localhost:3000/developers/9`. Compare: `localhost:3000/developers/compare?a=9&b=10`. `GET /api/developers` and the evidence list need `?quarter=` (F15).
 - Web design: tokens in `web/app/globals.css`, shared pieces in `web/components/`, colours of types and tiers from `web/lib/palette.ts` (`docs/features/F14-interface-redesign/design.md`). Charts through Recharts, wrapped in `web/components/charts/` (decision 278; F15 notes).
 - Profile: `localhost:3000/developers/9/profile` (quarter from `DEFAULT_QUARTER` in `.env`, level L2; `?quarter=&level=` change them). Item page: `localhost:3000/items/42`.
+- Blind check: `localhost:3000/blind-check` (download, upload, numbers); the guide is `docs/blind-check-labeling-guide.md`. The item page hides the AI judgment of a sampled item until its label is imported, and takes the mark of the AI's reason afterwards (F08).
 - Never start a second backend against the Compose database while a job runs: startup marks every running run as interrupted.
 - A test that needs the database extends `com.dsinnovators.ei.DatabaseTest`.
 - Do not put quotes around values in `.env`: the backend would read them as part of the value.

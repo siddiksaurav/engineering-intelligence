@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { fetchItem, type ItemDetail, type ItemJudgment } from "@/lib/items";
+import { fetchItem, type HumanLabel, type ItemBlindCheck, type ItemDetail, type ItemJudgment } from "@/lib/items";
 import ItemPage from "./page";
 
 vi.mock("@/lib/items", () => ({ fetchItem: vi.fn() }));
@@ -45,6 +45,7 @@ const FEATURE: ItemDetail = {
   current: true,
   currentItemId: null,
   judgment: COMPLEXITY_JUDGMENT,
+  blindCheck: null,
 };
 
 async function render(itemId = "1"): Promise<string> {
@@ -319,6 +320,82 @@ describe("ItemPage", () => {
       expect(html).not.toContain("Problems solved");
       expect(html).toContain("<h3>Facts</h3>");
       expect(html).toContain("Adds a new role table");
+    });
+  });
+
+  describe("an item of the blind check sample", () => {
+    const LABEL: HumanLabel = {
+      complexity: "medium",
+      cannotJudge: false,
+      note: "Only one hard part",
+      labeledAt: "2026-11-26T09:00:00Z",
+    };
+    const withLabel = (label: ItemBlindCheck["label"]): ItemDetail => ({
+      ...FEATURE,
+      judgment: { ...COMPLEXITY_JUDGMENT, value: { complexity: "high" } },
+      blindCheck: { label, reasonMark: null },
+    });
+
+    it("a labeled item shows your label beside the AI judgment", async () => {
+      answering(withLabel(LABEL));
+
+      const html = await render();
+
+      expect(html).toContain("Your label");
+      expect(html).toContain("Medium");
+      expect(html).toContain("one step apart");
+      expect(html).toContain("Only one hard part");
+      expect(html).toContain("Complexity: High");
+    });
+
+    it("says same and two or more steps apart", async () => {
+      answering(withLabel({ ...LABEL, complexity: "high" }));
+      expect(await render()).toContain("same");
+
+      answering(withLabel({ ...LABEL, complexity: "low" }));
+      expect(await render()).toContain("two or more steps apart");
+    });
+
+    it("hides the AI judgment until the label is imported", async () => {
+      answering({
+        ...withLabel(null),
+        judgment: { ...NOT_JUDGED_YET, state: "hidden_until_labeled" },
+      });
+
+      const html = await render();
+
+      expect(html).toContain("hidden until your label is imported");
+      expect(html).not.toContain("not judged yet");
+      expect(html).not.toContain("Complexity:");
+    });
+
+    it("says you could not judge an item that has no complexity", async () => {
+      answering(withLabel({ complexity: null, cannotJudge: true, note: null, labeledAt: LABEL.labeledAt }));
+
+      const html = await render();
+
+      expect(html).toContain("You could not judge this item");
+      expect(html).not.toContain("steps apart");
+    });
+
+    it("offers the reason mark form only on a labeled item that could be judged", async () => {
+      answering(withLabel(LABEL));
+      expect(await render()).toContain("Mark the AI&#x27;s reason");
+
+      answering(withLabel(null));
+      expect(await render()).not.toContain("Mark the AI&#x27;s reason");
+
+      answering(withLabel({ complexity: null, cannotJudge: true, note: null, labeledAt: LABEL.labeledAt }));
+      expect(await render()).not.toContain("Mark the AI&#x27;s reason");
+
+      answering(FEATURE);
+      expect(await render()).not.toContain("Mark the AI&#x27;s reason");
+    });
+
+    it("shows no label panel for an item outside the sample", async () => {
+      answering(FEATURE);
+
+      expect(await render()).not.toContain("Your label");
     });
   });
 });

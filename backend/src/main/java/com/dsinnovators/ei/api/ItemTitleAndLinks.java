@@ -4,6 +4,7 @@ import com.dsinnovators.ei.evidence.EvidenceItem;
 import com.dsinnovators.ei.evidence.EvidenceType;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import tools.jackson.databind.JsonNode;
 
 /**
@@ -37,10 +38,8 @@ final class ItemTitleAndLinks {
         List<ItemLink> links = new ArrayList<>();
         switch (type) {
             case FEATURE_WORK -> {
-                if (!hasNoWorkItem(fields)) {
-                    links.add(workItemLink(fields.required("feature")));
-                }
-                fields.required("pullRequests").forEach(pullRequest -> links.add(pullRequestLink(pullRequest)));
+                workItemLinkOf(item).ifPresent(links::add);
+                links.addAll(pullRequestLinksOf(item));
             }
             case BUG_FIX -> {
                 if (!hasNoWorkItem(fields)) {
@@ -57,6 +56,19 @@ final class ItemTitleAndLinks {
             case TEST_CHANGE, REFACTOR_PERFORMANCE, SECURITY, INFRA_RELEASE, DOCUMENTATION ->
                 links.add(pullRequestLink(fields.required("pullRequest")));
         }
+        return links;
+    }
+
+    /** The link to the OpenProject work item of a Feature work item; none for an item with no work item. */
+    static Optional<ItemLink> workItemLinkOf(EvidenceItem item) {
+        JsonNode fields = item.getFields();
+        return hasNoWorkItem(fields) ? Optional.empty() : Optional.of(workItemLink(fields.required("feature")));
+    }
+
+    /** The links to the pull requests of a Feature work item, in the order of its fields. */
+    static List<ItemLink> pullRequestLinksOf(EvidenceItem item) {
+        List<ItemLink> links = new ArrayList<>();
+        item.getFields().required("pullRequests").forEach(pullRequest -> links.add(pullRequestLink(pullRequest)));
         return links;
     }
 

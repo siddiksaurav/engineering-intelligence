@@ -4,9 +4,12 @@ import { Swatch } from "@/components/EvidenceTypes";
 import { PageContent, PageHeader } from "@/components/Page";
 import { Notice } from "@/components/Panel";
 import { typeTitle } from "@/lib/evidenceSections";
+import { featureWorkProblems } from "@/lib/featureWorkProblems";
 import { fetchItem, type ItemDetail } from "@/lib/items";
 import { typeColor } from "@/lib/palette";
 import { JudgmentView } from "./JudgmentView";
+import { ReasonMarkForm } from "./ReasonMarkForm";
+import { YourLabel } from "./YourLabel";
 import styles from "./item.module.css";
 
 // Read on every request, on the server. The browser never calls the backend.
@@ -75,19 +78,34 @@ function Item({ item }: { item: ItemDetail }) {
       <section className={styles.judgment}>
         <h2>AI judgment</h2>
         <JudgmentView item={item} />
+        {canMarkReason(item) && (
+          <ReasonMarkForm
+            itemId={item.id}
+            problemNames={featureWorkProblems(item.judgment)?.problems.map((problem) => problem.name) ?? []}
+            stored={item.blindCheck?.reasonMark ?? null}
+          />
+        )}
       </section>
-      <aside className={styles.sources}>
-        <h2>Sources</h2>
-        <ul className={styles.links}>
-          {item.links.map((link) => (
-            <li key={link.url}>
-              <a href={link.url}>{link.label}</a>
-            </li>
-          ))}
-        </ul>
-      </aside>
+      <div className={styles.side}>
+        <YourLabel item={item} />
+        <aside className={styles.sources}>
+          <h2>Sources</h2>
+          <ul className={styles.links}>
+            {item.links.map((link) => (
+              <li key={link.url}>
+                <a href={link.url}>{link.label}</a>
+              </li>
+            ))}
+          </ul>
+        </aside>
+      </div>
     </div>
   );
+}
+
+/** The reason is marked on a labeled item of the sample, except one the user could not judge (design flow 6). */
+function canMarkReason(item: ItemDetail): boolean {
+  return item.blindCheck?.label?.complexity != null;
 }
 
 function Superseded({ currentItemId }: { currentItemId: number | null }) {
