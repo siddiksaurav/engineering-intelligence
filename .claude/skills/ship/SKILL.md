@@ -25,7 +25,7 @@ The user's answer to the question brief is the only stop in the normal flow. Aft
 Read, in this order:
 1. The top entry of `docs/progress.md`. In `docs/decisions.md`, every decision from 72 on, and the earlier ones that name this feature or the tables and packages it touches.
 2. The feature's block in `docs/master-plan.md` (section 5), and section 2 "Global constraints".
-3. Every section the block lists under "Read first", in `poc-plan.md` and `docs/spec/spec-v1.5.md`. Read only those sections of the spec.
+3. Every section the block lists under "Read first", in `poc-plan.md` and `docs/spec/spec-v1.6.md` (the version in force; `docs/spec/v1.5-to-v1.6-impact.md` lists what differs from v1.5). Read only those sections of the spec.
 4. "What a later feature should know" in the `notes.md` of every earlier feature.
 5. The existing code this feature uses or changes: the classes, tables and migrations it names or depends on.
 

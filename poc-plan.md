@@ -1,8 +1,10 @@
 # Engineering Intelligence PoC: plan
 
-This is the design document of the PoC. The feature list and build status are in `docs/master-plan.md`. The spec it refers to is `docs/spec/spec-v1.5.md`. A build step in section 3.7 is the feature with the same number in the master plan (build step 2 is F02, build step 11 is F11).
+This is the design document of the PoC. The feature list and build status are in `docs/master-plan.md`. It was written against spec v1.5; the spec in force is `docs/spec/spec-v1.6.md` (25 Nov 2026), and `docs/spec/v1.5-to-v1.6-impact.md` lists what differs. Where this plan says "gate", "hygiene" or "confidence", v1.6 says "quality check", "project compliance" and "limited data". A build step in section 3.7 is the feature with the same number in the master plan (build step 2 is F02, build step 11 is F11).
 
 ## Context
+
+**Goal from 25 Nov 2026 (decision 302).** The PoC answers one question for the user: can this idea be done? It is no longer built to convince management, though it may be shown later. What counts as validated is in `docs/master-plan.md` section 1. The paragraphs below are the plan as first written.
 
 The spec (Version 1.5) puts all judgment in one step: the AI sets work type, complexity and tier on each evidence item (sections 6.2 to 6.4). Everything after that is counting. The PoC must show management that this judgment is correct often enough to trust, and make that visible. It uses public data (github.com/opf/openproject and community.openproject.org), and it must be the first slice of the real system, not throwaway code.
 
@@ -83,6 +85,7 @@ Left out on purpose: gates G3 and G5, the clean-delivery rule, the Planning and 
 **The AI's two stages**
 
 - **Stage 1, PR digest.** One call per PR. Input: PR title, body, file list, and the diff with generated files, lock files and vendored code removed. Output: work type of the PR, modules touched, schema or data migration yes/no, new integration yes/no, nature of the change, tests included yes/no, test kind (unit, integration, regression, CI gate), a short reason. For the test change in a PR, and for a PR whose work type is refactor, performance, security or infra, it also gives a tier from the rows of spec 6.4, with a reason. A cheaper model is enough here.
+- **Stage 2 from spec v1.6 (F16).** The output is the list of problems in the work, a depth for each (Routine, Answer exists, No ready answer) and the complexity set from the depths, in place of the rubric facts below. The repository is not searched for an earlier example (decision 303).
 - **Stage 2, Feature work judgment.** One call per Feature work item with a strong model. Input: the work item texts (feature and the person's child items), priority, linked items, and the PR digests. Output: work type, complexity (Low, Medium, High, Very high), the rubric facts from spec 6.2 with a quote or link for each, a reason, and a confidence value. Lines of code are not given to the model.
 - **Tier** is not asked from the model for Feature work. It is read from the complexity by the table in 6.2.
 - **Review comments.** One call per PR for all human reviewer comments, each with its diff hunk. Output per comment: type, substantive or style, tier (6.4 row 2), reason. Bot comments and the author's own replies are filtered out before the call.
@@ -187,6 +190,8 @@ Optional, after step 12:
 13. Accuracy measurement (section 4): a larger held-out sample through the same export and import as step 8, and an accuracy page. Nothing in steps 1 to 12 depends on it, and it needs no change to the existing tables.
 
 ## 4. How we measure whether the AI judged correctly (optional, after the planned features)
+
+**From 25 Nov 2026 (decision 308).** Two of the measures below are now the core of the PoC and are taken in F08 on 30 Feature work items: complexity against the user's blind labels (exact, and within one step) and "reason factually right". The work type match, the repeat labeling, the second AI run, the size check and the review comment sample are not planned.
 
 This section is deferred. It describes build step 13. Until then, the checks on the AI are the 30-item blind check in build step 8 and your own reading of items on the item page.
 

@@ -1,6 +1,6 @@
 # Engineering Intelligence PoC
 
-A system that measures a developer's performance from the work they leave in Git and OpenProject. An AI judges each piece of work (work type, complexity, tier); everything after that is counting. This PoC proves the judgment on public data (`github.com/opf/openproject`, `community.openproject.org`) and shows one developer profile where every score can be followed back to a pull request. It is the first slice of the real system.
+A system that measures a developer's performance from the work they leave in Git and OpenProject. An AI judges each piece of work (work type, complexity, tier); everything after that is counting. This PoC answers one question for the user: can the idea be done? It judges public data (`github.com/opf/openproject`, `community.openproject.org`), shows one developer profile where every score can be followed back to a pull request, and measures the AI's complexity judgment against the user's own blind labels (`docs/master-plan.md` section 1). It is the first slice of the real system.
 
 The whole project is built by Claude Code, one feature at a time. You have no memory of earlier sessions. The documents below are that memory. Keep them current.
 
@@ -10,7 +10,7 @@ Read in this order:
 1. `docs/progress.md`: the last entry says where the work stands and what is next.
 2. `docs/master-plan.md`: the feature list, global constraints, status table.
 3. The folder of the current feature in `docs/features/`: `design.md`, `plan.md`, `notes.md`.
-4. The sections of `poc-plan.md` and `docs/spec/spec-v1.5.md` that the feature names. Do not read the whole spec unless needed; it is 1,000 lines.
+4. The sections of `poc-plan.md` and `docs/spec/spec-v1.6.md` that the feature names. Do not read the whole spec unless needed; it is 1,100 lines. F01 to F15 were built on `spec-v1.5.md`; `docs/spec/v1.5-to-v1.6-impact.md` lists what differs.
 
 `docs/decisions.md` holds every decision with its reason. Check it before changing direction.
 
@@ -51,6 +51,8 @@ When something is unclear or a document is wrong, ask. Do not guess, and do not 
 - A work item of type Bug is never Feature work.
 - Lines of code are never given to the model for complexity.
 - For Feature work the model gives complexity; the tier is read from the table (Low T1, Medium T2, High T3, Very high counts as T3).
+- From F16 the complexity of Feature work comes from the problems the work solved and the depth of each (spec v1.6 section 6.2), never from size, module count or time.
+- Screens and trail notes say "quality check" and "project compliance"; code, tables and the API keep "gate" and "hygiene" (decision 304).
 - The model is called only through the `JudgmentModel` interface.
 - Thresholds and weights are rows in `setting`, never constants in code.
 - Use the names of spec section 3 and the master plan glossary in code, tables and screens.

@@ -2,6 +2,22 @@
 
 One entry per working session, newest at the top. Each entry says what was done, what is next and what is blocked. Read the top entry first.
 
+## 25 Nov 2026: spec v1.6 adopted, goal changed to a feasibility check
+
+**Done**
+- The user upgraded the spec to v1.6 and changed the goal: the PoC must let the user say "I validated the idea"; management may see it later (decisions 301, 302).
+- v1.5 and v1.6 compared line by line and against the code: `docs/spec/v1.5-to-v1.6-impact.md`. One major change (complexity is judged by problems and their depths, spec 6.2), one small one (G2 is shown and not scored). Everything else is names or parts the PoC never built.
+- The user chose: no repository search for an earlier example (303); renames on screens and trail notes only (304); validated means agreement with blind labels and right reasons (308).
+- `docs/spec/spec-v1.6.md` added. Master plan (goal, out of scope, glossary, new F16, F08 reshaped, order), `poc-plan.md`, `CLAUDE.md` and the ship skill updated. Decisions 301 to 309. No code changed.
+
+**Next**
+- `/clear`, then `/ship F16` (Spec v1.6 alignment).
+- After F16: count the Feature work items at Low, Medium and High. Fewer than 6 at one of them means F09 (15 to 31 Jul) runs first; then `/ship F08` (decision 307). Under the old rubric the 42 items were 23 Low, 17 Medium, 2 High.
+- The user does not open item pages of Feature work items after F16 until the F08 labels are imported, or the check is no longer blind.
+
+**Blocked or needed from the user**
+- Nothing for F16 to start. F08 needs about 3 hours of the user's labeling.
+
 ## 24 Nov 2026: F15 Deck-style pages on existing data shipped
 
 **Done**
