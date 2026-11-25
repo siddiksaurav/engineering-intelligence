@@ -63,7 +63,7 @@ class BlindCheckControllerTest extends DatabaseTest {
 
         assertEquals(409, response.statusCode());
         String detail = JobEndpointClient.json(response).get("detail").stringValue();
-        assertTrue(detail.contains("medium") && detail.contains("1") && detail.contains("2"), detail);
+        assertEquals("The blind check needs 2 Feature work items judged medium, but only 1 exist", detail);
     }
 
     @Test

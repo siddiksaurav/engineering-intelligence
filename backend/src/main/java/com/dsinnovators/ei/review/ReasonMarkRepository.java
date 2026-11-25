@@ -1,7 +1,5 @@
 package com.dsinnovators.ei.review;
 
-import java.util.Collection;
-import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.Repository;
@@ -18,11 +16,4 @@ interface ReasonMarkRepository extends Repository<ReasonMark, Long> {
               and not exists (select 1 from ReasonMark s where s.supersedesId = m.id)
             """)
     Optional<ReasonMark> findCurrentOfItem(@Param("blindCheckItemId") long blindCheckItemId);
-
-    @Query("""
-            select m from ReasonMark m
-            where m.blindCheckItemId in :blindCheckItemIds
-              and not exists (select 1 from ReasonMark s where s.supersedesId = m.id)
-            """)
-    List<ReasonMark> findCurrentOfItems(@Param("blindCheckItemIds") Collection<Long> blindCheckItemIds);
 }

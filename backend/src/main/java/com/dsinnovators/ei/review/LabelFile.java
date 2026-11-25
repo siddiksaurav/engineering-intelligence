@@ -16,7 +16,7 @@ record LabelFile(List<Row> rows) {
 
     static LabelFile parse(String text) {
         String withoutMark = text.isEmpty() || text.charAt(0) != BYTE_ORDER_MARK ? text : text.substring(1);
-        List<CsvReader.Row> csvRows = CsvReader.read(withoutMark, separatorOf(withoutMark));
+        List<CsvReader.Row> csvRows = csvRowsOf(withoutMark);
         if (csvRows.isEmpty()) {
             throw refused("The file is empty; it needs a header with item_id, complexity and note");
         }
@@ -36,6 +36,14 @@ record LabelFile(List<Row> rows) {
                         row.line(), cellOf(row, itemIdColumn), cellOf(row, complexityColumn), cellOf(row, noteColumn)))
                 .toList();
         return new LabelFile(rows);
+    }
+
+    private static List<CsvReader.Row> csvRowsOf(String text) {
+        try {
+            return CsvReader.read(text, separatorOf(text));
+        } catch (IllegalArgumentException unclosedQuote) {
+            throw refused(unclosedQuote.getMessage());
+        }
     }
 
     private static String cellOf(CsvReader.Row row, int column) {

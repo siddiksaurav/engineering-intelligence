@@ -91,7 +91,10 @@ public class LabelImport {
         }
         if (!problems.isEmpty()) {
             throw new LabelImportRefusedException(
-                    problems.size() + " rows of the file are wrong; nothing was stored", problems);
+                    problems.size()
+                            + (problems.size() == 1 ? " row of the file is wrong" : " rows of the file are wrong")
+                            + "; nothing was stored",
+                    problems);
         }
         toStore.forEach(labels::save);
         return new LabelImportResult(

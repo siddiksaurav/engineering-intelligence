@@ -28,6 +28,7 @@ class BlindCheckNumbersTest extends DatabaseTest {
     @Autowired
     private BlindCheckNumbers numbers;
 
+    private BlindCheckFixture stored;
     private long thinLow;
     private long lowLabeledMedium;
     private long mediumRightLabel;
@@ -37,7 +38,7 @@ class BlindCheckNumbersTest extends DatabaseTest {
 
     @BeforeEach
     void pickASampleOfSix() {
-        BlindCheckFixture stored = new BlindCheckFixture(jdbc);
+        stored = new BlindCheckFixture(jdbc);
         jdbc.update("update setting set value = '2'::jsonb where key = 'blind_check.items_per_complexity'");
         thinLow = stored.judgedItem("low", true);
         lowLabeledMedium = stored.judgedItem("low");
@@ -131,5 +132,33 @@ class BlindCheckNumbersTest extends DatabaseTest {
         jdbc.update("delete from setting where key = 'blind_check.targets'");
 
         assertThrows(SettingNotFoundException.class, () -> numbers.compute());
+    }
+
+    @Test
+    void theNumbersKeepTheJudgmentTheSampleFixedAfterANewJudgmentOfTheItem() {
+        label();
+        long fixedJudgment = jdbc.queryForObject(
+                "select judgment_id from blind_check_item where evidence_item_id = ?", Long.class, lowLabeledMedium);
+        stored.judgment(lowLabeledMedium, "medium", fixedJudgment);
+
+        BlindCheckSummary summary = numbers.compute().summary();
+
+        assertEquals(new Rate(2, 5, 0.4), summary.exactMatch());
+        assertEquals(
+                1,
+                summary.confusion().stream()
+                        .filter(cell -> cell.equals(new ConfusionCell("medium", "low", 1)))
+                        .count());
+    }
+
+    @Test
+    void aVeryHighLabelAgainstAnAiHighIsWithinOneStepAndNotExact() {
+        labelImport.importLabels("item_id,complexity,note\n" + highLabeledLow + ",very_high,\n");
+
+        BlindCheckSummary summary = numbers.compute().summary();
+
+        assertEquals(new Rate(0, 1, 0.0), summary.exactMatch());
+        assertEquals(new Rate(1, 1, 1.0), summary.withinOneStep());
+        assertEquals(Set.of(new ConfusionCell("very_high", "high", 1)), Set.copyOf(summary.confusion()));
     }
 }

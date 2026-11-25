@@ -9,6 +9,7 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 
 class LabelImportTest extends DatabaseTest {
 
@@ -63,6 +64,7 @@ class LabelImportTest extends DatabaseTest {
                 assertThrows(LabelImportRefusedException.class, () -> labelImport.importLabels(file));
 
         assertEquals(0, storedLabels());
+        assertEquals("4 rows of the file are wrong; nothing was stored", refused.getMessage());
         assertEquals(
                 List.of(3, 4, 5, 7),
                 refused.problems().stream().map(LabelProblem::line).toList());
@@ -70,6 +72,40 @@ class LabelImportTest extends DatabaseTest {
         assertEquals("abc", refused.problems().get(1).itemId());
         assertTrue(refused.problems().get(2).problem().contains("not in the sample"));
         assertTrue(refused.problems().get(3).problem().contains("twice"));
+    }
+
+    @Test
+    void oneWrongRowIsNamedInTheSingular() {
+        LabelImportRefusedException refused = assertThrows(
+                LabelImportRefusedException.class,
+                () -> labelImport.importLabels(HEADER + row(lowItem, "enormous", "")));
+
+        assertEquals("1 row of the file is wrong; nothing was stored", refused.getMessage());
+    }
+
+    @Test
+    void aFileWithAnUnclosedQuoteIsRefusedAndNothingIsStored() {
+        String file = HEADER + row(lowItem, "low", "") + lowItem + ",Ada,\"Title,,,high,\r\n";
+
+        LabelImportRefusedException refused =
+                assertThrows(LabelImportRefusedException.class, () -> labelImport.importLabels(file));
+
+        assertEquals(0, storedLabels());
+        assertTrue(
+                refused.getMessage().contains("quote") && refused.getMessage().contains("line 3"),
+                refused.getMessage());
+    }
+
+    @Test
+    void theDatabaseRefusesASecondLabelOfAnItemThatNoLabelSupersedes() {
+        labelImport.importLabels(HEADER + row(lowItem, "low", ""));
+        long sampledItem =
+                jdbc.queryForObject("select id from blind_check_item where evidence_item_id = ?", Long.class, lowItem);
+
+        assertThrows(DataIntegrityViolationException.class, () -> jdbc.update("""
+                        insert into human_label (blind_check_item_id, complexity, cannot_judge, labeled_at)
+                        values (?, 'high', false, now())
+                        """, sampledItem));
     }
 
     @Test

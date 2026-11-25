@@ -6,6 +6,7 @@ import java.util.List;
 /**
  * Reads CSV text by RFC 4180 with a chosen separator: a cell in quotes may hold the separator, a line
  * break and a doubled quote. Rows that hold nothing at all are left out.
+ *
  */
 final class CsvReader {
 
@@ -19,6 +20,7 @@ final class CsvReader {
     private final StringBuilder cell = new StringBuilder();
     private int line = 1;
     private int rowStartLine = 1;
+    private int quoteOpenedOnLine;
     private boolean quoted;
 
     private CsvReader(String text, char separator) {
@@ -26,6 +28,7 @@ final class CsvReader {
         this.separator = separator;
     }
 
+    /** @throws IllegalArgumentException when a quote is never closed */
     static List<Row> read(String text, char separator) {
         return new CsvReader(text, separator).readRows();
     }
@@ -37,6 +40,7 @@ final class CsvReader {
                 index += readInsideQuotes(character, index);
             } else if (character == '"' && cell.isEmpty()) {
                 quoted = true;
+                quoteOpenedOnLine = line;
             } else if (character == separator) {
                 endCell();
             } else if (character == '\r' || character == '\n') {
@@ -44,6 +48,10 @@ final class CsvReader {
             } else {
                 cell.append(character);
             }
+        }
+        if (quoted) {
+            throw new IllegalArgumentException(
+                    "A quote opened on line " + quoteOpenedOnLine + " is never closed; check the file for a stray \"");
         }
         endRow();
         return rows;

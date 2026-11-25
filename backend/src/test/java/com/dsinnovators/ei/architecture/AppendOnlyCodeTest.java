@@ -49,6 +49,21 @@ class AppendOnlyCodeTest {
     }
 
     @Test
+    void theBlindCheckItemEntityIsImmutable() {
+        entityIsImmutable("BlindCheckItem");
+    }
+
+    @Test
+    void theHumanLabelEntityIsImmutable() {
+        entityIsImmutable("HumanLabel");
+    }
+
+    @Test
+    void theReasonMarkEntityIsImmutable() {
+        entityIsImmutable("ReasonMark");
+    }
+
+    @Test
     void noRepositoryOfRawRecordCanUpdateOrDelete() {
         repositoryCannotUpdateOrDelete("RawRecord");
     }
@@ -61,6 +76,21 @@ class AppendOnlyCodeTest {
     @Test
     void noRepositoryOfJudgmentCanUpdateOrDelete() {
         repositoryCannotUpdateOrDelete("Judgment");
+    }
+
+    @Test
+    void noRepositoryOfBlindCheckItemCanUpdateOrDelete() {
+        repositoryCannotUpdateOrDelete("BlindCheckItem");
+    }
+
+    @Test
+    void noRepositoryOfHumanLabelCanUpdateOrDelete() {
+        repositoryCannotUpdateOrDelete("HumanLabel");
+    }
+
+    @Test
+    void noRepositoryOfReasonMarkCanUpdateOrDelete() {
+        repositoryCannotUpdateOrDelete("ReasonMark");
     }
 
     // Covers what the repository rules cannot see: SQL in JdbcTemplate calls, native queries and

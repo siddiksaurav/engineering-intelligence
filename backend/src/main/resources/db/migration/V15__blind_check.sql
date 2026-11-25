@@ -19,6 +19,8 @@ create table human_label (
     constraint human_label_complexity_or_cannot_judge_ck check ((complexity is null) = cannot_judge)
 );
 create index human_label_item_idx on human_label (blind_check_item_id);
+-- A label is given once (decision 333), so an item has at most one label that supersedes nothing.
+create unique index human_label_one_first_label_per_item_idx on human_label (blind_check_item_id) where supersedes_id is null;
 
 create table reason_mark (
     id                  bigint generated always as identity primary key,

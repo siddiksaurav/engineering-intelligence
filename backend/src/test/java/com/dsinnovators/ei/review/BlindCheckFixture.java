@@ -67,8 +67,4 @@ public final class BlindCheckFixture {
                 "Reason for " + complexity + " item " + itemId,
                 supersedes);
     }
-
-    public long person() {
-        return person;
-    }
 }

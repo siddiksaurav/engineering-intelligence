@@ -68,6 +68,14 @@ class ReasonMarkControllerTest extends DatabaseTest {
 
         assertEquals(400, wrongList.statusCode());
         assertTrue(JobEndpointClient.json(wrongList).get("detail").stringValue().contains("1 problems"));
+        HttpResponse<String> missingVerdict =
+                mark(lowItem, "{\"reasonRight\":true,\"problemMarks\":[{\"name\":\"X\"}]}");
+
+        assertEquals(400, missingVerdict.statusCode());
+        assertTrue(JobEndpointClient.json(missingVerdict)
+                .get("detail")
+                .stringValue()
+                .contains("verdict"));
         assertEquals(400, missingField.statusCode());
         assertTrue(
                 JobEndpointClient.json(missingField).get("detail").stringValue().contains("reasonRight"));
