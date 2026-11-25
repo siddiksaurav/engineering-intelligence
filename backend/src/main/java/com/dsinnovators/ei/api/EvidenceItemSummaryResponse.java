@@ -41,4 +41,13 @@ record EvidenceItemSummaryResponse(
                 current,
                 current ? null : currentRowIdOfKey);
     }
+
+    EvidenceItemSummaryResponse withTier(String newTier) {
+        return new EvidenceItemSummaryResponse(
+                id, type, date, quarter, title, sourceUrl, links, person, newTier, current, currentItemId);
+    }
+
+    EvidenceItemSummaryResponse withoutTier() {
+        return withTier(null);
+    }
 }

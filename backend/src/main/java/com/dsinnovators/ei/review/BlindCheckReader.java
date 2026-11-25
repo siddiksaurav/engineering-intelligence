@@ -32,7 +32,7 @@ public class BlindCheckReader {
                     .map(found -> new ItemBlindCheck.Mark(
                             found.isReasonRight(), found.getProblemMarks(), found.getNote(), found.getMarkedAt()))
                     .orElse(null);
-            return new ItemBlindCheck(label, mark);
+            return new ItemBlindCheck(sampled.getJudgmentId(), label, mark);
         });
     }
 }

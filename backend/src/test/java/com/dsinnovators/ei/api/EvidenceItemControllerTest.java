@@ -310,6 +310,7 @@ class EvidenceItemControllerTest extends DatabaseTest {
 
         assertEquals("hidden_until_labeled", hidden.get("judgment").get("state").stringValue());
         assertFalse(hiddenResponse.body().contains("Reason for"), hiddenResponse.body());
+        assertTrue(hidden.get("tier").isNull(), hiddenResponse.body());
         assertTrue(hidden.get("blindCheck").get("label").isNull());
         assertTrue(hidden.get("blindCheck").get("reasonMark").isNull());
         assertEquals("judged", shown.get("judgment").get("state").stringValue());
@@ -327,5 +328,26 @@ class EvidenceItemControllerTest extends DatabaseTest {
         JsonNode outside = detail(outsideTheSample);
         assertTrue(outside.get("blindCheck").isNull());
         assertEquals("judged", outside.get("judgment").get("state").stringValue());
+    }
+
+    @Test
+    void theDetailOfASampledItemShowsTheJudgmentTheSampleFixedAfterANewOneSupersedesIt() throws Exception {
+        BlindCheckFixture sampled = new BlindCheckFixture(jdbc);
+        jdbc.update("update setting set value = '1'::jsonb where key = 'blind_check.items_per_complexity'");
+        long low = sampled.judgedItem("low");
+        sampled.judgedItem("medium");
+        sampled.judgedItem("high");
+        client.post("/api/blind-check/sample");
+        long fixedJudgment = jdbc.queryForObject(
+                "select judgment_id from blind_check_item where evidence_item_id = ?", Long.class, low);
+        sampled.judgment(low, "high", fixedJudgment);
+        client.postCsv("/api/blind-check/labels", "item_id,complexity,note\n" + low + ",low,\n");
+
+        JsonNode shown = detail(low);
+
+        assertEquals("low", shown.get("judgment").get("value").get("complexity").stringValue());
+        assertEquals(
+                "Reason for low item " + low,
+                shown.get("judgment").get("reason").stringValue());
     }
 }
