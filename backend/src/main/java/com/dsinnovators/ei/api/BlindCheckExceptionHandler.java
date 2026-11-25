@@ -1,8 +1,10 @@
 package com.dsinnovators.ei.api;
 
 import com.dsinnovators.ei.review.InsufficientItemsException;
+import com.dsinnovators.ei.review.LabelImportRefusedException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -13,5 +15,11 @@ class BlindCheckExceptionHandler {
     @ExceptionHandler(InsufficientItemsException.class)
     ProblemDetail tooFewItems(InsufficientItemsException refused) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, refused.getMessage());
+    }
+
+    @ExceptionHandler(LabelImportRefusedException.class)
+    ResponseEntity<LabelImportRefusalResponse> wrongLabelFile(LabelImportRefusedException refused) {
+        return ResponseEntity.badRequest()
+                .body(new LabelImportRefusalResponse(refused.getMessage(), refused.problems()));
     }
 }
