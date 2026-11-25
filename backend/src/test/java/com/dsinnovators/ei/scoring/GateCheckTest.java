@@ -2,9 +2,12 @@ package com.dsinnovators.ei.scoring;
 
 import static com.dsinnovators.ei.scoring.ScoringFixtures.settings;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import org.junit.jupiter.api.Test;
@@ -15,6 +18,10 @@ class GateCheckTest {
     private static final int REPOSITORY_TESTED = 5_000;
 
     private final GateCheck gateCheck = new GateCheck(settings());
+
+    private static GateCheck scoredCheck() {
+        return new GateCheck(settings(Map.of(Gate.G1, true, Gate.G2, true)));
+    }
 
     @Test
     void exactlyTenPointsLowerPasses() {
@@ -52,12 +59,31 @@ class GateCheckTest {
 
     @Test
     void theResultCarriesTheSharesAndTheDifferenceInPoints() {
-        GateResult result = gateCheck.check(Gate.G2, numbers(1, 10, 5, 10, 3));
+        GateResult result = scoredCheck().check(Gate.G2, numbers(1, 10, 5, 10, 3));
 
         assertEquals(10.0, result.personSharePercent(), 0.0001);
         assertEquals(50.0, result.repositorySharePercent(), 0.0001);
         assertEquals(40.0, result.differencePoints(), 0.0001);
-        assertEquals("gate: G2 far", result.note());
+        assertEquals("check: G2 far", result.note());
+    }
+
+    @Test
+    void anUnscoredGateKeepsItsOutcomeAndNotesNotScoredYetWhateverItIs() {
+        assertEquals(
+                GateOutcome.FAR_MISS,
+                gateCheck.check(Gate.G2, numbers(1, 10, 5, 10, 3)).outcome());
+        for (GateNumbers numbers :
+                List.of(numbers(1, 10, 5, 10, 3), numbers(5, 10, 5, 10, 3), numbers(0, 10, 5, 10, 2))) {
+            GateResult result = gateCheck.check(Gate.G2, numbers);
+
+            assertFalse(result.scored());
+            assertEquals("G2 not scored yet", result.note());
+        }
+    }
+
+    @Test
+    void aScoredGateIsMarkedScored() {
+        assertTrue(gateCheck.check(Gate.G1, numbers(5, 10, 5, 10, 3)).scored());
     }
 
     @Test
@@ -66,7 +92,7 @@ class GateCheckTest {
 
         assertEquals(GateOutcome.UNVERIFIED, result.outcome());
         assertEquals(UnverifiedReason.TOO_FEW_DEVELOPERS, result.unverifiedReason());
-        assertEquals("gate unverified: G1", result.note());
+        assertEquals("check unverified: G1", result.note());
     }
 
     @Test

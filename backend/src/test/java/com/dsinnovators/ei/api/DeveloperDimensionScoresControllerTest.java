@@ -46,7 +46,7 @@ class DeveloperDimensionScoresControllerTest extends DatabaseTest {
                 insert into dimension_score (job_run_id, person_id, dimension_id, quarter, selected_level, working_tier,
                                              score, gates, trail, calculated_at)
                 values (?, ?, (select id from dimension where key = ?), ?, ?, ?, ?,
-                        '[{"gate":"G1","outcome":"PASS"}]'::jsonb,
+                        '[{"gate":"G1","outcome":"PASS","scored":true}]'::jsonb,
                         ('{"dimensionKey":"' || ? || '","notes":["held: G1"],"finalScore":' || ? || '}')::jsonb,
                         now())
                 """, runId, personId, dimensionKey, quarter, level, tier, score, dimensionKey, score);
@@ -88,6 +88,7 @@ class DeveloperDimensionScoresControllerTest extends DatabaseTest {
         assertEquals("T2", coding.get("workingTier").stringValue());
         assertEquals(1, coding.get("score").intValue());
         assertEquals("PASS", coding.get("gates").get(0).get("outcome").stringValue());
+        assertTrue(coding.get("gates").get(0).get("scored").booleanValue());
         assertEquals("held: G1", coding.get("notes").get(0).stringValue());
         assertEquals(1, coding.get("trail").get("finalScore").intValue());
         JsonNode standards = dimensions.get(1);

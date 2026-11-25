@@ -7,6 +7,7 @@ import static com.dsinnovators.ei.scoring.ScoringFixtures.settings;
 import static com.dsinnovators.ei.scoring.ScoringFixtures.standards;
 import static com.dsinnovators.ei.scoring.ScoringFixtures.unjudged;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -23,6 +24,8 @@ import tools.jackson.databind.json.JsonMapper;
 class DimensionScorerTest {
 
     private final DimensionScorer scorer = new DimensionScorer(settings());
+    private final DimensionScorer scorerWithG2Scored =
+            new DimensionScorer(settings(Map.of(Gate.G1, true, Gate.G2, true)));
     private final List<ScoredItem> aT3Item = List.of(judged(EvidenceType.SECURITY, Tier.T3));
 
     @Test
@@ -48,7 +51,41 @@ class DimensionScorerTest {
         DimensionScoreResult result = scorer.score(standards(), Level.L2, aT3Item, gates(0, 10, 5, 10));
 
         assertEquals(0, result.score());
-        assertTrue(result.trail().notes().contains("gate: G2 far"));
+        assertTrue(result.trail().notes().contains("check: G1 far"));
+    }
+
+    @Test
+    void aFarMissOfAnUnscoredGateLeavesTheScoreAndNotesNotScoredYet() {
+        Map<Gate, GateNumbers> numbers = Map.of(
+                Gate.G1, numbers(5, 10, 5, 10, 3),
+                Gate.G2, numbers(0, 10, 5, 10, 3));
+
+        DimensionScoreResult unscored = scorer.score(standards(), Level.L2, aT3Item, numbers);
+        DimensionScoreResult scored = scorerWithG2Scored.score(standards(), Level.L2, aT3Item, numbers);
+
+        assertEquals(2, unscored.trail().scoreBeforeGates());
+        assertEquals(2, unscored.score());
+        assertEquals(GateOutcome.FAR_MISS, unscored.gates().get(1).outcome());
+        assertFalse(unscored.gates().get(1).scored());
+        assertTrue(unscored.trail().notes().contains("G2 not scored yet"));
+        assertTrue(unscored.trail().notes().stream().noneMatch(note -> note.contains("gate")));
+        assertEquals(0, scored.score());
+        assertTrue(scored.gates().get(1).scored());
+        assertTrue(scored.trail().notes().contains("check: G2 far"));
+        assertFalse(scored.trail().notes().contains("G2 not scored yet"));
+    }
+
+    @Test
+    void aCloseMissOfAnUnscoredGateLeavesAScoreOfTwo() {
+        Map<Gate, GateNumbers> numbers = Map.of(
+                Gate.G1, numbers(5, 10, 5, 10, 3),
+                Gate.G2, numbers(3, 10, 5, 10, 3));
+
+        DimensionScoreResult result = scorer.score(standards(), Level.L2, aT3Item, numbers);
+
+        assertEquals(2, result.score());
+        assertTrue(result.trail().notes().contains("G2 not scored yet"));
+        assertTrue(result.trail().notes().contains("changes tests stands in for adds a regression test"));
     }
 
     @Test
@@ -60,7 +97,7 @@ class DimensionScorerTest {
         DimensionScoreResult result = scorer.score(standards(), Level.L2, aT3Item, numbers);
 
         assertEquals(2, result.score());
-        assertTrue(result.trail().notes().contains("gate unverified: G1"));
+        assertTrue(result.trail().notes().contains("check unverified: G1"));
     }
 
     @Test
@@ -70,7 +107,8 @@ class DimensionScorerTest {
         GateResult g4 = result.gates().get(2);
         assertEquals(Gate.G4, g4.gate());
         assertEquals(UnverifiedReason.NOT_CALCULATED, g4.unverifiedReason());
-        assertTrue(result.trail().notes().contains("gate unverified: G4"));
+        assertFalse(g4.scored());
+        assertTrue(result.trail().notes().contains("check unverified: G4"));
     }
 
     @Test

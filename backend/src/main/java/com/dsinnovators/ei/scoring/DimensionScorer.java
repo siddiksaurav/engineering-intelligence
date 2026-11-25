@@ -69,12 +69,16 @@ public final class DimensionScorer {
         return gateCheck.check(mappedGate.gate(), numbers);
     }
 
-    /** A far miss gives 0, a close miss turns a 2 into a 1, nothing else changes the score. */
+    /**
+     * A far miss gives 0, a close miss turns a 2 into a 1, nothing else changes the score. A gate that is not scored
+     * never counts (decision 316).
+     */
     private static int applyGates(int score, List<GateResult> gates) {
-        if (hasOutcome(gates, GateOutcome.FAR_MISS)) {
+        List<GateResult> scoredGates = gates.stream().filter(GateResult::scored).toList();
+        if (hasOutcome(scoredGates, GateOutcome.FAR_MISS)) {
             return 0;
         }
-        if (hasOutcome(gates, GateOutcome.CLOSE_MISS)) {
+        if (hasOutcome(scoredGates, GateOutcome.CLOSE_MISS)) {
             return Math.min(score, 1);
         }
         return score;

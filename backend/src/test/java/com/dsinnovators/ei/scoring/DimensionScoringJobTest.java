@@ -1,6 +1,7 @@
 package com.dsinnovators.ei.scoring;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -135,6 +136,52 @@ class DimensionScoringJobTest extends DatabaseTest {
         long secondRun = run(QUARTER_ARGUMENTS).get("id").longValue();
 
         assertEquals("CLOSE_MISS", gateOutcome(secondRun, "G1"));
+    }
+
+    @Test
+    void switchingG2OnInSettingsLowersTheScore() throws Exception {
+        rows.itemTier(rows.testChange(ada, 3, "2026-07-03"), "T3");
+        for (int number = 6; number <= 9; number++) {
+            long author = number <= 7 ? ada : grace;
+            rows.pullRequest(number, 1, number <= 7 ? 11 : 12, number <= 7 ? "ada" : "grace", "2026-07-1" + number);
+            rows.item("bug_fix", author, "2026-07-1" + number, false, null, number);
+        }
+        rows.testChange(grace, 8, "2026-07-18");
+        rows.testChange(grace, 9, "2026-07-19");
+        insertSetting(
+                "scoring.gate_limits",
+                "{\"G1\":{\"passWithinPoints\":100,\"farMissBeyondPoints\":100},"
+                        + "\"G2\":{\"passWithinPoints\":10,\"farMissBeyondPoints\":25}}");
+        long unscoredRun = run(QUARTER_ARGUMENTS).get("id").longValue();
+
+        assertEquals("FAR_MISS", gateOutcome(unscoredRun, "G2"));
+        assertFalse(gateScored(unscoredRun, "G2"));
+        assertEquals(2, scoreRow(unscoredRun, ada, STANDARDS, "L1").get("score"));
+        assertTrue(scoreRow(unscoredRun, ada, STANDARDS, "L1")
+                .get("trail")
+                .toString()
+                .contains("G2 not scored yet"));
+
+        insertSetting("scoring.gate_scored", "{\"G1\":true,\"G2\":true}");
+        long scoredRun = run(QUARTER_ARGUMENTS).get("id").longValue();
+
+        assertEquals("FAR_MISS", gateOutcome(scoredRun, "G2"));
+        assertTrue(gateScored(scoredRun, "G2"));
+        assertEquals(0, scoreRow(scoredRun, ada, STANDARDS, "L1").get("score"));
+        assertTrue(scoreRow(scoredRun, ada, STANDARDS, "L1")
+                .get("trail")
+                .toString()
+                .contains("check: G2 far"));
+    }
+
+    private boolean gateScored(long runId, String gate) throws Exception {
+        String gates = scoreRow(runId, ada, STANDARDS, "L1").get("gates").toString();
+        for (JsonNode result : JSON.readTree(gates)) {
+            if (gate.equals(result.get("gate").stringValue())) {
+                return result.get("scored").booleanValue();
+            }
+        }
+        throw new AssertionError("No result of gate " + gate + " in " + gates);
     }
 
     private String gateOutcome(long runId, String gate) throws Exception {

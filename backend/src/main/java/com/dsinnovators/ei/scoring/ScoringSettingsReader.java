@@ -36,12 +36,16 @@ public class ScoringSettingsReader {
     }
 
     public ScoringSettings in(Quarter quarter) {
+        PresenceThreshold presenceThreshold = presenceThreshold(quarter);
+        Map<Tier, Integer> featureWorkWeights = featureWorkWeights(quarter);
+        Set<EvidenceType> frequentEvidenceTypes = frequentEvidenceTypes(quarter);
+        Map<String, Integer> t3ItemsNeededAtLevel3 = t3ItemsNeededAtLevel3(quarter);
         Map<Gate, GateLimits> gateLimits = gateLimits(quarter);
         return new ScoringSettings(
-                presenceThreshold(quarter),
-                featureWorkWeights(quarter),
-                frequentEvidenceTypes(quarter),
-                t3ItemsNeededAtLevel3(quarter),
+                presenceThreshold,
+                featureWorkWeights,
+                frequentEvidenceTypes,
+                t3ItemsNeededAtLevel3,
                 gateLimits,
                 gateScored(quarter, gateLimits.keySet()),
                 settings.getInt(GATE_MINIMUM_DEVELOPERS, quarter),

@@ -5,6 +5,8 @@ import java.util.List;
 /**
  * One gate checked for a person, with every number the result rests on.
  *
+ * @param scored whether the result may lower the score; false for a switched-off gate (decision 316) and for a gate
+ *     that is not calculated. A stored trail written before F16 has no such field.
  * @param repositoryTestedPullRequests numbers of the repository's tested pull requests of the kind
  * @param repositoryPullRequests numbers of all the repository's pull requests of the kind
  * @param developersInGroup person ids of the developers counted in the group
@@ -20,6 +22,7 @@ import java.util.List;
 public record GateResult(
         Gate gate,
         GateOutcome outcome,
+        boolean scored,
         UnverifiedReason unverifiedReason,
         List<Integer> personTestedPullRequests,
         List<Integer> personPullRequests,
@@ -39,6 +42,7 @@ public record GateResult(
         return new GateResult(
                 gate,
                 GateOutcome.UNVERIFIED,
+                false,
                 UnverifiedReason.NOT_CALCULATED,
                 List.of(),
                 List.of(),
