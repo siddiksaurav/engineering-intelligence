@@ -25,6 +25,7 @@ public class ScoringSettingsReader {
     private static final String FREQUENT_EVIDENCE_TYPES = "scoring.frequent_evidence_types";
     private static final String T3_ITEMS_NEEDED_AT_L3 = "scoring.t3_items_needed_at_l3";
     private static final String GATE_LIMITS = "scoring.gate_limits";
+    private static final String GATE_SCORED = "scoring.gate_scored";
     private static final String GATE_MINIMUM_DEVELOPERS = "scoring.gate_minimum_developers";
     private static final String GATE_MINIMUM_PULL_REQUESTS = "scoring.gate_minimum_pull_requests_per_developer";
 
@@ -35,12 +36,14 @@ public class ScoringSettingsReader {
     }
 
     public ScoringSettings in(Quarter quarter) {
+        Map<Gate, GateLimits> gateLimits = gateLimits(quarter);
         return new ScoringSettings(
                 presenceThreshold(quarter),
                 featureWorkWeights(quarter),
                 frequentEvidenceTypes(quarter),
                 t3ItemsNeededAtLevel3(quarter),
-                gateLimits(quarter),
+                gateLimits,
+                gateScored(quarter, gateLimits.keySet()),
                 settings.getInt(GATE_MINIMUM_DEVELOPERS, quarter),
                 settings.getInt(GATE_MINIMUM_PULL_REQUESTS, quarter));
     }
@@ -98,6 +101,20 @@ public class ScoringSettingsReader {
             }
         }
         return limits;
+    }
+
+    private Map<Gate, Boolean> gateScored(Quarter quarter, Set<Gate> gatesWithLimits) {
+        JsonNode value = settings.getJson(GATE_SCORED, quarter);
+        Map<Gate, Boolean> scored = new EnumMap<>(Gate.class);
+        for (Gate gate : gatesWithLimits) {
+            JsonNode switchOfGate = value.get(gate.name());
+            if (switchOfGate == null || !switchOfGate.isBoolean()) {
+                throw new IllegalStateException("Setting '" + GATE_SCORED + "' needs true or false for gate " + gate
+                        + " in quarter " + quarter + ", got " + value);
+            }
+            scored.put(gate, switchOfGate.booleanValue());
+        }
+        return scored;
     }
 
     private static int whole(String key, JsonNode object, String field) {

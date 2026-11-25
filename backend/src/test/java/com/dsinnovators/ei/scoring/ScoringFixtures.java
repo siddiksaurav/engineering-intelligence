@@ -26,6 +26,7 @@ final class ScoringFixtures {
                 Set.of(EvidenceType.FEATURE_WORK, EvidenceType.REVIEW_COMMENT_WRITTEN, EvidenceType.TEST_CHANGE),
                 Map.of(STANDARDS, 2),
                 Map.of(Gate.G1, limits, Gate.G2, limits),
+                Map.of(Gate.G1, true, Gate.G2, false),
                 3,
                 1);
     }

@@ -39,8 +39,38 @@ class ScoringSettingsTest extends DatabaseTest {
                 settings.frequentEvidenceTypes());
         assertEquals(Map.of("engineering_standards_and_system_health", 2), settings.t3ItemsNeededAtLevel3());
         assertEquals(Map.of(Gate.G1, new GateLimits(10, 25), Gate.G2, new GateLimits(10, 25)), settings.gateLimits());
+        assertEquals(Map.of(Gate.G1, true, Gate.G2, false), settings.gateScored());
         assertEquals(3, settings.gateMinimumDevelopers());
         assertEquals(1, settings.gateMinimumPullRequestsPerDeveloper());
+    }
+
+    @Test
+    void readsWhichGatesAreScored() {
+        replace("scoring.gate_scored", "{\"G1\": true, \"G2\": false}");
+        assertEquals(Map.of(Gate.G1, true, Gate.G2, false), reader.in(Q3_2026).gateScored());
+
+        replace("scoring.gate_scored", "{\"G1\": true, \"G2\": true}");
+        assertEquals(Map.of(Gate.G1, true, Gate.G2, true), reader.in(Q3_2026).gateScored());
+    }
+
+    @Test
+    void aGateWithLimitsAndNoEntryInTheSwitchFailsNamingTheGateAndTheQuarter() {
+        replace("scoring.gate_scored", "{\"G1\": true}");
+
+        IllegalStateException e = assertThrows(IllegalStateException.class, () -> reader.in(Q3_2026));
+
+        assertTrue(e.getMessage().contains("scoring.gate_scored"));
+        assertTrue(e.getMessage().contains("G2"));
+        assertTrue(e.getMessage().contains("2026-Q3"));
+    }
+
+    @Test
+    void aSwitchThatIsNotTrueOrFalseFailsNamingTheGate() {
+        replace("scoring.gate_scored", "{\"G1\": true, \"G2\": \"no\"}");
+
+        IllegalStateException e = assertThrows(IllegalStateException.class, () -> reader.in(Q3_2026));
+
+        assertTrue(e.getMessage().contains("G2"));
     }
 
     @Test

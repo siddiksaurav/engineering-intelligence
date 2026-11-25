@@ -38,7 +38,7 @@ class ScoringSchemaTest extends DatabaseTest {
     }
 
     @Test
-    void theSevenScoringSettingsAreSeeded() {
+    void theEightScoringSettingsAreSeeded() {
         List<String> keys =
                 jdbc.queryForList("select key from setting where key like 'scoring.%' order by key", String.class);
         assertEquals(
@@ -48,6 +48,7 @@ class ScoringSchemaTest extends DatabaseTest {
                         "scoring.gate_limits",
                         "scoring.gate_minimum_developers",
                         "scoring.gate_minimum_pull_requests_per_developer",
+                        "scoring.gate_scored",
                         "scoring.presence_threshold",
                         "scoring.t3_items_needed_at_l3"),
                 keys);
