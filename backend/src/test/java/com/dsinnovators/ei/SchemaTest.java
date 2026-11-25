@@ -36,6 +36,7 @@ class SchemaTest extends DatabaseTest {
                 String.class);
         assertEquals(
                 List.of(
+                        "blind_check_item",
                         "data_source",
                         "dimension",
                         "dimension_evidence_type",
@@ -44,6 +45,7 @@ class SchemaTest extends DatabaseTest {
                         "evidence_item",
                         "evidence_item_link",
                         "evidence_item_source",
+                        "human_label",
                         "identity_proposal",
                         "job_run",
                         "judgment",
@@ -53,6 +55,7 @@ class SchemaTest extends DatabaseTest {
                         "project",
                         "pull_request_work_item",
                         "raw_record",
+                        "reason_mark",
                         "setting"),
                 tables);
     }
