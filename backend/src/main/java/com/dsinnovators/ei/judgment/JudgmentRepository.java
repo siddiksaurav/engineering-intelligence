@@ -15,6 +15,8 @@ interface JudgmentRepository extends Repository<Judgment, Long> {
 
     Judgment save(Judgment judgment);
 
+    Optional<Judgment> findById(Long id);
+
     boolean existsByKindAndInputHashAndJudgedBy(JudgmentKind kind, String inputHash, JudgedBy judgedBy);
 
     @Query("""
