@@ -113,6 +113,8 @@ export type GateResult = {
   minimumDevelopers: number;
   limits: GateLimits | null;
   pullRequestsWithoutDigest: number[];
+  /** False for a check that is shown but never lowers the score (decision 322); absent in a run before F16, which scored every check. */
+  scored?: boolean;
   note: string | null;
 };
 

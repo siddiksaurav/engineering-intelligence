@@ -1,6 +1,6 @@
 import { Panel } from "@/components/Panel";
 import type { GateName, GateResult } from "@/lib/profile";
-import { gateWords, sharePoints } from "@/lib/profileText";
+import { gateWords, isShownNotScored, sharePoints } from "@/lib/profileText";
 import { Drill, ofPullRequests } from "./Drill";
 import type { SummariesById } from "./ItemReferences";
 import styles from "./profile.module.css";
@@ -60,7 +60,10 @@ function Check({
     <article className={styles.check} data-outcome={gate.outcome}>
       <div className={styles.checkHead}>
         <h3 className={styles.checkTitle}>{title}</h3>
-        <span className={styles.outcome}>{OUTCOME_LABELS[gate.outcome]}</span>
+        <div className={styles.checkResult}>
+          <span className={styles.outcome}>{OUTCOME_LABELS[gate.outcome]}</span>
+          {isShownNotScored(gate) && <span className={styles.notScored}>not scored</span>}
+        </div>
       </div>
       <p className={styles.checkDetail}>{detail}</p>
       {verified &&

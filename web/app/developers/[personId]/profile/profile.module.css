@@ -333,9 +333,18 @@
 
 .checkHead {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+}
+
+.checkResult {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 6px;
 }
 
 .checkTitle {
@@ -373,6 +382,15 @@
 .check[data-outcome="FAR_MISS"] .outcome {
   background: var(--critical-wash);
   color: var(--critical);
+}
+
+.notScored {
+  flex: none;
+  padding: 2px 8px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--ink-3);
+  font-size: 0.75rem;
 }
 
 .unverifiedLine {
