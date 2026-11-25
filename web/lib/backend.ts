@@ -10,7 +10,7 @@ export type WriteResult<T> =
 /** What the backend answered, or that it could not be reached. The body is read as text. */
 export type BackendAnswer = { status: "answered"; httpStatus: number; body: string; url: string } | { status: "down" };
 
-export type BackendRequest = { method?: string; headers?: Record<string, string>; body?: string };
+export type BackendRequest = { method?: string; headers?: Record<string, string>; body?: BodyInit };
 
 const DEFAULT_TIMEOUT_MS = 5000;
 

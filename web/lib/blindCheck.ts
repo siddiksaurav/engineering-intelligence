@@ -1,4 +1,4 @@
-import { readBackend, type BackendResult } from "./backend";
+import { readBackend, sendBackend, writeBackend, type BackendResult } from "./backend";
 import type { ComplexityName, ProblemVerdict } from "./items";
 import { percent } from "./profileText";
 
@@ -111,4 +111,38 @@ export async function fetchBlindCheck(
 /** A rate in words: "21 of 28, 75%"; without a share only the count. */
 export function rateWords(rate: Rate): string {
   return rate.share === null ? `${rate.count} of ${rate.of}` : `${rate.count} of ${rate.of}, ${percent(rate.share)}`;
+}
+
+/** One wrong row of an uploaded file, as the backend names it. */
+export type WrongRow = { line: number; itemId: string | null; value: string; problem: string };
+
+/** What the upload form shows after an upload: nothing yet, the counts of the import, or why the file was refused. */
+export type UploadState =
+  | { status: "idle" }
+  | { status: "imported"; labeledNow: number; alreadyLabeled: number; notLabeledYet: number }
+  | { status: "refused"; message: string; problems: WrongRow[] };
+
+/** The wrong rows in the body of a refused import; none when the body holds no list of them. */
+export function wrongRowsOf(body: unknown): WrongRow[] {
+  const problems = typeof body === "object" && body !== null ? (body as { problems?: unknown }).problems : undefined;
+  return Array.isArray(problems) ? (problems as WrongRow[]) : [];
+}
+
+/** The file of the sample, or why there is none. Picks the sample first, which changes nothing once it exists. */
+export type SampleFile =
+  { status: "ok"; csv: string } | { status: "refused"; httpStatus: number; message: string } | { status: "down" };
+
+export async function fetchSampleFile(baseUrl: string | undefined, fetchFn: typeof fetch = fetch): Promise<SampleFile> {
+  const picked = await writeBackend<unknown>(baseUrl, "/api/blind-check/sample", { method: "POST" }, fetchFn);
+  if (picked.status !== "ok") {
+    return picked;
+  }
+  const file = await sendBackend(baseUrl, "/api/blind-check/sample.csv", {}, fetchFn);
+  if (file.status === "down") {
+    return file;
+  }
+  if (file.httpStatus < 200 || file.httpStatus > 299) {
+    return { status: "refused", httpStatus: 502, message: `The backend answered HTTP ${file.httpStatus} for the file` };
+  }
+  return { status: "ok", csv: file.body };
 }
