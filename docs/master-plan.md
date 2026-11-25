@@ -481,7 +481,7 @@ Update this table when a feature changes state. States: not started, in design, 
 | F13 | Accuracy measurement | dropped (decision 80) | | |
 | F14 | Interface redesign with charts | done | `docs/features/F14-interface-redesign/design.md` | `docs/features/F14-interface-redesign/plan.md` |
 | F15 | Deck-style pages on existing data | done | `docs/features/F15-deck-style-pages/design.md` | `docs/features/F15-deck-style-pages/plan.md` |
-| F16 | Spec v1.6 alignment | not started | | |
+| F16 | Spec v1.6 alignment | in design | `docs/features/F16-spec-v1.6-alignment/design.md` | |
 
 ## 8. Glossary
 
