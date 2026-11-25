@@ -7,6 +7,7 @@ import { typeTitle } from "@/lib/evidenceSections";
 import { fetchItem, type ItemDetail } from "@/lib/items";
 import { typeColor } from "@/lib/palette";
 import { JudgmentView } from "./JudgmentView";
+import { YourLabel } from "./YourLabel";
 import styles from "./item.module.css";
 
 // Read on every request, on the server. The browser never calls the backend.
@@ -76,16 +77,19 @@ function Item({ item }: { item: ItemDetail }) {
         <h2>AI judgment</h2>
         <JudgmentView item={item} />
       </section>
-      <aside className={styles.sources}>
-        <h2>Sources</h2>
-        <ul className={styles.links}>
-          {item.links.map((link) => (
-            <li key={link.url}>
-              <a href={link.url}>{link.label}</a>
-            </li>
-          ))}
-        </ul>
-      </aside>
+      <div className={styles.side}>
+        <YourLabel item={item} />
+        <aside className={styles.sources}>
+          <h2>Sources</h2>
+          <ul className={styles.links}>
+            {item.links.map((link) => (
+              <li key={link.url}>
+                <a href={link.url}>{link.label}</a>
+              </li>
+            ))}
+          </ul>
+        </aside>
+      </div>
     </div>
   );
 }
