@@ -1,6 +1,6 @@
 # F16 Spec v1.6 alignment: design
 
-State: draft
+State: approved on 2026-11-25, through the question brief
 
 ## Goal
 
@@ -92,9 +92,12 @@ No new table. One migration, `V14`, adds one setting row (the G2 switch). The an
 | --- | --- | --- |
 | `workType` | one of the 13 work types | model |
 | `problems[]` | at least one; each has `name`, `depth` (`routine`, `answer_exists`, `no_ready_answer`), `depthReason`, `quote`, `source`, `earlierExample` | model, except `earlierExample`, which the system sets to `not_checked` (decision 303) |
-| how the problems affect each other | see open point Q5 | model |
+| `problemsAffectEachOther`, `problemsAffectEachOtherReason` | one yes or no for the item, and one sentence that names the problems and says why (decision 324) | model |
 | `mistakesStayHidden`, `mistakesStayHiddenReason` | true when the work is a design whose mistakes stay hidden across the system | model |
-| `complexity` | `low`, `medium`, `high`, `very_high`; key and values unchanged, so scoring and analytics read on | see open point Q4 |
+| `reachesAcrossProjects` | true when the problems reach across projects or the organization | model |
+| `thinEvidence` | true when the model could not really see the problems of the item (decision 321) | model |
+| `complexity` | `low`, `medium`, `high`, `very_high`; key and values unchanged, so scoring and analytics read on | model, by its own judgment (decision 323) |
+| `complexityByTable` | what the table of spec 6.2 gives for the listed depths and flags; information only, nothing reads it for a score | system |
 | `reason` | one to four sentences; names the nearest of the five examples | model |
 | `judgedOnPartialInput`, `leftOutPullRequests` | as in v1 | system |
 
@@ -105,14 +108,32 @@ The new input hash (new prompt version, new text) means every item is judged aga
 ## Main flows
 
 1. **Input.** Under each `[PR-n]` part the text gets two more lines from the stored digest: `Digest reason:` and `Digest facts:` (each fact with its file path when it has one). Nothing else changes: no diff, no file list, no line count.
-2. **Prompt v2.** Task; what is given; move 1 list the distinct problems (one to eight); move 2 the depth table; move 3 the complexity table and the meaning of "affect each other"; the five examples; the rules; work type (as v1); what to quote; style. The v1 rubric of modules, schema change and integration is gone.
+2. **Prompt v2.** See "The prompt" below.
 3. **Answer.** `FeatureWorkAnswer` reads and checks v2: at least one problem, every enum spelled exactly, a non-blank name and depth reason per problem. An invalid answer is asked once more, as today.
-4. **Complexity.** See open point Q4.
+4. **Complexity.** The model picks it and the code stores it as given; no answer is refused because its complexity differs from the table (decision 323). The code also applies the table of spec 6.2 to the answer and stores the result as `complexityByTable`: `very_high` when `reachesAcrossProjects`; else `high` when a problem is `no_ready_answer`, or two or more are `answer_exists` and `problemsAffectEachOther`, or `mistakesStayHidden`; else `medium` when the deepest problem is `answer_exists`; else `low`. The tier is read from the model's `complexity`.
 5. **Store.** As today, with the value above and one fact per problem.
-6. **Item page.** For a `feature_work_complexity` judgment with `problems`: a list "Problems solved", each with its name, a depth chip (Routine, Answer exists, No ready answer), the depth reason, the quote linked to its source, and the small line "earlier example not checked". Under the list: whether the problems affect each other and whether mistakes stay hidden, with the reason of each when true. A judgment without `problems` (a v1 row on another database) shows as today.
-7. **G2 not scored.** The scorer reads the switch per gate. A gate that is calculated but not scored keeps its numbers and its outcome on the result, carries `scored: false`, never lowers the score, and its note is "G2 not scored yet" whatever its outcome. The stand-in note "changes tests stands in for adds a regression test" stays, because G2 is still shown. The "why this score" and "next step" lines of the profile leave an unscored check out.
+6. **Item page.** For a `feature_work_complexity` judgment with `problems`: a list "Problems solved", each with its name, a depth chip (Routine, Answer exists, No ready answer), the depth reason, the quote linked to its source, and the small line "earlier example not checked". Under the list: whether the problems affect each other and whether mistakes stay hidden, with the reason of each when true; "thin evidence" when the mark is set; and, only when it differs from the AI's complexity, the line "The table of spec 6.2 would give Medium." A judgment without `problems` (a v1 row on another database) shows as today.
+7. **G2 not scored.** The scorer reads the switch per gate. A gate that is calculated but not scored keeps its numbers and its outcome on the result, carries `scored: false`, never lowers the score, and its note is "G2 not scored yet" whatever its outcome. On the profile its pill shows the result as today (for example "Far miss") with a small tag "not scored" next to it (decision 322). The stand-in note "changes tests stands in for adds a regression test" stays, because G2 is still shown. The "why this score" and "next step" lines of the profile leave an unscored check out.
 8. **Names.** Trail notes: "check: G1 far", "check unverified: G4"; "held: G1" stays. Web texts: "Score before checks", "This check is not calculated in the PoC.", "The check has no result."
-9. **Run on `ei_latest`.** Dump the database first. Start the backend with `POSTGRES_DB=ei_latest JUDGMENT_MODE=exchange` (V14 is applied at start). Follow the steps of `/judge feature-work` until nothing waits. Run `dimension-scoring` for 2026-Q3. Count the items per complexity.
+9. **Run on `ei_latest`.** Dump the database first. Start the backend with `POSTGRES_DB=ei_latest JUDGMENT_MODE=exchange` (V14 is applied at start). Follow the steps of `/judge feature-work` until nothing waits; the subagents run on Opus (decision 326). Run `dimension-scoring` for 2026-Q3. Count the items per complexity.
+
+### The prompt (`feature-work-complexity/v2`)
+
+The file is written in the plain style of v1 and holds, in this order:
+
+1. **Task.** Judge one piece of Feature work of OpenProject: list the problems it had to solve, give each a depth, then give the complexity and the work type. Answer with one JSON object of the schema.
+2. **What you are given.** As v1, plus the digest reason and digest facts under each `[PR-n]`. The parts are the only evidence.
+3. **Move 1, the problems.** One to eight distinct problems the work had to solve, each named in a few words. A problem is something that had to be worked out, not a file, a ticket or a pull request. All tasks and pull requests of the item are read together: how the tickets were cut changes nothing.
+4. **Move 2, the depth.** The depth table of spec 6.2 with its examples. The model cannot see the repository, so (decision 320): a problem is `routine` only when it is standard practice that every developer on the stack knows (Ruby on Rails, Angular, PostgreSQL), or when the input itself shows an earlier solved example in the project ("like the existing ...", "same as for ..."). Otherwise a problem that a tool or a well-known pattern covers is `answer_exists`. `no_ready_answer` needs evidence in the input that no tool support and no known pattern fitted. New to the person is not new to the project. Each problem gets a `depthReason` of one sentence, a `quote` copied exactly from the input (empty when no text shows it) and the `source` key of the part it comes from.
+5. **Move 3, the complexity.** The complexity table of spec 6.2 and the sentence on "affect each other", given as guidance. The model weighs the problems, their depths and how they hang together, places the item among the five examples and picks the complexity by its own judgment. It may depart from the table when the evidence asks for it and then says why in the reason (decision 323). `problemsAffectEachOther`, `mistakesStayHidden` and `reachesAcrossProjects` are answered from the evidence, each with its reason sentence where the schema has one.
+6. **The five examples** of spec 6.2, as a table, word for word.
+7. **The rules** of spec 6.2: size is not complexity (no line counts are given and none may be estimated); merged means accepted; the work must leave a trace; complexity does not depend on how the tickets were cut; new to the person is not new to the project. "The first solution gets the credit" is stated with the limit above: the repository cannot be searched.
+8. **Thin evidence** (decision 321). When the input is too thin to really see the problems, the model still judges as for any item, with no push toward a lower depth, sets `thinEvidence` to true and says in the reason what was missing.
+9. **Work type**, the 13 types, as v1. A work item of type Bug is never `feature`.
+10. **Reason and confidence.** The reason is one to four sentences: why this complexity, and which of the five examples the item is nearest to. Confidence as v1.
+11. **Style**, as v1.
+
+The schema is strict (`additionalProperties: false`, every field required): `workType`, `problems[]` (`name`, `depth`, `depthReason`, `quote`, `source`), `problemsAffectEachOther`, `problemsAffectEachOtherReason`, `mistakesStayHidden`, `mistakesStayHiddenReason`, `reachesAcrossProjects`, `thinEvidence`, `complexity`, `reason`, `confidence`. The two reason texts may be empty when their flag is false.
 
 ## Edge cases
 
@@ -122,7 +143,7 @@ The new input hash (new prompt version, new text) means every item is judged aga
 - An item whose input is cut for size: `judgedOnPartialInput` as today.
 - A database that still holds v1 judgments (the Compose `ei`): pages keep working; the item page shows no problem list for them.
 - The switch setting has no entry for a calculated gate: the scoring run fails and names the gate and the quarter. No default lives in code.
-- G2 unverified (fewer than three developers) while not scored: the note is still "G2 not scored yet"; the pill shows what open point Q3 decides.
+- G2 unverified (fewer than three developers) while not scored: the note is still "G2 not scored yet"; the pill says "Unverified" with the tag "not scored".
 - Scores stored by an earlier run keep "gate" in their notes. The pages read the newest run only; the run of flow 9 replaces them. On `ei` they stay until scoring runs there again.
 - "A test gate in CI for a module" on the next-step line is the wording of spec v1.6 6.4 for a T3 Test change. It is another meaning of the word and stays.
 
@@ -130,13 +151,13 @@ The new input hash (new prompt version, new text) means every item is judged aga
 
 Tests (written first):
 - `FeatureWorkAnswerTest`: reads a v2 answer; refuses no problem, an unknown depth, a blank name; `toValue` holds the problems with `earlierExample: not_checked`.
-- The complexity rule (open point Q4): all routine gives low; deepest answer exists gives medium; one no ready answer gives high; two answer exists that affect each other give high; mistakes stay hidden gives high; the five examples of spec 6.2 as five cases.
+- The table of spec 6.2 (`complexityByTable`): all routine gives low; deepest answer exists gives medium; one no ready answer gives high; two answer exists that affect each other give high; mistakes stay hidden gives high; reaches across projects gives very high; the five examples of spec 6.2 as five cases. An answer whose `complexity` differs from the table is accepted and stored with both values.
 - `FeatureWorkInputTest`: the text holds the digest reason and facts of each PR; no line count.
 - `FeatureWorkJudgeTest`: the judgment has prompt version `feature-work-complexity/v2`, one fact per problem with a link, the tier from the table; a v1 judgment of the same item is superseded.
 - `PromptLibraryTest`: v2 prompt and schema load, hashes pinned, the schema is strict, the prompt names the three depths, the four complexities, the 13 work types and the five examples.
 - `DimensionScorerTest`: with G2 not scored, a G2 far miss leaves the score as it is and the notes hold "G2 not scored yet" (master plan "Done when"); with the switch on, the far miss gives 0. `ScoreNotesTest`: no note holds "gate".
 - `DimensionScoringJobTest`: the switch is read from `setting`; changing the row changes the score without a code change.
-- Web: `JudgmentView` shows problems, depths and "earlier example not checked"; `QualityChecksSection` shows G2 as open point Q3 decides; `Trail` says "Score before checks"; `profileText` leaves an unscored check out of the next step.
+- Web: `JudgmentView` shows problems, depths and "earlier example not checked"; `QualityChecksSection` shows G2 with its result pill and the tag "not scored"; `Trail` says "Score before checks"; `profileText` leaves an unscored check out of the next step.
 
 Master plan "Done when", line by line:
 1. Every Feature work item of `ei_latest` has a current `feature-work-complexity/v2` judgment with at least one problem and a depth on each: SQL count after flow 9.
@@ -145,58 +166,25 @@ Master plan "Done when", line by line:
 4. No screen and no trail note says "gate": a search of `web/` texts (the spec 6.4 wording above is the one exception) and a SQL search of the notes of the newest scoring run.
 5. The count of items at Low, Medium and High is in `notes.md`, with what it means for F09 (decision 307).
 
-## Open points
+## Decisions
 
-### Business questions
+From the question brief (user, 25 Nov 2026):
+- 320 (Q1). Without a repository search the AI assumes the project had no earlier example: beyond standard practice of the stack a problem is "answer exists", unless the input shows an earlier example.
+- 321 (Q2). An item with thin evidence is judged normally, with no push toward the lower depth, and marked `thinEvidence`.
+- 322 (Q3). The profile shows G2 with its result pill and a small tag "not scored".
+- 323 (Q4). The AI decides the complexity itself and reasons on it; the table and the five examples of spec 6.2 are guidance. The code derives nothing and refuses nothing; it stores what the table would give as `complexityByTable`, for information. Replaces decision 313 as a rule on the complexity.
+- 326 (Q7). Opus answers the Feature work requests in exchange mode.
 
-Q1. The AI cannot search the repository (decision 303). When the tickets and digests do not say whether OpenProject already had a solved example of a problem, what does the AI assume?
-- A. It assumes an earlier example exists. OpenProject is more than ten years old; a problem is "answer exists" or deeper only when the trace shows it is new to the project (a new integration, a new dependency, a first of its kind named in the text). Risk: real first-time work with a thin trace is judged Routine.
-- B. It assumes no earlier example. Anything beyond standard practice of the stack is "answer exists". Risk: much ordinary work becomes Medium or High.
-- Recommended: A. It matches the rule "the work must leave a trace" and keeps Routine as the default in a mature codebase.
-
-Q2. When the evidence of an item is too thin to see its problems (no description, a one-line digest), what happens?
-- A. The AI judges what it can see, chooses the lower depth, says so in the reason and sets `thinEvidence: true` on the judgment. Every item keeps a complexity.
-- B. The item gets no complexity and shows as "cannot be judged". It leaves the scores and the complexity counts.
-- Recommended: A. It is what v1 did, no item drops out of the scores, and F08 can look at the marked items apart.
-
-Q3. How does the profile show G2 while it is not scored?
-- A. The pill says "Not scored yet"; the line below gives the numbers and what the result would be ("would be a far miss").
-- B. The pill shows the result as today (Far miss) with a small "not scored" tag next to it.
-- C. Numbers only, no result.
-- Recommended: A. Nobody reads a red "Far miss" that changes nothing, and the numbers stay visible.
-
-### Technical decisions I need your direction on
-
-Q4. Who sets the complexity from the depths?
-- A. The code derives it from the depths and the two flags, by the table of spec 6.2. The model gives no complexity; it adds a flag for work that reaches across projects (Very high).
-- B. The model gives the complexity; the code checks it against the table and refuses an answer that breaks it (asked once more, then the item fails).
-- C. The code derives it and the model's own value is stored next to it, with the mismatches counted.
-- Recommended: A. The complexity can never contradict the listed depths, a later correction of one depth needs no model call, and it is how the tier is already read from the complexity.
-
-Q5. How does the answer say that problems affect each other?
-- A. One yes or no for the item, with one sentence that says which problems and why.
-- B. Each problem lists the other problems it affects.
-- Recommended: A. Simpler for the model to fill in correctly and enough to apply the rule; B is easier to get inconsistent.
-
-Q6. Do the files of `feature-work-complexity/v1` stay?
-- A. The prompt and schema files stay (42 stored judgments name them; a released prompt is never edited, decision 129). The v1 Java code that read its rubric goes.
-- B. Files and code both go; git history keeps them.
-- Recommended: A. A stored judgment should be traceable to the exact prompt that produced it.
-
-Q7. Which Claude model answers the 42 requests in exchange mode?
-- A. Opus, for this stage only. Stage 2 was planned for a strong model; 42 requests is a small cost.
-- B. Sonnet, as for the v1 run. Cheaper; the old and new spreads are then from the same model.
-- Recommended: A. This judgment is what the PoC validates.
-
-### Decisions I made myself (overrule any by number)
-
-- D310. The v2 answer has no `rubric` and no separate `facts` list. `judgment.facts` gets one fact per problem (problem, depth, quote), linked to the cited source.
-- D311. Each stored problem carries `earlierExample: "not_checked"`, set by the system, not by the model (decision 303).
-- D312. The prompt holds the two tables, the five examples and six rules of spec 6.2 (without the client-owned repositories rule). It asks for one to eight problems; the reason names the nearest example. The code refuses an answer with no problem and sets no upper limit.
-- D313. Work that is "a design whose mistakes stay hidden across the system" is High whatever the depths, as the table of spec 6.2 says. "Several" problems that affect each other means two or more.
-- D314. The Stage 2 input gets the reason and the facts of each digest. The budget of 14,000 characters stays (largest input today 7,707; a digest adds about 630). No digest of `ei_latest` states a line count (checked 25 Nov 2026).
-- D315. The G2 switch is a new setting `scoring.gate_scored` (`{"G1": true, "G2": false}`, from 2026-Q2, migration V14). `dimension_gate.applied` stays true for G2, so it is still calculated. A calculated gate missing in the setting fails the run.
-- D316. A gate result gets the field `scored`. An unscored gate keeps its numbers and outcome, never changes the score, and its note is "G2 not scored yet" whatever the outcome. The profile's "why this score" and "next step" lines leave it out.
-- D317. Trail notes: "check: G1 far", "check unverified: G4"; "held: G1" stays (spec 9.1). Rows of earlier scoring runs are not rewritten; the pages read the newest run.
-- D318. "A test gate in CI for a module" stays on the next-step line: it is the wording of spec v1.6 6.4, another meaning of the word.
-- D319. Before the run on `ei_latest` the database is dumped to a file. This session runs the steps of `/judge feature-work` itself as part of verification.
+By the session (the user found Q5 too technical; Q6 was not asked):
+- 324 (Q5). One yes or no per item for "the problems affect each other", with one sentence.
+- 325 (Q6). The prompt and schema files of `feature-work-complexity/v1` stay; the Java code only v1 used is removed.
+- 310. One fact per problem in `judgment.facts`; no `rubric`, no separate `facts` list.
+- 311. `earlierExample: "not_checked"` on each problem, set by the system.
+- 312. The prompt holds the tables, the five examples and the rules of spec 6.2; one to eight problems; no upper limit in code.
+- 313. Kept only inside the table comparison: hidden-mistakes design work is High by the table; "several" means two or more.
+- 314. The Stage 2 input gets the digest reason and facts; the budget stays.
+- 315. The G2 switch is the setting `scoring.gate_scored`, migration V14.
+- 316. A gate result gets `scored`; an unscored gate never changes the score; note "G2 not scored yet".
+- 317. Trail notes "check: G1 far", "check unverified: G4"; earlier runs are not rewritten.
+- 318. "A test gate in CI for a module" stays.
+- 319. `ei_latest` is dumped before the run; the session runs the judging.
