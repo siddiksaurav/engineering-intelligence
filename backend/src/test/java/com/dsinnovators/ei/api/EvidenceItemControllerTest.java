@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.dsinnovators.ei.DatabaseTest;
 import com.dsinnovators.ei.JobEndpointClient;
+import com.dsinnovators.ei.review.BlindCheckFixture;
 import java.net.http.HttpResponse;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
@@ -288,5 +289,43 @@ class EvidenceItemControllerTest extends DatabaseTest {
 
         assertEquals(404, response.statusCode());
         assertTrue(JobEndpointClient.json(response).get("detail").stringValue().contains("999999"));
+    }
+
+    @Test
+    void theJudgmentOfASampledItemIsHiddenUntilItsLabelIsImported() throws Exception {
+        BlindCheckFixture sampled = new BlindCheckFixture(jdbc);
+        jdbc.update("update setting set value = '1'::jsonb where key = 'blind_check.items_per_complexity'");
+        long low = sampled.judgedItem("low");
+        long medium = sampled.judgedItem("medium");
+        sampled.judgedItem("high");
+        client.post("/api/blind-check/sample");
+        long outsideTheSample = sampled.judgedItem("low");
+
+        HttpResponse<String> hiddenResponse = client.get("/api/evidence-items/" + low);
+        client.postCsv(
+                "/api/blind-check/labels",
+                "item_id,complexity,note\n" + low + ",medium,my note\n" + medium + ",cannot_judge,no ticket\n");
+        JsonNode hidden = JobEndpointClient.json(hiddenResponse);
+        JsonNode shown = detail(low);
+
+        assertEquals("hidden_until_labeled", hidden.get("judgment").get("state").stringValue());
+        assertFalse(hiddenResponse.body().contains("Reason for"), hiddenResponse.body());
+        assertTrue(hidden.get("blindCheck").get("label").isNull());
+        assertTrue(hidden.get("blindCheck").get("reasonMark").isNull());
+        assertEquals("judged", shown.get("judgment").get("state").stringValue());
+        assertEquals("low", shown.get("judgment").get("value").get("complexity").stringValue());
+        JsonNode label = shown.get("blindCheck").get("label");
+        assertEquals("medium", label.get("complexity").stringValue());
+        assertFalse(label.get("cannotJudge").booleanValue());
+        assertEquals("my note", label.get("note").stringValue());
+        assertTrue(label.get("labeledAt").isString());
+        assertTrue(shown.get("blindCheck").get("reasonMark").isNull());
+        JsonNode cannotJudge = detail(medium);
+        assertEquals("judged", cannotJudge.get("judgment").get("state").stringValue());
+        assertTrue(cannotJudge.get("blindCheck").get("label").get("cannotJudge").booleanValue());
+        assertTrue(cannotJudge.get("blindCheck").get("label").get("complexity").isNull());
+        JsonNode outside = detail(outsideTheSample);
+        assertTrue(outside.get("blindCheck").isNull());
+        assertEquals("judged", outside.get("judgment").get("state").stringValue());
     }
 }

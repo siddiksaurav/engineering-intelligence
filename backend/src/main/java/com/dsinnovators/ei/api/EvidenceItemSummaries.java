@@ -8,6 +8,8 @@ import com.dsinnovators.ei.identity.PersonSummary;
 import com.dsinnovators.ei.judgment.CurrentItemJudgments;
 import com.dsinnovators.ei.judgment.ItemJudgment;
 import com.dsinnovators.ei.judgment.JudgmentKind;
+import com.dsinnovators.ei.review.BlindCheckReader;
+import com.dsinnovators.ei.review.ItemBlindCheck;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -26,10 +28,17 @@ class EvidenceItemSummaries {
     private final PersonDirectory persons;
     private final CurrentItemJudgments judgments;
 
-    EvidenceItemSummaries(CurrentEvidenceItems evidenceItems, PersonDirectory persons, CurrentItemJudgments judgments) {
+    private final BlindCheckReader blindChecks;
+
+    EvidenceItemSummaries(
+            CurrentEvidenceItems evidenceItems,
+            PersonDirectory persons,
+            CurrentItemJudgments judgments,
+            BlindCheckReader blindChecks) {
         this.evidenceItems = evidenceItems;
         this.persons = persons;
         this.judgments = judgments;
+        this.blindChecks = blindChecks;
     }
 
     /** The summary of each id that names a row, in the order asked. An unknown id is left out. */
@@ -37,9 +46,13 @@ class EvidenceItemSummaries {
         return assemble(ids).stream().map(Assembled::summary).toList();
     }
 
-    /** The row with this id and its current judgment, or nothing when no row has the id. */
+    /**
+     * The row with this id, its current judgment and its blind check state, or nothing when no row has the id.
+     * The judgment of a sample item is hidden until the user has labeled it.
+     */
     Optional<EvidenceItemDetailResponse> detailOf(long id) {
-        return assemble(List.of(id)).stream().findFirst().map(Assembled::detail);
+        ItemBlindCheck blindCheck = blindChecks.ofItem(id).orElse(null);
+        return assemble(List.of(id)).stream().findFirst().map(assembled -> assembled.detail(blindCheck));
     }
 
     private List<Assembled> assemble(List<Long> ids) {
@@ -85,13 +98,16 @@ class EvidenceItemSummaries {
 
     private record Assembled(EvidenceItemSummaryResponse summary, EvidenceType type, ItemJudgment judgment) {
 
-        EvidenceItemDetailResponse detail() {
-            return new EvidenceItemDetailResponse(summary, judgmentResponse());
+        EvidenceItemDetailResponse detail(ItemBlindCheck blindCheck) {
+            return new EvidenceItemDetailResponse(summary, judgmentResponse(blindCheck), blindCheck);
         }
 
-        private ItemJudgmentResponse judgmentResponse() {
+        private ItemJudgmentResponse judgmentResponse(ItemBlindCheck blindCheck) {
             if (ItemJudgmentKind.of(type).isEmpty()) {
                 return ItemJudgmentResponse.notTiered();
+            }
+            if (blindCheck != null && blindCheck.label() == null) {
+                return ItemJudgmentResponse.hiddenUntilLabeled();
             }
             return judgment == null ? ItemJudgmentResponse.notJudgedYet() : ItemJudgmentResponse.judged(judgment);
         }
