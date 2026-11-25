@@ -19,7 +19,8 @@ import tools.jackson.databind.node.ObjectNode;
 /**
  * What the model reads of one Feature work item (F07 design, "The Feature work input", decisions 167
  * and 168): the work item texts and the digests of the pull requests, each part tagged with a source
- * key the model cites. No line count, no file size and no diff is ever part of it.
+ * key the model cites. The digest reason and facts of each pull request are part of it (decision 314);
+ * no line count, no file size and no diff ever is.
  *
  * @param text the user message sent to the model
  * @param hash SHA-256 over the kind, the prompt version, the text, the item row, its source records and
@@ -231,10 +232,18 @@ record FeatureWorkInput(
             text.append("; test kind ").append(digest.testKind().wireName());
             text.append("; code read in full ").append(yesNo(!digest.judgedOnPartialCode()));
             text.append("\nNature of the change: ").append(digest.natureOfChange());
+            text.append("\nDigest reason: ").append(digest.reason());
+            text.append("\nDigest facts: ").append(factsOf(digest));
             if (feature.isEmpty()) {
                 appendDescription(text, pullRequest.body(), bodyCap);
             }
             text.append("\n\n");
+        }
+
+        private static String factsOf(PullRequestDigest digest) {
+            return digest.facts().stream()
+                    .map(fact -> fact.filePath().isBlank() ? fact.text() : fact.text() + " (" + fact.filePath() + ")")
+                    .collect(Collectors.joining("; "));
         }
 
         private static void appendDescription(StringBuilder text, String description, int cap) {
