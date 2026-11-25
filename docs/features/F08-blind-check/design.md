@@ -1,6 +1,6 @@
 # F08 Blind check: design
 
-State: draft
+State: approved on 2026-11-25, through the question brief (the user asked the session to decide all questions, decision 342)
 
 ## Goal
 
@@ -20,7 +20,7 @@ The measurement behind "I validated the idea" (master plan section 1, points 2 a
 - Work type labels, repeat labeling, a second AI run, the size check, the review comment sample (`poc-plan.md` section 4; not planned, decision 308).
 - The screen where a lead corrects a judgment (master plan section 4). A reason mark changes no judgment and no score.
 - Authentication. There is one labeler, the user.
-- A new prompt version. Whether a tuning round follows is question Q8.
+- A new prompt version. No tuning round in F08 (decision 350).
 - F09. Every complexity has 6 or more items (decision 307).
 
 ## Data and tables
@@ -88,8 +88,8 @@ All three are append-only: a trigger refuses every update and delete, as on `jud
 | --- | --- | --- |
 | `id` | bigint identity | |
 | `blind_check_item_id` | bigint, references `blind_check_item` | |
-| `complexity` | text, null or one of `low`, `medium`, `high`, `very_high` | null only with `cannot_judge` (Q5) |
-| `cannot_judge` | boolean | the user could not label the item (Q5) |
+| `complexity` | text, null or one of `low`, `medium`, `high`, `very_high` | null only with `cannot_judge` |
+| `cannot_judge` | boolean | the user could not label the item |
 | `note` | text, nullable | the user's own words from the CSV |
 | `labeled_at` | timestamptz | the time of the import |
 | `supersedes_id` | bigint, unique, references `human_label` | |
@@ -101,7 +101,7 @@ All three are append-only: a trigger refuses every update and delete, as on `jud
 | `id` | bigint identity | |
 | `blind_check_item_id` | bigint, references `blind_check_item` | |
 | `reason_right` | boolean | the AI's reason is right |
-| `problem_marks` | jsonb array | one entry per problem of the judgment, in its order: `{"name": ..., "verdict": "right" / "should_be_routine" / "should_be_answer_exists" / "should_be_no_ready_answer" / "not_a_problem"}`; empty when Q2 is answered A |
+| `problem_marks` | jsonb array | one entry per problem of the judgment, in its order: `{"name": ..., "verdict": "right" / "should_be_routine" / "should_be_answer_exists" / "should_be_no_ready_answer" / "not_a_problem"}` |
 | `note` | text, nullable | |
 | `marked_at` | timestamptz | |
 | `supersedes_id` | bigint, unique, references `reason_mark` | a changed mark is a new row |
@@ -111,13 +111,13 @@ The current label or mark of an item is the row no other row supersedes.
 ### New settings (migration V15, from 2026-Q2)
 
 - `blind_check.items_per_complexity`: `10`. How many items of each of low, medium and high are picked.
-- `blind_check.targets`: `{"exactMatch": 0.70, "withinOneStep": 0.95, "reasonRight": 0.90}` (Q7).
+- `blind_check.targets`: `{"exactMatch": 0.70, "withinOneStep": 0.95, "reasonRight": 0.90}`.
 
 ## Main flows
 
 All of it runs against the database the backend is started on; for the real check that is `ei_latest`.
 
-**1. Pick the sample.** `POST /api/blind-check/sample`. Reads every current Feature work item with a current `feature_work_complexity` judgment. Per value low, medium and high it takes `blind_check.items_per_complexity` items, in the order of a hash of the item id (a fixed, arbitrary order that does not depend on the complexity or the developer). If a value has fewer items, the call is refused and names the value and the count. The picked items get their `position` from the same hash order across the whole sample, so the order of the rows says nothing about the AI's value. The rows are stored once. A second call changes nothing and answers with the stored sample (decision 330). On `ei_latest`: all 10 high, 10 of 13 low, 10 of 19 medium (Q3, Q4).
+**1. Pick the sample.** `POST /api/blind-check/sample`. Reads every current Feature work item with a current `feature_work_complexity` judgment. Per value low, medium and high it takes `blind_check.items_per_complexity` items, in the order of a hash of the item id (a fixed, arbitrary order that does not depend on the complexity or the developer). If a value has fewer items, the call is refused and names the value and the count. The picked items get their `position` from the same hash order across the whole sample, so the order of the rows says nothing about the AI's value. The rows are stored once. A second call changes nothing and answers with the stored sample (decision 330). On `ei_latest`: all 10 high, 10 of 13 low, 10 of 19 medium.
 
 **2. Export.** `GET /api/blind-check/sample.csv`. One row per `blind_check_item` in `position` order, RFC 4180, UTF-8. Columns (decision 331):
 
@@ -128,7 +128,7 @@ All of it runs against the database the backend is started on; for the real chec
 | `title` | the feature title, or the first PR title for an item with no work item |
 | `work_item` | the OpenProject link; empty for an item with no work item |
 | `pull_requests` | the GitHub links of the person's PRs, separated by one space |
-| `complexity` | empty; the user fills in `low`, `medium`, `high`, `very_high` (or `cannot_judge`, Q5) |
+| `complexity` | empty; the user fills in `low`, `medium`, `high`, `very_high` or `cannot_judge` |
 | `note` | empty; free text |
 
 No column comes from `judgment`. The export reads `judgment` only to know nothing: it does not join it at all; `blind_check_item` already holds the sample.
@@ -143,9 +143,9 @@ No column comes from `judgment`. The export reads `judgment` only to know nothin
 - A label is given once. A row whose item already has a label with another value is wrong ("item 17 is already labeled medium; a label is not changed after the AI's answer could be seen"). The same value again is skipped.
 - The answer counts: labeled now, already labeled, not labeled yet.
 
-**5. See both answers.** `GET /api/evidence-items/{id}` gains `blindCheck`: null for an item outside the sample; otherwise `{label: {complexity, cannotJudge, note, labeledAt} or null, reasonMark: {reasonRight, problemMarks, note, markedAt} or null}`. While a sampled item has no label, its `judgment` is answered with the state `hidden_until_labeled` and no other field (Q6). The item page shows "Your label" beside "AI judgment" with a line "same", "one step apart" or "two or more steps apart".
+**5. See both answers.** `GET /api/evidence-items/{id}` gains `blindCheck`: null for an item outside the sample; otherwise `{label: {complexity, cannotJudge, note, labeledAt} or null, reasonMark: {reasonRight, problemMarks, note, markedAt} or null}`. While a sampled item has no label, its `judgment` is answered with the state `hidden_until_labeled` and no other field. The item page shows "Your label" beside "AI judgment" with a line "same", "one step apart" or "two or more steps apart".
 
-**6. Mark the reason.** On the item page of a labeled item, a form under the AI judgment: "The AI's reason is right" yes or no, per problem a verdict on its depth (Q2), a note, Save. The form posts to a Next.js server action, which calls `PUT /api/evidence-items/{id}/reason-mark` (the browser still never calls the backend; decision 336). The backend refuses a mark for an item outside the sample (404) or without a label (409), and a `problem_marks` list that does not match the problems of the pinned judgment (400). A second save writes a new row that supersedes the first.
+**6. Mark the reason.** On the item page of a labeled item, a form under the AI judgment: "The AI's reason is right" yes or no, per problem a verdict on its depth, a note, Save. The form posts to a Next.js server action, which calls `PUT /api/evidence-items/{id}/reason-mark` (the browser still never calls the backend; decision 336). The backend refuses a mark for an item outside the sample (404) or without a label (409), and a `problem_marks` list that does not match the problems of the pinned judgment (400). A second save writes a new row that supersedes the first.
 
 **7. The numbers.** `GET /api/blind-check`, computed by SQL on every call, nothing stored (decision 337):
 - `sampled`, `labeled`, `cannotJudge`, `reasonMarked`.
@@ -153,7 +153,7 @@ No column comes from `judgment`. The export reads `judgment` only to know nothin
 - `tableExactMatch`: the same against `value.complexityByTable`.
 - `reasonRight`: count, of the items marked, share.
 - `confusion`: the count per pair (user's label, AI's complexity).
-- `problemVerdicts`: the count per verdict over all marked problems (Q2 B).
+- `problemVerdicts`: the count per verdict over all marked problems.
 - `thinEvidence`: exact match and reason right for the items with `thinEvidence` apart.
 - `targets` from the setting, and `disagreements`: every item where the label differs or the reason is marked wrong, with item id, title, both values, the user's note, the AI's reason and the mark's note.
 
@@ -186,86 +186,22 @@ Master plan "Done when":
 
 Other checks: the sample is balanced and stable (second call, same rows); the row order is not grouped by complexity; the import is all or nothing and names every wrong row; a label is not changed by a second import; the judgment is hidden until the label is in; a reason mark supersedes; the three tables refuse update and delete.
 
-## Open points
+## Decisions
 
-### Question brief
+By the session in the design: 328 (three append-only tables in `review`), 329 (the sample fixes the judgment), 330 (picked once by hash order, rows not grouped), 331 (CSV columns), 332 (import all or nothing, empty means not labeled yet), 333 (a label is given once), 334 (headline against the model's complexity, the table apart), 335 (within one step, denominator), 336 (reason mark through a server action), 337 (numbers computed, not stored), 338 (endpoints, not jobs), 339 (settings), 340 (labeling guide), 341 (no labeler column).
 
-**1. Business questions**
+From the question brief, decided by the session at the user's request (decision 342): 343 (complexity and a free note), 344 (reason marked per item and per problem), 345 (30 items, 10 each), 346 (thin evidence may be picked, reported apart), 347 (`cannot_judge` allowed), 348 (judgment hidden until labeled), 349 (targets 70, 95, 90), 350 (no tuning round in F08), 351 (page `/blind-check`), 352 (download and upload buttons), 353 (tooling merged first, report in a later session).
 
-Q1. What do you fill in for each item?
-A. A complexity, and a free note if you want. Fast; your reasons are in the notes only where you write one.
-B. A complexity and the depth of the hardest problem. A little slower; shows whether a disagreement comes from the depth or from the step to the complexity.
-C. A complexity and your own list of problems with depths. The richest comparison, but about twice the labeling time.
-Recommended: A. It is what the plan asks, and Q2 gets the depth detail from your reading of the AI's reasons.
+### The page `/blind-check` (decisions 351, 352)
 
-Q2. How do you mark the AI's reason after the labels are in?
-A. One mark per item: right or wrong, with a note.
-B. One mark per item, and for each problem the AI listed whether its depth is right (or which depth it should be, or "not a real problem"). About 90 problems on 30 items.
-Recommended: B. It shows where the AI goes wrong, above all whether it calls routine work "answer exists" (decision 320).
+- Header figures: sampled, labeled, reasons marked.
+- "Get the file": a download link (a Next.js route handler that passes `GET /api/blind-check/sample.csv` through; it picks the sample first when none exists) and an upload form (a server action that posts the file to `POST /api/blind-check/labels` and shows the counts or the list of wrong rows).
+- The three numbers, each with its count, its share and its target; a share is shown only when at least one item counts.
+- The table of the user's label against the AI's complexity.
+- The verdicts on the problems, and the thin-evidence numbers.
+- The disagreements, each linking to its item page. An item that is labeled and not yet marked is listed under "Reasons to mark".
+- A link to the page from the overview's navigation.
 
-Q3. Which items are in the check?
-A. 30, balanced: all 10 High, 10 of the 13 Low, 10 of the 19 Medium. About 3 hours.
-B. All 42. About 4.5 hours; no sampling, and the numbers reflect the real spread.
-Recommended: A. It is the decided size (decision 308) and keeps High from being rare.
+### How F08 closes (decision 353)
 
-Q4. Six items have thin evidence (the AI had no ticket or no description). Three of them are High.
-A. They can be picked like any other; the report gives their numbers apart.
-B. They are left out. High then has 7 items, so the sample is 7, 7, 7 or uneven.
-Recommended: A. Leaving them out makes the sample too small.
-
-Q5. May you answer "cannot judge" for an item?
-A. Yes. It is counted and listed, and left out of the percentages.
-B. No. Every item gets a complexity.
-Recommended: A. A forced guess makes the agreement number worse for no reason.
-
-Q6. Should the item page hide the AI's answer of a sampled item until its label is imported?
-A. Yes: "hidden until your label is imported". Profiles and lists still show complexities, so they stay closed.
-B. No, the order is kept by discipline alone.
-Recommended: A. A cheap guard against spoiling the check by one wrong click.
-
-Q7. Which targets does the report measure against?
-A. Exact match 70%, within one step 95%, reason right 90%, fixed now, before labeling.
-B. No targets; the report gives the numbers and you judge.
-Recommended: A. A target set after seeing the result is worth little.
-
-Q8. What happens after a poor result?
-A. F08 ends with the report. Whether a prompt tuning round follows is decided then, as its own piece of work.
-B. F08 includes one tuning round: a new prompt version, measured on the 12 items left over, which you then also label.
-Recommended: A. The report must first show what is wrong; 12 items are too few to measure a fix.
-
-Q9. Where do you see the numbers?
-A. A "Blind check" page in the web app (numbers against targets, the table of your label against the AI's, the disagreements with links) and the report.
-B. In the report only.
-Recommended: A. The disagreement list with links is how you will work through the reasons.
-
-**2. Technical decisions I need your direction on**
-
-Q10. How do you get the file and give it back?
-A. Download and upload buttons on the Blind check page.
-B. Two `curl` commands (the session can run them for you; the file lies in `data/blind-check/`).
-C. No file: a labeling page in the web app that shows the links and takes your answer. Easier on a phone, but it changes the plan (the CSV is a "Done when" line) and is more to build.
-Recommended: A, if Q9 is A; otherwise B.
-
-Q11. Labeling takes you about 3 hours, after the code is built. How does F08 close?
-A. The tooling is built, reviewed and merged now. You label and mark. A short later session checks the numbers against SQL and writes the report. F08 stays "in progress, waiting for labels" until then.
-B. The branch stays open until the labels are in, and everything merges at once.
-Recommended: A. Nothing waits on an open branch.
-
-**3. Decisions I made myself (overrule any by number)**
-
-D328. Three append-only tables in a new package `review`: `blind_check_item`, `human_label`, `reason_mark`.
-D329. The sample fixes the judgment it measures; a later judgment of the same item does not move the numbers.
-D330. The sample is picked once, in the order of a hash of the item id, and stored; the CSV rows are in that order, not grouped by complexity.
-D331. CSV columns: `item_id`, `developer`, `title`, `work_item`, `pull_requests`, `complexity`, `note`.
-D332. The import is all or nothing and names every wrong row; an empty complexity means "not labeled yet".
-D333. A label is given once; an import cannot change it.
-D334. The headline numbers compare your label with the AI's own complexity; agreement with the spec's table is a second line.
-D335. Within one step: at most one place apart in low, medium, high, very high. Denominator: the items labeled with a complexity.
-D336. The reason mark is saved from the item page through the web server; the browser still never calls the backend.
-D337. The numbers are computed on every call; nothing is stored.
-D338. Sample, export and import are plain endpoints, not jobs: they are short and carry a file.
-D339. The sample size per complexity and the targets are rows in `setting`.
-D340. A labeling guide, `docs/blind-check-labeling-guide.md`, carries the tables and rules of spec 6.2.
-D341. No labeler column: there is one labeler and no login.
-
-Reply with letters (Q1 B, Q2 A ...), "OK" for all recommendations, or your own answer.
+The pull request holds the tooling. "Done when" lines 3 and 4 wait for the user's labels: the state in the master plan is "in progress, waiting for labels" after the merge, and a later session writes the report.
