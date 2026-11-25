@@ -2,6 +2,28 @@
 
 One entry per working session, newest at the top. Each entry says what was done, what is next and what is blocked. Read the top entry first.
 
+## 25 Nov 2026: F08 Blind check, tooling shipped; waiting for the labels
+
+**Done**
+- The user asked the session to decide the whole question brief (decision 342); decisions 328 to 353.
+- Backend: migration V15 (`blind_check_item`, `human_label`, `reason_mark`, two settings), package `review`: a balanced sample of 30 picked once, the CSV export without any AI answer, the all-or-nothing import, the reason mark, the numbers (`GET /api/blind-check`).
+- Web: `/blind-check` (download, upload, the three numbers against the targets, the label against AI table, disagreements); the item page hides the AI judgment of a sampled item until its label is in, then shows both and takes the mark.
+- `docs/blind-check-labeling-guide.md`.
+- One review round: one blocking finding (the tier of a hidden item was still in the API), fixed with the small follow-ups. Backend 1,106 tests, web 308 tests.
+- Verified on a throwaway copy of `ei_latest` with made-up labels: every number equals its SQL count (`docs/features/F08-blind-check/notes.md`, "Verification"). `ei_latest` is untouched.
+
+**Checks still open (waiting for the user)**
+1. Start the backend on `ei_latest` and the web: `POSTGRES_DB=ei_latest JUDGMENT_MODE=exchange LLM_PROVIDER_2_API_KEY= java -jar backend/target/ei.jar` (after `cd backend && ./mvnw -DskipTests package`), and `cd web && BACKEND_URL=http://localhost:8080 npm run dev`.
+2. Open `localhost:3000/blind-check` only. Download the file, label the 30 rows with `docs/blind-check-labeling-guide.md` (about 3 hours), upload.
+3. Open each item from that page and mark the AI's reason.
+4. Until step 2 is done: no profile, no developers list, no compare page, no overview.
+
+**Next**
+- When the labels and marks are in: a short session checks the numbers against SQL on `ei_latest` and writes `docs/feasibility-report.md` (design flow 8, notes "What a later feature should know"). Then F08 is done.
+
+**Blocked or needed from the user**
+- The labels and the reason marks.
+
 ## 25 Nov 2026: F16 Spec v1.6 alignment shipped
 
 **Done**
