@@ -474,14 +474,14 @@ Update this table when a feature changes state. States: not started, in design, 
 | F06 | `JudgmentModel`, PR digest, AI-dependent builders | done | `docs/features/F06-pr-digest/design.md` | `docs/features/F06-pr-digest/plan.md` |
 | F07 | Feature work and review comment judgment | done | `docs/features/F07-stage-2-judgment/design.md` | `docs/features/F07-stage-2-judgment/plan.md` |
 | F08 | Blind check | not started; after F16 (decision 307) | | |
-| F09 | Full-window run (one month) | not started; only if decision 307 asks for it | | |
+| F09 | Full-window run (one month) | not started; not needed before F08: F16 gave 13 Low, 19 Medium, 10 High (decision 307) | | |
 | F10 | Analytics and hygiene | done | `docs/features/F10-analytics/design.md` | `docs/features/F10-analytics/plan.md` |
 | F11 | Scoring | done | `docs/features/F11-scoring/design.md` | `docs/features/F11-scoring/plan.md` |
 | F12 | Profile page | done | `docs/features/F12-profile-page/design.md` | `docs/features/F12-profile-page/plan.md` |
 | F13 | Accuracy measurement | dropped (decision 80) | | |
 | F14 | Interface redesign with charts | done | `docs/features/F14-interface-redesign/design.md` | `docs/features/F14-interface-redesign/plan.md` |
 | F15 | Deck-style pages on existing data | done | `docs/features/F15-deck-style-pages/design.md` | `docs/features/F15-deck-style-pages/plan.md` |
-| F16 | Spec v1.6 alignment | not started | | |
+| F16 | Spec v1.6 alignment | done | `docs/features/F16-spec-v1.6-alignment/design.md` | `docs/features/F16-spec-v1.6-alignment/plan.md` |
 
 ## 8. Glossary
 

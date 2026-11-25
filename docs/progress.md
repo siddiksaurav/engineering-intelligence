@@ -2,6 +2,26 @@
 
 One entry per working session, newest at the top. Each entry says what was done, what is next and what is blocked. Read the top entry first.
 
+## 25 Nov 2026: F16 Spec v1.6 alignment shipped
+
+**Done**
+- Question brief answered (decisions 320 to 327); decisions 310 to 319 and 324, 325 by the session. The user relaxed the spec on one point: the AI decides the complexity itself, the table of spec 6.2 is guidance, and the code only stores what the table would give (decision 323). Without a repository search the AI assumes no earlier example (320).
+- Backend: prompt and schema `feature-work-complexity/v2` (problems, depths, flags, thin evidence); the Stage 2 input also carries each digest's reason and facts; `ComplexityTable`; migration V14 with the setting `scoring.gate_scored`; G2 calculated, shown and not scored; trail notes say "check".
+- Web: the item page shows the problems and depths; the profile shows G2 with its result and the tag "not scored"; every screen text says "check".
+- One review round, nothing blocking, the small follow-ups fixed. Backend 1,061 tests, web 264 tests.
+- On `ei_latest`: the 42 Feature work items judged again by Sonnet subagents (decision 327) and scored again (runs 76 to 78). Spread: **13 Low, 19 Medium, 10 High** (before: 23, 17, 2). The model and the table of the spec agree on 39 of 42. Detail: `docs/features/F16-spec-v1.6-alignment/notes.md`, "Verification".
+
+**Checks still open (waiting for the user)**
+- None for F16.
+
+**Next**
+- `/clear`, then `/ship F08` (Blind check). F09 does not run first: every complexity has 6 or more items (decision 307).
+- The user does not open item pages of Feature work items until the F08 labels are imported.
+- For F08: no problem was judged "no ready answer", and no item went down from v1; if the blind labels show the AI too high, decision 320 is the first thing to look at.
+
+**Blocked or needed from the user**
+- Nothing. F08 needs about 3 hours of the user's labeling.
+
 ## 25 Nov 2026: spec v1.6 adopted, goal changed to a feasibility check
 
 **Done**

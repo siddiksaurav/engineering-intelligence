@@ -14,11 +14,13 @@ public final class GateCheck {
     public GateResult check(Gate gate, GateNumbers numbers) {
         GateLimits limits = Optional.ofNullable(settings.gateLimits().get(gate))
                 .orElseThrow(() -> new IllegalStateException("No gate limits in the settings for gate " + gate));
+        boolean scored = Optional.ofNullable(settings.gateScored().get(gate))
+                .orElseThrow(() -> new IllegalStateException("No scoring switch in the settings for gate " + gate));
         UnverifiedReason reason = unverifiedReason(numbers);
         if (reason != null) {
-            return result(gate, limits, numbers, GateOutcome.UNVERIFIED, reason);
+            return result(gate, scored, limits, numbers, GateOutcome.UNVERIFIED, reason);
         }
-        return result(gate, limits, numbers, outcomeOf(numbers, limits), null);
+        return result(gate, scored, limits, numbers, outcomeOf(numbers, limits), null);
     }
 
     private UnverifiedReason unverifiedReason(GateNumbers numbers) {
@@ -55,13 +57,19 @@ public final class GateCheck {
     }
 
     private GateResult result(
-            Gate gate, GateLimits limits, GateNumbers numbers, GateOutcome outcome, UnverifiedReason reason) {
+            Gate gate,
+            boolean scored,
+            GateLimits limits,
+            GateNumbers numbers,
+            GateOutcome outcome,
+            UnverifiedReason reason) {
         Double personShare = sharePercent(numbers.personTested(), numbers.personTotal());
         Double repositoryShare = sharePercent(numbers.repositoryTested(), numbers.repositoryTotal());
         Double difference = personShare == null || repositoryShare == null ? null : repositoryShare - personShare;
         return new GateResult(
                 gate,
                 outcome,
+                scored,
                 reason,
                 numbers.personTestedPullRequests(),
                 numbers.personPullRequests(),
@@ -74,7 +82,7 @@ public final class GateCheck {
                 settings.gateMinimumDevelopers(),
                 limits,
                 numbers.pullRequestsWithoutDigest(),
-                ScoreNotes.forGate(gate, outcome));
+                scored ? ScoreNotes.forGate(gate, outcome) : ScoreNotes.notScoredYet(gate));
     }
 
     private static Double sharePercent(long tested, long total) {

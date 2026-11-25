@@ -9,12 +9,13 @@ import com.dsinnovators.ei.common.CanonicalJson;
 import com.dsinnovators.ei.source.openproject.WorkPackageText;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
 class FeatureWorkInputTest {
 
-    private static final String PROMPT_VERSION = "feature-work-complexity/v1";
+    private static final String PROMPT_VERSION = FeatureWorkJudge.PROMPT_VERSION;
     private static final FeatureWorkLimits ROOMY = new FeatureWorkLimits(1_500, 14_000);
     private static final String ITEM_URL = "https://community.openproject.org/wp/100";
 
@@ -64,7 +65,10 @@ class FeatureWorkInputTest {
                   "dependencyChanges": false,
                   "documentationScope": "not_applicable",
                   "reason": "The files show it.",
-                  "facts": [{"fact": "Adds a model", "filePath": "app/models/series.rb"}]
+                  "facts": [
+                    {"fact": "Adds a model", "filePath": "app/models/series.rb"},
+                    {"fact": "Adds a migration", "filePath": ""}
+                  ]
                 }
                 """), false);
     }
@@ -139,15 +143,27 @@ class FeatureWorkInputTest {
     }
 
     @Test
-    void givesTheDigestInShortFormWithoutTheFactsOrSizes() {
+    void givesTheDigestInShortFormWithoutSizesOrTheDiff() {
         String text = inputOf(ROOMY, "Feature text").text();
 
         assertTrue(text.contains("Merged: 2026-07-02"));
         assertTrue(text.contains("Digest: work type feature; modules core, api; schema or data migration yes; "
                 + "new integration no; dependency changes no; test kind unit; code read in full yes"));
         assertTrue(text.contains("Nature of the change: Adds a recurring meeting series."));
-        assertFalse(text.contains("app/models/series.rb"));
         assertFalse(text.contains("Body of 1"));
+    }
+
+    @Test
+    void theTextHoldsTheReasonAndTheFactsOfEachDigest() {
+        String text = inputOf(ROOMY, "Feature text").text();
+
+        int firstPullRequest = text.indexOf("[PR-1] ");
+        int secondPullRequest = text.indexOf("[PR-2] ");
+        int reason = text.indexOf("Digest reason: The files show it.");
+        int facts = text.indexOf("Digest facts: Adds a model (app/models/series.rb); Adds a migration\n");
+        assertTrue(firstPullRequest < reason && reason < facts && facts < secondPullRequest);
+        assertFalse(text.toLowerCase(Locale.ROOT).contains("lines"));
+        assertFalse(text.toLowerCase(Locale.ROOT).contains("additions"));
     }
 
     @Test
@@ -232,7 +248,7 @@ class FeatureWorkInputTest {
                                 List.of(workItem(101, "Implementation", "Task text")),
                                 threePullRequests(),
                                 ROOMY,
-                                "feature-work-complexity/v2")
+                                "feature-work-complexity/v1")
                         .hash());
         assertNotEquals(
                 hash,

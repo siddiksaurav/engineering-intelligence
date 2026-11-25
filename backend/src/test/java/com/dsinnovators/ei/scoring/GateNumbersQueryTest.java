@@ -116,6 +116,7 @@ class GateNumbersQueryTest extends DatabaseTest {
                 settings.frequentEvidenceTypes(),
                 settings.t3ItemsNeededAtLevel3(),
                 settings.gateLimits(),
+                settings.gateScored(),
                 settings.gateMinimumDevelopers(),
                 2);
 

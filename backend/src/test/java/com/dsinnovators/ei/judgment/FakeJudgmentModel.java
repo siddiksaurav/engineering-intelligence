@@ -55,22 +55,30 @@ final class FakeJudgmentModel implements JudgmentModel {
         return (ObjectNode) CanonicalJson.parse("""
                 {
                   "workType": "feature",
-                  "complexity": "%s",
-                  "rubric": {
-                    "modulesTouched": ["core", "api"],
-                    "dataChange": "schema_change",
-                    "integration": "none",
-                    "requirementsUnclear": false,
-                    "knownPattern": true,
-                    "acrossSystems": false,
-                    "newArchitecture": false,
-                    "clientCriticalWithoutEarlierExample": false
-                  },
-                  "facts": [
-                    {"fact": "The feature adds a table", "quote": "Nature of the change", "source": "PR-1"},
-                    {"fact": "The ticket asks for a series", "quote": "Users miss alerts", "source": "WI-100"}
+                  "problems": [
+                    {
+                      "name": "Store the series",
+                      "depth": "answer_exists",
+                      "depthReason": "A known pattern covers it and the project had no example.",
+                      "quote": "Nature of the change",
+                      "source": "PR-1"
+                    },
+                    {
+                      "name": "Alert on a missed series",
+                      "depth": "routine",
+                      "depthReason": "A standard notification.",
+                      "quote": "Users miss alerts",
+                      "source": "WI-100"
+                    }
                   ],
-                  "reason": "Two modules and one schema change.",
+                  "problemsAffectEachOther": false,
+                  "problemsAffectEachOtherReason": "",
+                  "mistakesStayHidden": false,
+                  "mistakesStayHiddenReason": "",
+                  "reachesAcrossProjects": false,
+                  "thinEvidence": false,
+                  "complexity": "%s",
+                  "reason": "One problem has a known answer and no earlier example.",
                   "confidence": 0.8
                 }
                 """.formatted(complexity));

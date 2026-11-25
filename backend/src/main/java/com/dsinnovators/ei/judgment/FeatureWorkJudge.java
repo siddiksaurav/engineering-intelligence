@@ -17,13 +17,13 @@ import tools.jackson.databind.JsonNode;
 
 /**
  * Stage 2 for one Feature work item: builds the input, asks the model unless this input was judged
- * before, checks the answer, reads the tier from the complexity table and stores the complexity as a
+ * before, checks the answer, reads the tier from the complexity the model chose and stores the complexity as a
  * judgment (F07 design, "Main flows" 1). Never gives the model a line count (spec 6.2).
  */
 @Component
 class FeatureWorkJudge {
 
-    static final String PROMPT_VERSION = "feature-work-complexity/v1";
+    static final String PROMPT_VERSION = "feature-work-complexity/v2";
 
     private static final String SCHEMA_NAME = "feature_work_complexity";
     private static final String COMPLEXITY_TIERS_SETTING = "evidence.complexity_tiers";
@@ -160,11 +160,15 @@ class FeatureWorkJudge {
         return tier.asString();
     }
 
+    /** One fact per problem: the problem, its depth and its quote, linked to the part it comes from (decision 310). */
     private static List<JudgmentFact> factsOf(FeatureWorkAnswer answer, FeatureWorkInput input) {
-        return answer.facts().stream()
-                .map(fact -> new JudgmentFact(
-                        fact.quote().isBlank() ? fact.text() : fact.text() + " (\"" + fact.quote() + "\")",
-                        input.linkOf(fact.source())))
+        return answer.problems().stream()
+                .map(problem -> new JudgmentFact(factText(problem), input.linkOf(problem.source())))
                 .toList();
+    }
+
+    private static String factText(FeatureWorkAnswer.Problem problem) {
+        String text = problem.name() + ": " + problem.depth().wireName().replace('_', ' ');
+        return problem.quote().isBlank() ? text : text + ", \"" + problem.quote() + "\"";
     }
 }

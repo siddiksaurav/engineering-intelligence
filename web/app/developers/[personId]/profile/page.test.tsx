@@ -191,6 +191,7 @@ function gate(name: GateResult["gate"], overrides: Partial<GateResult> = {}): Ga
     minimumDevelopers: 3,
     limits: { passWithinPoints: 10, farMissBeyondPoints: 25 },
     pullRequestsWithoutDigest: [],
+    scored: true,
     note: null,
     ...overrides,
   };
@@ -658,6 +659,56 @@ describe("ProfilePage", () => {
     expect(quality).toContain("G4, escaped defects and sprint commitment: unverified, no data in the pilot");
     expect(quality).toContain('href="https://github.com/opf/openproject/pull/201"');
     expect(quality).toContain('href="https://github.com/opf/openproject/pull/301"');
+  });
+
+  it('G2 shows its result with the tag "not scored"', async () => {
+    const engineering = withTrail(dimension("engineering", ENGINEERING, "T2", 1), {}, [
+      gate("G1", { outcome: "CLOSE_MISS" }),
+      gate("G2", { outcome: "FAR_MISS", scored: false }),
+      gate("G4", { outcome: "UNVERIFIED", unverifiedReason: "NOT_CALCULATED", scored: false }),
+    ]);
+    answeringWith(scores("L2", [engineering]));
+
+    const html = await render({ quarter: "2026-Q3" });
+
+    const quality = html.slice(html.indexOf("4 · Quality checks"), html.indexOf("5 · Reviews"));
+    expect(quality).toContain("Far miss");
+    expect(quality.match(/not scored/g)).toHaveLength(1);
+    const bugFixCheck = quality.slice(quality.indexOf("Tests with bug fixes"));
+    expect(bugFixCheck).toContain("not scored");
+  });
+
+  it("G2 unverified while not scored shows Unverified with the tag", async () => {
+    const engineering = withTrail(dimension("engineering", ENGINEERING, "T2", 1), {}, [
+      gate("G2", { outcome: "UNVERIFIED", unverifiedReason: "TOO_FEW_DEVELOPERS", scored: false }),
+    ]);
+    answeringWith(scores("L2", [engineering]));
+
+    const html = await render({ quarter: "2026-Q3" });
+
+    const quality = html.slice(html.indexOf("4 · Quality checks"), html.indexOf("5 · Reviews"));
+    expect(quality).toContain("Unverified");
+    expect(quality.match(/not scored/g)).toHaveLength(1);
+  });
+
+  it('no profile text says "gate"', async () => {
+    const engineering = withTrail(
+      dimension("engineering", ENGINEERING, "T2", 0),
+      { scoreBeforeGates: 2, notes: ["check: G1 far", "G2 not scored yet", "check unverified: G4", "held: G1"] },
+      [
+        gate("G1", { outcome: "FAR_MISS" }),
+        gate("G2", { outcome: "CLOSE_MISS", scored: false }),
+        gate("G4", { outcome: "UNVERIFIED", unverifiedReason: "NOT_CALCULATED", scored: false }),
+        gate("G1", { outcome: "UNVERIFIED", unverifiedReason: null }),
+      ],
+    );
+    answeringWith(scores("L2", [engineering]));
+
+    const html = await render({ quarter: "2026-Q3" });
+
+    const text = html.replace(/<[^>]*>/g, " ").replaceAll("A test gate in CI for a module", "");
+    expect(text).toContain("Score before checks 2");
+    expect(text).not.toMatch(/gate/i);
   });
 
   it("says why a gate is unverified instead of giving an outcome", async () => {

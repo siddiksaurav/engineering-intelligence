@@ -12,14 +12,19 @@ final class ScoreNotes {
 
     private ScoreNotes() {}
 
-    /** The note of a gate result; null when the gate passes. */
+    /** The note of a scored gate result; null when the gate passes. */
     static String forGate(Gate gate, GateOutcome outcome) {
         return switch (outcome) {
             case PASS -> null;
             case CLOSE_MISS -> "held: " + gate;
-            case FAR_MISS -> "gate: " + gate + " far";
-            case UNVERIFIED -> "gate unverified: " + gate;
+            case FAR_MISS -> "check: " + gate + " far";
+            case UNVERIFIED -> "check unverified: " + gate;
         };
+    }
+
+    /** The note of a calculated gate that is switched off, whatever its outcome (decision 316). */
+    static String notScoredYet(Gate gate) {
+        return gate + " not scored yet";
     }
 
     static String countedNotTiered(EvidenceType type) {

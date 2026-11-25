@@ -1,0 +1,61 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "workType",
+    "problems",
+    "problemsAffectEachOther",
+    "problemsAffectEachOtherReason",
+    "mistakesStayHidden",
+    "mistakesStayHiddenReason",
+    "reachesAcrossProjects",
+    "thinEvidence",
+    "complexity",
+    "reason",
+    "confidence"
+  ],
+  "properties": {
+    "workType": {
+      "type": "string",
+      "enum": [
+        "feature",
+        "enhancement",
+        "fix",
+        "maintenance",
+        "research",
+        "technical_task",
+        "operational_support",
+        "refactor",
+        "test",
+        "docs",
+        "infra",
+        "performance",
+        "security"
+      ]
+    },
+    "problems": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "depth", "depthReason", "quote", "source"],
+        "properties": {
+          "name": { "type": "string" },
+          "depth": { "type": "string", "enum": ["routine", "answer_exists", "no_ready_answer"] },
+          "depthReason": { "type": "string" },
+          "quote": { "type": "string" },
+          "source": { "type": "string" }
+        }
+      }
+    },
+    "problemsAffectEachOther": { "type": "boolean" },
+    "problemsAffectEachOtherReason": { "type": "string" },
+    "mistakesStayHidden": { "type": "boolean" },
+    "mistakesStayHiddenReason": { "type": "string" },
+    "reachesAcrossProjects": { "type": "boolean" },
+    "thinEvidence": { "type": "boolean" },
+    "complexity": { "type": "string", "enum": ["low", "medium", "high", "very_high"] },
+    "reason": { "type": "string" },
+    "confidence": { "type": "number" }
+  }
+}

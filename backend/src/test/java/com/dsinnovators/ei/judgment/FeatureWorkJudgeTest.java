@@ -114,24 +114,69 @@ class FeatureWorkJudgeTest extends DatabaseTest {
         judge.judge(item, QUARTER, jobCounts);
 
         Judgment judgment = currentJudgmentOf(item);
-        assertEquals("Two modules and one schema change.", judgment.getReason());
+        assertEquals("One problem has a known answer and no earlier example.", judgment.getReason());
         assertEquals(FakeJudgmentModel.MODEL, judgment.getModel());
-        assertEquals("feature-work-complexity/v1", judgment.getPromptVersion());
+        assertEquals("feature-work-complexity/v2", judgment.getPromptVersion());
         assertEquals(JudgedBy.MODEL, judgment.getJudgedBy());
         assertEquals(64, judgment.getInputHash().length());
         assertNull(judgment.getBasedOnJudgmentId());
         assertEquals("feature", judgment.getValue().path("workType").asString());
         assertTrue(judgment.getValue().path("confidence").isMissingNode());
         assertFalse(judgment.getValue().path("judgedOnPartialInput").asBoolean());
+    }
+
+    @Test
+    void writesOneFactPerProblemUnderVersionTwo() {
+        FeatureWorkToJudge item = stored.item(100, List.of(), 1);
+        model.answeringByDefault(FakeJudgmentModel.aFeatureWork("medium"));
+
+        judge.judge(item, QUARTER, jobCounts);
+
+        Judgment judgment = currentJudgmentOf(item);
         assertEquals(
                 List.of(
                         new JudgmentFact(
-                                "The feature adds a table (\"Nature of the change\")",
+                                "Store the series: answer exists, \"Nature of the change\"",
                                 "https://github.com/opf/openproject/pull/1"),
                         new JudgmentFact(
-                                "The ticket asks for a series (\"Users miss alerts\")",
+                                "Alert on a missed series: routine, \"Users miss alerts\"",
                                 "https://community.openproject.org/wp/100")),
                 judgment.getFacts());
+        assertEquals(2, judgment.getValue().path("problems").size());
+        assertEquals("medium", judgment.getValue().path("complexityByTable").asString());
+        assertTrue(judgment.getValue().path("rubric").isMissingNode());
+    }
+
+    @Test
+    void readsTheTierFromTheComplexityOfTheModelEvenWhenTheTableDiffers() {
+        FeatureWorkToJudge item = stored.item(100, List.of(), 1);
+        model.answeringByDefault(FakeJudgmentModel.aFeatureWork("high"));
+
+        judge.judge(item, QUARTER, jobCounts);
+
+        Judgment judgment = currentJudgmentOf(item);
+        assertEquals("T3", judgment.getTier());
+        assertEquals("medium", judgment.getValue().path("complexityByTable").asString());
+    }
+
+    @Test
+    void aVersionOneJudgmentOfTheItemIsSuperseded() {
+        FeatureWorkToJudge item = stored.item(100, List.of(), 1);
+        long versionOne = judgmentStore
+                .write(NewJudgmentBuilder.aDigestOf(JudgmentSubject.evidenceItem(item.itemRowId()))
+                        .kind(JudgmentKind.FEATURE_WORK_COMPLEXITY)
+                        .tier("T1")
+                        .promptVersion("feature-work-complexity/v1")
+                        .inputHash("version-one-hash")
+                        .build())
+                .getId();
+        model.answeringByDefault(FakeJudgmentModel.aFeatureWork("medium"));
+
+        judge.judge(item, QUARTER, jobCounts);
+
+        Judgment current = currentJudgmentOf(item);
+        assertEquals("feature-work-complexity/v2", current.getPromptVersion());
+        assertEquals(versionOne, current.getSupersedesId());
     }
 
     @Test
@@ -166,8 +211,8 @@ class FeatureWorkJudgeTest extends DatabaseTest {
     void aFactWithAnUnknownSourceGetsTheLinkOfTheItem() {
         FeatureWorkToJudge item = stored.item(100, List.of(), 1);
         ObjectNode answer = FakeJudgmentModel.aFeatureWork("low");
-        ((ObjectNode) answer.path("facts").get(0)).put("source", "WI-999");
-        ((ObjectNode) answer.path("facts").get(1)).put("source", "").put("quote", "");
+        ((ObjectNode) answer.path("problems").get(0)).put("source", "WI-999");
+        ((ObjectNode) answer.path("problems").get(1)).put("source", "").put("quote", "");
         model.answeringByDefault(answer);
 
         judge.judge(item, QUARTER, jobCounts);
@@ -175,7 +220,7 @@ class FeatureWorkJudgeTest extends DatabaseTest {
         List<JudgmentFact> facts = currentJudgmentOf(item).getFacts();
         assertEquals("https://community.openproject.org/wp/100", facts.get(0).link());
         assertEquals("https://community.openproject.org/wp/100", facts.get(1).link());
-        assertEquals("The ticket asks for a series", facts.get(1).fact());
+        assertEquals("Alert on a missed series: routine", facts.get(1).fact());
     }
 
     @Test
@@ -186,9 +231,9 @@ class FeatureWorkJudgeTest extends DatabaseTest {
         judge.judge(item, QUARTER, jobCounts);
 
         ModelRequest request = model.requests().getFirst();
-        assertEquals("feature-work-complexity/v1", request.promptVersion());
-        assertEquals(promptLibrary.instructions("feature-work-complexity/v1"), request.instructions());
-        assertEquals(promptLibrary.schema("feature-work-complexity/v1"), request.jsonSchema());
+        assertEquals("feature-work-complexity/v2", request.promptVersion());
+        assertEquals(promptLibrary.instructions("feature-work-complexity/v2"), request.instructions());
+        assertEquals(promptLibrary.schema("feature-work-complexity/v2"), request.jsonSchema());
         assertTrue(request.input().contains("[WI-100] Work item 100"));
         assertTrue(request.input().contains("[PR-1] Pull request 1"));
         assertFalse(request.input().toLowerCase(Locale.ROOT).contains("lines"));

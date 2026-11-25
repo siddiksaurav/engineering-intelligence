@@ -19,6 +19,11 @@ final class ScoringFixtures {
     private ScoringFixtures() {}
 
     static ScoringSettings settings() {
+        return settings(Map.of(Gate.G1, true, Gate.G2, false));
+    }
+
+    /** The seeded settings with another switch of which gates are scored. */
+    static ScoringSettings settings(Map<Gate, Boolean> gateScored) {
         GateLimits limits = new GateLimits(10, 25);
         return new ScoringSettings(
                 new PresenceThreshold(1, 3),
@@ -26,6 +31,7 @@ final class ScoringFixtures {
                 Set.of(EvidenceType.FEATURE_WORK, EvidenceType.REVIEW_COMMENT_WRITTEN, EvidenceType.TEST_CHANGE),
                 Map.of(STANDARDS, 2),
                 Map.of(Gate.G1, limits, Gate.G2, limits),
+                gateScored,
                 3,
                 1);
     }

@@ -96,13 +96,24 @@ function unverifiedWords(gate: GateResult): string {
     TOO_FEW_DEVELOPERS: `Fewer than ${gate.minimumDevelopers} developers have pull requests of this kind, too few to compare.`,
     NO_PULL_REQUEST_OF_THE_KIND: "The person has no pull request of this kind.",
     NO_REPOSITORY_PULL_REQUESTS: "The repository has no pull request of this kind.",
-    NOT_CALCULATED: "This gate is not calculated in the PoC.",
+    NOT_CALCULATED: "This check is not calculated in the PoC.",
   };
-  return gate.unverifiedReason ? words[gate.unverifiedReason] : "The gate has no result.";
+  return gate.unverifiedReason ? words[gate.unverifiedReason] : "The check has no result.";
 }
 
+/** A check of a run before F16 has no `scored` value and counted. */
+function isScored(gate: GateResult): boolean {
+  return gate.scored !== false;
+}
+
+/** Whether the screen tags the check "not scored": G4 is never calculated and stays untagged (decision 322). */
+export function isShownNotScored(gate: GateResult): boolean {
+  return !isScored(gate) && gate.unverifiedReason !== "NOT_CALCULATED";
+}
+
+/** A missed check that counted: an unscored one never holds a score (decision 316). */
 function isMiss(gate: GateResult): boolean {
-  return gate.outcome === "FAR_MISS" || gate.outcome === "CLOSE_MISS";
+  return isScored(gate) && (gate.outcome === "FAR_MISS" || gate.outcome === "CLOSE_MISS");
 }
 
 /** The highest score a missed gate allows: a far miss gives 0, a close miss caps at 1 (decision 211). */

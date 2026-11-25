@@ -48,6 +48,14 @@ describe("palette", () => {
     expect(orderedColor("design")).toBeUndefined();
   });
 
+  it("goes from light to dark over the depths of a problem", () => {
+    expect(["routine", "answer_exists", "no_ready_answer"].map(orderedColor)).toEqual([
+      "var(--step-1)",
+      "var(--step-3)",
+      "var(--step-5)",
+    ]);
+  });
+
   it("keeps the chart chrome apart from the data colours", () => {
     expect(new Set([CHART_AXIS_COLOR, CHART_GRID_COLOR, CHART_REFERENCE_COLOR, CHART_SURFACE_COLOR]).size).toBe(4);
   });

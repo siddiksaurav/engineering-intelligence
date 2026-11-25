@@ -49,6 +49,7 @@ function gate(outcome: GateOutcome, overrides: Partial<GateResult> = {}): GateRe
     minimumDevelopers: 3,
     limits: { passWithinPoints: 10, farMissBeyondPoints: 25 },
     pullRequestsWithoutDigest: [],
+    scored: true,
     note: null,
     ...overrides,
   };
@@ -279,6 +280,36 @@ describe("nextStepLine", () => {
     expect(line).toBe("To score 2: a third of weighted Feature work at Medium complexity or higher.");
   });
 
+  it("the next step leaves an unscored check out", () => {
+    const line = nextStepLine(
+      dimension({
+        score: 1,
+        evidenceTypes: [typeTrail("feature_work", "SHARE", true)],
+        gates: [gate("FAR_MISS", { gate: "G2", scored: false })],
+      }),
+      "L1",
+    );
+
+    expect(line).toBe("To score 2: a third of weighted Feature work at Medium complexity or higher.");
+  });
+
+  it("the why line does not name an unscored check", () => {
+    const unscored = gate("FAR_MISS", { gate: "G2", scored: false });
+
+    expect(whyLine(dimension({ score: 0, scoreBeforeGates: 2, gates: [unscored] }), "L2")).toBe(
+      "Works at T2. L2 expects T2: 2.",
+    );
+  });
+
+  it("treats a check of an earlier scoring run, which has no scored value, as scored", () => {
+    const earlier: Partial<GateResult> = gate("CLOSE_MISS");
+    delete earlier.scored;
+
+    expect(whyLine(dimension({ score: 1, scoreBeforeGates: 2, gates: [earlier as GateResult] }), "L1")).toContain(
+      "held to 1 by G1 (close miss)",
+    );
+  });
+
   it("leaves out a type that is not read at the level", () => {
     const trails = [typeTrail("feature_work", "SHARE", true), typeTrail("review_comment_written", "SHARE", false)];
 
@@ -335,12 +366,18 @@ describe("gateWords", () => {
     ["TOO_FEW_DEVELOPERS", "Fewer than 3 developers have pull requests of this kind, too few to compare."],
     ["NO_PULL_REQUEST_OF_THE_KIND", "The person has no pull request of this kind."],
     ["NO_REPOSITORY_PULL_REQUESTS", "The repository has no pull request of this kind."],
-    ["NOT_CALCULATED", "This gate is not calculated in the PoC."],
-  ] as const)("says why a gate is unverified: %s", (reason, words) => {
+    ["NOT_CALCULATED", "This check is not calculated in the PoC."],
+  ] as const)("says why a check is unverified: %s", (reason, words) => {
     expect(gateWords(gate("UNVERIFIED", { unverifiedReason: reason }))).toEqual({
       outcome: "unverified",
       detail: words,
     });
+  });
+});
+
+describe("gateWords without a reason", () => {
+  it("says the check has no result", () => {
+    expect(gateWords(gate("UNVERIFIED", { unverifiedReason: null })).detail).toBe("The check has no result.");
   });
 });
 

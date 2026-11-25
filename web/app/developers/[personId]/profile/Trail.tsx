@@ -33,7 +33,7 @@ export function Trail({
       )}
       <TrailItems label="Counted, not tiered" items={trail.countedNotTiered} summariesById={summariesById} />
       <p>
-        Score before gates {trail.scoreBeforeGates}, final score {trail.finalScore}.
+        Score before checks {trail.scoreBeforeGates}, final score {trail.finalScore}.
       </p>
       {trail.notes.length > 0 && (
         <ul>

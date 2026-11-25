@@ -20,25 +20,37 @@ class FeatureWorkAnswerTest {
         return (ObjectNode) CanonicalJson.parse("""
                 {
                   "workType": "feature",
-                  "complexity": "medium",
-                  "rubric": {
-                    "modulesTouched": ["meeting", "core"],
-                    "dataChange": "schema_change",
-                    "integration": "none",
-                    "requirementsUnclear": false,
-                    "knownPattern": true,
-                    "acrossSystems": false,
-                    "newArchitecture": false,
-                    "clientCriticalWithoutEarlierExample": false
-                  },
-                  "facts": [
-                    {"fact": "Adds a column to the meetings table", "quote": "adds a migration", "source": "PR-24204"},
-                    {"fact": "The ticket asks for recurring meetings", "quote": "Recurring meetings", "source": "WI-81224"}
+                  "problems": [
+                    {
+                      "name": "Store a recurring series",
+                      "depth": "answer_exists",
+                      "depthReason": "A known pattern covers it, with no earlier example.",
+                      "quote": "adds a migration",
+                      "source": "PR-24204"
+                    },
+                    {
+                      "name": "Meeting form",
+                      "depth": "routine",
+                      "depthReason": "A standard Rails form.",
+                      "quote": "",
+                      "source": "WI-81224"
+                    }
                   ],
-                  "reason": "Two modules and one schema change make this Medium.",
+                  "problemsAffectEachOther": false,
+                  "problemsAffectEachOtherReason": "",
+                  "mistakesStayHidden": false,
+                  "mistakesStayHiddenReason": "",
+                  "reachesAcrossProjects": false,
+                  "thinEvidence": false,
+                  "complexity": "medium",
+                  "reason": "One problem has a known answer and the project had no example.",
                   "confidence": 0.8
                 }
                 """);
+    }
+
+    private static ObjectNode problem(ObjectNode answer, int index) {
+        return (ObjectNode) ((ArrayNode) answer.get("problems")).get(index);
     }
 
     private static FeatureWorkAnswer read(ObjectNode answer) {
@@ -68,15 +80,20 @@ class FeatureWorkAnswerTest {
         assertEquals(PullRequestDigest.WorkType.FEATURE, answer.workType());
         assertEquals(FeatureWorkAnswer.Complexity.MEDIUM, answer.complexity());
         assertEquals("medium", answer.complexity().wireName());
-        assertEquals(List.of("meeting", "core"), answer.rubric().modulesTouched());
-        assertEquals(FeatureWorkAnswer.DataChange.SCHEMA_CHANGE, answer.rubric().dataChange());
-        assertEquals(FeatureWorkAnswer.Integration.NONE, answer.rubric().integration());
-        assertTrue(answer.rubric().knownPattern());
-        assertFalse(answer.rubric().requirementsUnclear());
-        assertEquals(2, answer.facts().size());
+        assertEquals(2, answer.problems().size());
         assertEquals(
-                new FeatureWorkAnswer.Fact("Adds a column to the meetings table", "adds a migration", "PR-24204"),
-                answer.facts().get(0));
+                new FeatureWorkAnswer.Problem(
+                        "Store a recurring series",
+                        FeatureWorkAnswer.Depth.ANSWER_EXISTS,
+                        "A known pattern covers it, with no earlier example.",
+                        "adds a migration",
+                        "PR-24204"),
+                answer.problems().get(0));
+        assertEquals(FeatureWorkAnswer.Depth.ROUTINE, answer.problems().get(1).depth());
+        assertFalse(answer.problemsAffectEachOther());
+        assertFalse(answer.mistakesStayHidden());
+        assertFalse(answer.reachesAcrossProjects());
+        assertFalse(answer.thinEvidence());
         assertEquals(0.8, answer.confidence());
     }
 
@@ -102,55 +119,58 @@ class FeatureWorkAnswerTest {
     }
 
     @Test
-    void refusesAnAnswerWithoutAFact() {
+    void refusesAnAnswerWithoutAProblem() {
         ObjectNode none = validAnswer();
-        none.set("facts", CanonicalJson.parse("[]"));
+        none.set("problems", CanonicalJson.parse("[]"));
         ObjectNode missing = validAnswer();
-        missing.remove("facts");
+        missing.remove("problems");
 
         assertThrows(InvalidAnswerException.class, () -> read(none));
         assertThrows(InvalidAnswerException.class, () -> read(missing));
     }
 
-    @Test
-    void refusesAFactWithoutText() {
+    @ParameterizedTest
+    @ValueSource(strings = {"easy", "Routine", "answer exists", ""})
+    void refusesADepthOutsideTheThree(String depth) {
         ObjectNode answer = validAnswer();
-        ((ObjectNode) ((ArrayNode) answer.get("facts")).get(0)).put("fact", " ");
+        problem(answer, 0).put("depth", depth);
+
+        InvalidAnswerException refused = assertThrows(InvalidAnswerException.class, () -> read(answer));
+
+        assertTrue(refused.getMessage().contains("depth"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"name", "depthReason"})
+    void refusesAProblemWithABlankNameOrDepthReason(String field) {
+        ObjectNode answer = validAnswer();
+        problem(answer, 0).put(field, " ");
 
         assertThrows(InvalidAnswerException.class, () -> read(answer));
     }
 
-    @Test
-    void refusesAFactWithoutItsQuoteOrSourceField() {
-        ObjectNode noQuote = validAnswer();
-        ((ObjectNode) ((ArrayNode) noQuote.get("facts")).get(0)).remove("quote");
-        ObjectNode noSource = validAnswer();
-        ((ObjectNode) ((ArrayNode) noSource.get("facts")).get(0)).remove("source");
+    @ParameterizedTest
+    @ValueSource(strings = {"quote", "source"})
+    void refusesAProblemWithoutItsQuoteOrSourceField(String field) {
+        ObjectNode answer = validAnswer();
+        problem(answer, 0).remove(field);
 
-        assertThrows(InvalidAnswerException.class, () -> read(noQuote));
-        assertThrows(InvalidAnswerException.class, () -> read(noSource));
-    }
-
-    @Test
-    void refusesABlankReason() {
-        assertThrows(InvalidAnswerException.class, () -> read(validAnswer().put("reason", " ")));
+        assertThrows(InvalidAnswerException.class, () -> read(answer));
     }
 
     @ParameterizedTest
     @ValueSource(
             strings = {
-                "modulesTouched",
-                "dataChange",
-                "integration",
-                "requirementsUnclear",
-                "knownPattern",
-                "acrossSystems",
-                "newArchitecture",
-                "clientCriticalWithoutEarlierExample"
+                "problemsAffectEachOther",
+                "problemsAffectEachOtherReason",
+                "mistakesStayHidden",
+                "mistakesStayHiddenReason",
+                "reachesAcrossProjects",
+                "thinEvidence"
             })
-    void refusesARubricWithAFieldMissing(String field) {
+    void refusesAnAnswerWithAFlagOrItsReasonMissing(String field) {
         ObjectNode answer = validAnswer();
-        ((ObjectNode) answer.get("rubric")).remove(field);
+        answer.remove(field);
 
         InvalidAnswerException refused = assertThrows(InvalidAnswerException.class, () -> read(answer));
 
@@ -158,14 +178,8 @@ class FeatureWorkAnswerTest {
     }
 
     @Test
-    void refusesADataChangeOrIntegrationOutsideTheList() {
-        ObjectNode dataChange = validAnswer();
-        ((ObjectNode) dataChange.get("rubric")).put("dataChange", "migration");
-        ObjectNode integration = validAnswer();
-        ((ObjectNode) integration.get("rubric")).put("integration", "api");
-
-        assertThrows(InvalidAnswerException.class, () -> read(dataChange));
-        assertThrows(InvalidAnswerException.class, () -> read(integration));
+    void refusesABlankReason() {
+        assertThrows(InvalidAnswerException.class, () -> read(validAnswer().put("reason", " ")));
     }
 
     @Test
@@ -174,24 +188,49 @@ class FeatureWorkAnswerTest {
     }
 
     @Test
+    void keepsTheComplexityOfTheModelWhenTheTableDiffers() {
+        ObjectNode answer = validAnswer().put("complexity", "high");
+
+        JsonNode value = read(answer).toValue(false, List.of());
+
+        assertEquals("high", value.path("complexity").asString());
+        assertEquals("medium", value.path("complexityByTable").asString());
+    }
+
+    @Test
     void storesTheAnswerAndWhatTheSystemSetAsTheValueOfAJudgment() {
-        JsonNode value = read(validAnswer()).toValue(true, List.of("opf/openproject#9"));
+        ObjectNode answer = validAnswer()
+                .put("problemsAffectEachOther", true)
+                .put("problemsAffectEachOtherReason", "The series and the form share one model.")
+                .put("thinEvidence", true);
+
+        JsonNode value = read(answer).toValue(true, List.of("opf/openproject#9"));
 
         assertEquals("feature", value.path("workType").asString());
         assertEquals("medium", value.path("complexity").asString());
-        assertEquals("schema_change", value.path("rubric").path("dataChange").asString());
-        assertEquals("none", value.path("rubric").path("integration").asString());
+        assertEquals(2, value.path("problems").size());
+        JsonNode first = value.path("problems").get(0);
+        assertEquals("Store a recurring series", first.path("name").asString());
+        assertEquals("answer_exists", first.path("depth").asString());
+        assertEquals("adds a migration", first.path("quote").asString());
+        assertEquals("PR-24204", first.path("source").asString());
+        assertEquals("not_checked", first.path("earlierExample").asString());
         assertEquals(
-                "meeting", value.path("rubric").path("modulesTouched").get(0).asString());
-        assertTrue(value.path("rubric").path("knownPattern").asBoolean());
-        assertEquals(2, value.path("facts").size());
-        assertEquals("PR-24204", value.path("facts").get(0).path("source").asString());
+                "not_checked",
+                value.path("problems").get(1).path("earlierExample").asString());
+        assertTrue(value.path("problemsAffectEachOther").asBoolean());
         assertEquals(
-                "adds a migration", value.path("facts").get(0).path("quote").asString());
+                "The series and the form share one model.",
+                value.path("problemsAffectEachOtherReason").asString());
+        assertFalse(value.path("mistakesStayHidden").asBoolean());
+        assertFalse(value.path("reachesAcrossProjects").asBoolean());
+        assertTrue(value.path("thinEvidence").asBoolean());
+        assertEquals("medium", value.path("complexityByTable").asString());
         assertEquals(
-                "Two modules and one schema change make this Medium.",
+                "One problem has a known answer and the project had no example.",
                 value.path("reason").asString());
         assertTrue(value.path("confidence").isMissingNode());
+        assertTrue(value.path("rubric").isMissingNode());
         assertTrue(value.path("judgedOnPartialInput").asBoolean());
         assertEquals(
                 "opf/openproject#9", value.path("leftOutPullRequests").get(0).asString());
