@@ -8,20 +8,34 @@ import tools.jackson.databind.node.JsonNodeFactory;
 import tools.jackson.databind.node.ObjectNode;
 
 /**
- * The Stage 2 answer for one Feature work item (F07 design, "The answer"), read and checked. The tier
- * is not part of it: it is read from the complexity table (spec 6.2).
+ * The Stage 2 answer for one Feature work item (F16 design, "The prompt"), read and checked: the
+ * problems the work solved with the depth of each, three flags, and the complexity the model chose.
+ * The tier is not part of it: it is read from the complexity table (spec 6.2).
  *
  * @param workType the one work type of the item, separate from the work types of its pull requests
- * @param facts the observations the complexity rests on, at least one
+ * @param problems the problems the work solved, at least one
+ * @param problemsAffectEachOther one yes or no for the whole item (decision 324)
+ * @param mistakesStayHidden true for a design whose mistakes stay hidden across the system
+ * @param reachesAcrossProjects true when the problems reach across projects or the organization
+ * @param thinEvidence true when the model could not really see the problems (decision 321)
+ * @param complexity the model's own choice; the table of spec 6.2 is guidance (decision 323)
  * @param confidence the model's own value from 0 to 1 (decision 173)
  */
 record FeatureWorkAnswer(
         PullRequestDigest.WorkType workType,
+        List<Problem> problems,
+        boolean problemsAffectEachOther,
+        String problemsAffectEachOtherReason,
+        boolean mistakesStayHidden,
+        String mistakesStayHiddenReason,
+        boolean reachesAcrossProjects,
+        boolean thinEvidence,
         Complexity complexity,
-        Rubric rubric,
-        List<Fact> facts,
         String reason,
         double confidence) {
+
+    /** The earlier example of a problem is not searched in the PoC (decision 303). */
+    private static final String EARLIER_EXAMPLE_NOT_CHECKED = "not_checked";
 
     /** The four complexities of spec 6.2. */
     enum Complexity implements WireNamed {
@@ -31,36 +45,20 @@ record FeatureWorkAnswer(
         VERY_HIGH
     }
 
-    enum DataChange implements WireNamed {
-        NONE,
-        SCHEMA_CHANGE,
-        PRODUCTION_DATA_MIGRATION
+    /** The depth of a problem (spec 6.2, Move 2). */
+    enum Depth implements WireNamed {
+        ROUTINE,
+        ANSWER_EXISTS,
+        NO_READY_ANSWER
     }
-
-    enum Integration implements WireNamed {
-        NONE,
-        EXISTING_INTEGRATION,
-        NEW_INTEGRATION
-    }
-
-    /** The facts of spec 6.2 that the complexity rests on; the module count is one of them, never the rule. */
-    record Rubric(
-            List<String> modulesTouched,
-            DataChange dataChange,
-            Integration integration,
-            boolean requirementsUnclear,
-            boolean knownPattern,
-            boolean acrossSystems,
-            boolean newArchitecture,
-            boolean clientCriticalWithoutEarlierExample) {}
 
     /**
-     * One observation of the answer.
+     * One problem the work solved.
      *
-     * @param quote text copied from the input that shows the fact
-     * @param source the key of the input part the fact comes from, such as WI-81224 or PR-24204
+     * @param quote text copied from the input that shows the problem; may be empty
+     * @param source the key of the input part the quote comes from, such as WI-81224 or PR-24204
      */
-    record Fact(String text, String quote, String source) {}
+    record Problem(String name, Depth depth, String depthReason, String quote, String source) {}
 
     /**
      * Reads and checks the model's answer.
@@ -73,11 +71,25 @@ record FeatureWorkAnswer(
         }
         return new FeatureWorkAnswer(
                 AnswerFields.enumOf(PullRequestDigest.WorkType.class, answer, "workType"),
+                problemsOf(answer),
+                AnswerFields.flagOf(answer, "problemsAffectEachOther"),
+                AnswerFields.textOrEmptyOf(answer, "problemsAffectEachOtherReason"),
+                AnswerFields.flagOf(answer, "mistakesStayHidden"),
+                AnswerFields.textOrEmptyOf(answer, "mistakesStayHiddenReason"),
+                AnswerFields.flagOf(answer, "reachesAcrossProjects"),
+                AnswerFields.flagOf(answer, "thinEvidence"),
                 AnswerFields.enumOf(Complexity.class, answer, "complexity"),
-                rubricOf(AnswerFields.objectOf(answer, "rubric")),
-                factsOf(answer),
                 AnswerFields.textOf(answer, "reason"),
                 confidenceOf(answer));
+    }
+
+    /** What the table of spec 6.2 gives for the depths and flags of this answer. */
+    Complexity complexityByTable() {
+        return ComplexityTable.complexityOf(
+                problems.stream().map(Problem::depth).toList(),
+                problemsAffectEachOther,
+                mistakesStayHidden,
+                reachesAcrossProjects);
     }
 
     /**
@@ -88,23 +100,23 @@ record FeatureWorkAnswer(
     JsonNode toValue(boolean judgedOnPartialInput, List<String> leftOutPullRequests) {
         ObjectNode value = JsonNodeFactory.instance.objectNode();
         value.put("workType", workType.wireName());
-        value.put("complexity", complexity.wireName());
-        ObjectNode rubricNode = value.putObject("rubric");
-        ArrayNode modules = rubricNode.putArray("modulesTouched");
-        rubric.modulesTouched().forEach(modules::add);
-        rubricNode.put("dataChange", rubric.dataChange().wireName());
-        rubricNode.put("integration", rubric.integration().wireName());
-        rubricNode.put("requirementsUnclear", rubric.requirementsUnclear());
-        rubricNode.put("knownPattern", rubric.knownPattern());
-        rubricNode.put("acrossSystems", rubric.acrossSystems());
-        rubricNode.put("newArchitecture", rubric.newArchitecture());
-        rubricNode.put("clientCriticalWithoutEarlierExample", rubric.clientCriticalWithoutEarlierExample());
-        ArrayNode factNodes = value.putArray("facts");
-        facts.forEach(fact -> factNodes
+        ArrayNode problemNodes = value.putArray("problems");
+        problems.forEach(problem -> problemNodes
                 .addObject()
-                .put("fact", fact.text())
-                .put("quote", fact.quote())
-                .put("source", fact.source()));
+                .put("name", problem.name())
+                .put("depth", problem.depth().wireName())
+                .put("depthReason", problem.depthReason())
+                .put("quote", problem.quote())
+                .put("source", problem.source())
+                .put("earlierExample", EARLIER_EXAMPLE_NOT_CHECKED));
+        value.put("problemsAffectEachOther", problemsAffectEachOther);
+        value.put("problemsAffectEachOtherReason", problemsAffectEachOtherReason);
+        value.put("mistakesStayHidden", mistakesStayHidden);
+        value.put("mistakesStayHiddenReason", mistakesStayHiddenReason);
+        value.put("reachesAcrossProjects", reachesAcrossProjects);
+        value.put("thinEvidence", thinEvidence);
+        value.put("complexity", complexity.wireName());
+        value.put("complexityByTable", complexityByTable().wireName());
         value.put("reason", reason);
         value.put("judgedOnPartialInput", judgedOnPartialInput);
         ArrayNode leftOut = value.putArray("leftOutPullRequests");
@@ -112,31 +124,21 @@ record FeatureWorkAnswer(
         return value;
     }
 
-    private static Rubric rubricOf(JsonNode rubric) {
-        return new Rubric(
-                AnswerFields.textsOf(rubric, "modulesTouched"),
-                AnswerFields.enumOf(DataChange.class, rubric, "dataChange"),
-                AnswerFields.enumOf(Integration.class, rubric, "integration"),
-                AnswerFields.flagOf(rubric, "requirementsUnclear"),
-                AnswerFields.flagOf(rubric, "knownPattern"),
-                AnswerFields.flagOf(rubric, "acrossSystems"),
-                AnswerFields.flagOf(rubric, "newArchitecture"),
-                AnswerFields.flagOf(rubric, "clientCriticalWithoutEarlierExample"));
-    }
-
-    private static List<Fact> factsOf(JsonNode answer) {
-        JsonNode node = AnswerFields.required(answer, "facts");
+    private static List<Problem> problemsOf(JsonNode answer) {
+        JsonNode node = AnswerFields.required(answer, "problems");
         if (!node.isArray() || node.isEmpty()) {
-            throw new InvalidAnswerException("The field facts must be a list of at least one fact, was " + node);
+            throw new InvalidAnswerException("The field problems must be a list of at least one problem, was " + node);
         }
-        List<Fact> facts = new ArrayList<>();
-        for (JsonNode fact : node.values()) {
-            facts.add(new Fact(
-                    AnswerFields.textOf(fact, "fact"),
-                    AnswerFields.textOrEmptyOf(fact, "quote"),
-                    AnswerFields.textOrEmptyOf(fact, "source")));
+        List<Problem> problems = new ArrayList<>();
+        for (JsonNode problem : node.values()) {
+            problems.add(new Problem(
+                    AnswerFields.textOf(problem, "name"),
+                    AnswerFields.enumOf(Depth.class, problem, "depth"),
+                    AnswerFields.textOf(problem, "depthReason"),
+                    AnswerFields.textOrEmptyOf(problem, "quote"),
+                    AnswerFields.textOrEmptyOf(problem, "source")));
         }
-        return List.copyOf(facts);
+        return List.copyOf(problems);
     }
 
     private static double confidenceOf(JsonNode answer) {

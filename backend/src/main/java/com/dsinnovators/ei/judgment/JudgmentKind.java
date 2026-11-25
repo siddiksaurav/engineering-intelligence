@@ -10,7 +10,7 @@ public enum JudgmentKind {
     PULL_REQUEST_DIGEST(JudgmentSubject.Type.PULL_REQUEST_RECORD),
     /** The tier of one Test change, Refactor and performance, Security or Infra and release item row. */
     ITEM_TIER(JudgmentSubject.Type.EVIDENCE_ITEM),
-    /** Stage 2: the complexity of one Feature work item row, with its rubric facts. */
+    /** Stage 2: the complexity of one Feature work item row, with the problems it solved and their depths. */
     FEATURE_WORK_COMPLEXITY(JudgmentSubject.Type.EVIDENCE_ITEM),
     /** Stage 2: the type of one Review comment written item row. */
     REVIEW_COMMENT(JudgmentSubject.Type.EVIDENCE_ITEM);

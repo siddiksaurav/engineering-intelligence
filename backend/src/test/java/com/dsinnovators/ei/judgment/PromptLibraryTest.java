@@ -142,12 +142,6 @@ class PromptLibraryTest {
         assertEquals(6, properties.size());
         assertEquals(wireNames(PullRequestDigest.WorkType.values()), enumValues(properties.path("workType")));
         assertEquals(wireNames(FeatureWorkAnswer.Complexity.values()), enumValues(properties.path("complexity")));
-        assertEquals(
-                wireNames(FeatureWorkAnswer.DataChange.values()),
-                enumValues(properties.path("rubric").path("properties").path("dataChange")));
-        assertEquals(
-                wireNames(FeatureWorkAnswer.Integration.values()),
-                enumValues(properties.path("rubric").path("properties").path("integration")));
     }
 
     @Test
