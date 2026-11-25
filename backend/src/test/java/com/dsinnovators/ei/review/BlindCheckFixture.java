@@ -53,7 +53,8 @@ public final class BlindCheckFixture {
                 """,
                 Long.class,
                 itemId,
-                "{\"complexity\":\"" + complexity + "\",\"complexityByTable\":\"" + complexity + "\"}",
+                "{\"complexity\":\"%1$s\",\"complexityByTable\":\"%1$s\",\"problems\":[{\"name\":\"Cache invalidation\",\"depth\":\"answer_exists\"}]}"
+                        .formatted(complexity),
                 "Reason for " + complexity + " item " + itemId,
                 supersedes);
     }
