@@ -155,3 +155,67 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+.problems,
+.marks {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.marks {
+  margin-top: 12px;
+}
+
+.problem {
+  padding: 10px 12px;
+  border-radius: var(--radius-small);
+  background: var(--sky-50);
+  border-left: 3px solid var(--azure-500);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.problem p,
+.problem blockquote {
+  margin: 6px 0 0;
+}
+
+.problem blockquote {
+  padding-left: 10px;
+  border-left: 2px solid var(--line);
+  color: var(--ink-2);
+}
+
+.problem small {
+  display: block;
+  margin-top: 6px;
+  color: var(--ink-3);
+}
+
+.problemHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+}
+
+.depth {
+  padding: 1px 8px;
+  border-radius: 6px;
+  color: #fff;
+  font-family: var(--font-data);
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.depth[data-depth="routine"] {
+  color: var(--navy-950);
+}
+
+.tableLine {
+  margin: 12px 0 0;
+  color: var(--ink-2);
+}

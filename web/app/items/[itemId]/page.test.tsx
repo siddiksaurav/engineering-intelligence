@@ -200,4 +200,112 @@ describe("ItemPage", () => {
 
     expect(fetchItem).toHaveBeenCalledWith("http://backend.test:9000", 1);
   });
+
+  describe("a judgment with problems", () => {
+    const PROBLEMS_VALUE = {
+      workType: "feature",
+      problems: [
+        {
+          name: "Single sign-on handshake",
+          depth: "answer_exists",
+          depthReason: "A standard protocol covers it.",
+          quote: "uses the OIDC library",
+          source: "PR-101",
+          earlierExample: "not_checked",
+        },
+        {
+          name: "Role mapping",
+          depth: "no_ready_answer",
+          depthReason: "No pattern fitted the group model.",
+          quote: "",
+          source: "",
+          earlierExample: "not_checked",
+        },
+      ],
+      problemsAffectEachOther: true,
+      problemsAffectEachOtherReason: "The mapping depends on the handshake claims.",
+      mistakesStayHidden: false,
+      mistakesStayHiddenReason: "",
+      reachesAcrossProjects: false,
+      thinEvidence: false,
+      complexity: "high",
+      complexityByTable: "high",
+    };
+    const PROBLEMS_JUDGMENT: ItemJudgment = {
+      ...COMPLEXITY_JUDGMENT,
+      tier: "T3",
+      value: PROBLEMS_VALUE,
+      facts: [
+        {
+          fact: 'Single sign-on handshake: answer exists, "uses the OIDC library"',
+          link: "https://github.com/opf/openproject/pull/101",
+        },
+        { fact: "Role mapping: no ready answer", link: "https://community.openproject.org/wp/10" },
+      ],
+    };
+
+    it('shows each problem with its depth and "earlier example not checked"', async () => {
+      answering({ ...FEATURE, judgment: PROBLEMS_JUDGMENT });
+
+      const html = await render();
+
+      expect(html).toContain("Problems solved");
+      expect(html).toContain("Single sign-on handshake");
+      expect(html).toContain("Answer exists");
+      expect(html).toContain("A standard protocol covers it.");
+      expect(html).toContain("No ready answer");
+      expect(html).toContain("No pattern fitted the group model.");
+      expect(html).toContain('href="https://github.com/opf/openproject/pull/101"');
+      expect(html).toContain("uses the OIDC library");
+      expect(html).toContain('href="https://community.openproject.org/wp/10"');
+      expect(html.match(/earlier example not checked/g)).toHaveLength(2);
+      expect(html).toContain("The problems affect each other");
+      expect(html).toContain("The mapping depends on the handshake claims.");
+      expect(html).not.toContain("Mistakes stay hidden");
+      expect(html).not.toContain("thin evidence");
+      expect(html).not.toContain("<h3>Facts</h3>");
+    });
+
+    it("shows the two flags and thin evidence when they are set", async () => {
+      answering({
+        ...FEATURE,
+        judgment: {
+          ...PROBLEMS_JUDGMENT,
+          value: {
+            ...PROBLEMS_VALUE,
+            mistakesStayHidden: true,
+            mistakesStayHiddenReason: "A wrong schema would show only later.",
+            thinEvidence: true,
+          },
+        },
+      });
+
+      const html = await render();
+
+      expect(html).toContain("Mistakes stay hidden");
+      expect(html).toContain("A wrong schema would show only later.");
+      expect(html).toContain("thin evidence");
+    });
+
+    it("shows the table line only when it differs", async () => {
+      answering({ ...FEATURE, judgment: PROBLEMS_JUDGMENT });
+      expect(await render()).not.toContain("The table of spec 6.2");
+
+      answering({
+        ...FEATURE,
+        judgment: { ...PROBLEMS_JUDGMENT, value: { ...PROBLEMS_VALUE, complexityByTable: "medium" } },
+      });
+      expect(await render()).toContain("The table of spec 6.2 would give Medium.");
+    });
+
+    it("a judgment without problems shows as before", async () => {
+      answering(FEATURE);
+
+      const html = await render();
+
+      expect(html).not.toContain("Problems solved");
+      expect(html).toContain("<h3>Facts</h3>");
+      expect(html).toContain("Adds a new role table");
+    });
+  });
 });

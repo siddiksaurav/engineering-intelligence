@@ -1,5 +1,7 @@
 import { TierChip } from "@/components/TierChip";
+import { featureWorkProblems } from "@/lib/featureWorkProblems";
 import type { ItemDetail, ItemJudgment } from "@/lib/items";
+import { ProblemsSolved } from "./ProblemsSolved";
 import styles from "./item.module.css";
 
 /** The current judgment of an item in words: its state, tier, value, reason, facts and where it came from. */
@@ -26,12 +28,21 @@ export function JudgmentView({ item }: { item: ItemDetail }) {
         </ul>
       </div>
       {judgment.reason && <p className={styles.reason}>{judgment.reason}</p>}
-      <Facts facts={judgment.facts} />
+      <JudgmentEvidence judgment={judgment} />
       <p className={styles.provenance}>
         Model {judgment.model}, prompt version {judgment.promptVersion}, judged on {judgment.judgedAt?.slice(0, 10)}
       </p>
     </>
   );
+}
+
+/** The problems of a v2 Feature work judgment already carry the facts, so the plain list would show them twice. */
+function JudgmentEvidence({ judgment }: { judgment: ItemJudgment }) {
+  const problems = featureWorkProblems(judgment);
+  if (problems) {
+    return <ProblemsSolved problems={problems} facts={judgment.facts ?? []} />;
+  }
+  return <Facts facts={judgment.facts} />;
 }
 
 function Facts({ facts }: { facts: ItemJudgment["facts"] }) {

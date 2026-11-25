@@ -29,12 +29,15 @@ const TYPE_COLORS: Record<EvidenceType, string> = {
   review_comment_written: "var(--type-review-comment-written)",
 };
 
-/** Tiers and complexities are magnitudes: one blue, darker for more. */
+/** Tiers, complexities and the depths of a problem are magnitudes: one blue, darker for more. */
 const ORDERED_COLORS: Record<string, string> = {
   low: "var(--step-1)",
   medium: "var(--step-2)",
   high: "var(--step-4)",
   very_high: "var(--step-5)",
+  routine: "var(--step-1)",
+  answer_exists: "var(--step-3)",
+  no_ready_answer: "var(--step-5)",
   T1: "var(--step-1)",
   T2: "var(--step-3)",
   T3: "var(--step-5)",
