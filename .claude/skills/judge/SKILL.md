@@ -18,7 +18,7 @@ The user may be on a phone: short messages, counts only.
 | Argument | Job | Prompt version | Model | Before it |
 |---|---|---|---|---|
 | `digest` | `pull-request-digest` | `pull-request-digest/v1` | `sonnet` | `github-import` |
-| `feature-work` | `feature-work-judgment` | `feature-work-complexity/v2` | `opus` (decision 326) | `digest` done, then `evidence-build` |
+| `feature-work` | `feature-work-judgment` | `feature-work-complexity/v2` | `sonnet` (decision 327) | `digest` done, then `evidence-build` |
 | `review-comments` | `review-comment-judgment` | `review-comments/v1` | `sonnet` | `evidence-build` |
 
 The order of a full round is: `digest`, then `evidence-build` (the builders need the work types),

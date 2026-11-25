@@ -115,7 +115,7 @@ The new input hash (new prompt version, new text) means every item is judged aga
 6. **Item page.** For a `feature_work_complexity` judgment with `problems`: a list "Problems solved", each with its name, a depth chip (Routine, Answer exists, No ready answer), the depth reason, the quote linked to its source, and the small line "earlier example not checked". Under the list: whether the problems affect each other and whether mistakes stay hidden, with the reason of each when true; "thin evidence" when the mark is set; and, only when it differs from the AI's complexity, the line "The table of spec 6.2 would give Medium." A judgment without `problems` (a v1 row on another database) shows as today.
 7. **G2 not scored.** The scorer reads the switch per gate. A gate that is calculated but not scored keeps its numbers and its outcome on the result, carries `scored: false`, never lowers the score, and its note is "G2 not scored yet" whatever its outcome. On the profile its pill shows the result as today (for example "Far miss") with a small tag "not scored" next to it (decision 322). The stand-in note "changes tests stands in for adds a regression test" stays, because G2 is still shown. The "why this score" and "next step" lines of the profile leave an unscored check out.
 8. **Names.** Trail notes: "check: G1 far", "check unverified: G4"; "held: G1" stays. Web texts: "Score before checks", "This check is not calculated in the PoC.", "The check has no result."
-9. **Run on `ei_latest`.** Dump the database first. Start the backend with `POSTGRES_DB=ei_latest JUDGMENT_MODE=exchange` (V14 is applied at start). Follow the steps of `/judge feature-work` until nothing waits; the subagents run on Opus (decision 326). Run `dimension-scoring` for 2026-Q3. Count the items per complexity.
+9. **Run on `ei_latest`.** Dump the database first. Start the backend with `POSTGRES_DB=ei_latest JUDGMENT_MODE=exchange` (V14 is applied at start). Follow the steps of `/judge feature-work` until nothing waits; the subagents run on Sonnet (decision 327). Run `dimension-scoring` for 2026-Q3. Count the items per complexity.
 
 ### The prompt (`feature-work-complexity/v2`)
 
@@ -173,7 +173,7 @@ From the question brief (user, 25 Nov 2026):
 - 321 (Q2). An item with thin evidence is judged normally, with no push toward the lower depth, and marked `thinEvidence`.
 - 322 (Q3). The profile shows G2 with its result pill and a small tag "not scored".
 - 323 (Q4). The AI decides the complexity itself and reasons on it; the table and the five examples of spec 6.2 are guidance. The code derives nothing and refuses nothing; it stores what the table would give as `complexityByTable`, for information. Replaces decision 313 as a rule on the complexity.
-- 326 (Q7). Opus answers the Feature work requests in exchange mode.
+- 326 (Q7), replaced by 327 on the same day: Sonnet answers the Feature work requests in exchange mode, as for v1. Opus would use too much of the user's Claude usage.
 
 By the session (the user found Q5 too technical; Q6 was not asked):
 - 324 (Q5). One yes or no per item for "the problems affect each other", with one sentence.
