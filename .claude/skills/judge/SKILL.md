@@ -1,6 +1,6 @@
 ---
 name: judge
-description: PoC only. Claude Code answers the model jobs through the model exchange instead of a free LLM provider. Exports the waiting requests of one stage, has Sonnet subagents answer them, then runs the job again so the judgments are stored through the normal checks.
+description: PoC only. Claude Code answers the model jobs through the model exchange instead of a free LLM provider. Exports the waiting requests of one stage, has subagents answer them, then runs the job again so the judgments are stored through the normal checks.
 disable-model-invocation: true
 argument-hint: [digest|feature-work|review-comments] [max-requests]
 ---
@@ -15,11 +15,11 @@ The user may be on a phone: short messages, counts only.
 
 ## Stages
 
-| Argument | Job | Prompt version | Before it |
-|---|---|---|---|
-| `digest` | `pull-request-digest` | `pull-request-digest/v1` | `github-import` |
-| `feature-work` | `feature-work-judgment` | `feature-work-complexity/v1` | `digest` done, then `evidence-build` |
-| `review-comments` | `review-comment-judgment` | `review-comments/v1` | `evidence-build` |
+| Argument | Job | Prompt version | Model | Before it |
+|---|---|---|---|---|
+| `digest` | `pull-request-digest` | `pull-request-digest/v1` | `sonnet` | `github-import` |
+| `feature-work` | `feature-work-judgment` | `feature-work-complexity/v2` | `opus` (decision 326) | `digest` done, then `evidence-build` |
+| `review-comments` | `review-comment-judgment` | `review-comments/v1` | `sonnet` | `evidence-build` |
 
 The order of a full round is: `digest`, then `evidence-build` (the builders need the work types),
 then `feature-work` and `review-comments`, then `dimension-scoring` with the quarter. The three
@@ -44,7 +44,7 @@ Code usage in steps. Run `/judge` again for the rest.
    `jq`, so the request texts do not pass through your context:
    `curl -s "...requests?promptVersion=<v>&limit=<n>" | jq -c '.[]' | while read -r r; do echo "$r" > "<dir>/$(echo "$r" | jq -r .requestHash).json"; done`
 4. **Answer.** Split the files into batches of about 8. Start one subagent per batch, up to 6 at a
-   time, with `model: "sonnet"` and `subagent_type: "general-purpose"`, all in one message. Give
+   time, with the `model` of the stage's row and `subagent_type: "general-purpose"`, all in one message. Give
    each the brief below with its file paths. Wait for all of them, then start the next wave.
 5. **Consume.** Run the same job again and wait for it to end. Report the stored count (`digests_written`
    or `judgments_written`), any failed items, and `left_for_exchange`. After this run
@@ -54,7 +54,8 @@ Code usage in steps. Run `/judge` again for the rest.
 
 ## Subagent brief
 
-Fill in the file paths. Keep the rest word for word.
+Fill in the file paths and, in step 5, the model that answers: `claude-sonnet-5-5` for a Sonnet
+stage, `claude-opus-5-5` for an Opus stage. Keep the rest word for word.
 
 ```
 You are the judging model of a measurement system. You stand in for an LLM API call.
@@ -68,7 +69,7 @@ For each file below, one at a time:
 3. If refusalReason is not null, your earlier answer was refused for that reason; avoid it.
 4. Write one JSON object that strictly follows "jsonSchema": every required field, no extra field,
    enum values spelled exactly, the types as given. Facts and quotes come from the input only.
-5. Save it to <same path>.answer.json, as {"answer": <your object>, "answeredBy": "claude-sonnet-5-5 via claude-code"}.
+5. Save it to <same path>.answer.json, as {"answer": <your object>, "answeredBy": "<model id> via claude-code"}.
 6. Send it: curl -s -o /dev/null -w '%{http_code}' -X PUT -H 'Content-Type: application/json' \
      --data @<same path>.answer.json localhost:8080/api/model-exchange/requests/<requestHash>/answer
    204 means taken. On 400, fix the answer and send it again. 409 means it was answered already;
