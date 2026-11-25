@@ -4,7 +4,9 @@ This document lists what will be built, in which order, and where each part stan
 
 | Document | What it holds |
 | --- | --- |
-| `docs/spec/spec-v1.5.md` | The full system spec. Never edited |
+| `docs/spec/spec-v1.6.md` | The full system spec, the version in force from 25 Nov 2026 (decision 301). Never edited |
+| `docs/spec/spec-v1.5.md` | The version F01 to F15 were built on. Kept because their designs and decisions cite it. Never edited |
+| `docs/spec/v1.5-to-v1.6-impact.md` | What changed between the two versions and what each change means for the PoC |
 | `poc-plan.md` | The PoC design: what the real data contains, scope, building rules, data model, risks |
 | `docs/master-plan.md` | This document: features, order, status |
 | `docs/features/FNN-name/` | Per feature: `design.md`, `plan.md`, `notes.md` |
@@ -15,14 +17,19 @@ When two documents disagree, the order of authority is: `docs/decisions.md` (new
 
 ## 1. Goal
 
-The spec puts all judgment in one step: the AI sets work type, complexity and tier on each evidence item. Everything after that is counting. The PoC must show management two things on real, public data:
+The spec puts all judgment in one step: the AI sets work type, complexity and tier on each evidence item. Everything after that is counting. The PoC answers one question for the user: can this idea be done? The user must be able to say "I validated the idea with a small PoC" and name what was measured. Management may ask to see it later, so it stays showable, but it is not built for a demo (decision 302).
 
-1. The AI's judgment is correct often enough to trust.
-2. A person can follow any score back to the pull request it came from.
+The idea counts as validated when three things are shown on real, public data:
+
+1. Tickets and pull requests can be read and turned into judged evidence items, and a person can follow any score back to the pull request it came from. F01 to F15 show this.
+2. The AI's complexity, judged by the rule of spec v1.6 section 6.2 (problems and their depths), agrees with the user's own blind labels often enough. F16 and F08 show this.
+3. The AI's reasons, meaning the problems it lists and the depth it gives each, are right when the user reads them. F08 shows this.
+
+The result is written to `docs/feasibility-report.md`, with what was not validated. Gaps in how a project keeps its records (project compliance) do not block the idea: standard practice in a project closes them, and the PoC does not measure them further.
 
 The data is public: the repository `github.com/opf/openproject` and its tracker `community.openproject.org`. The PoC is the first slice of the real system, not throwaway code.
 
-The finished PoC is scope option B of `poc-plan.md` section 2. A viewer opens the profile page of one developer and sees two dimension scores, five analytics and two gates. Every number opens to its evidence items, each item opens to the AI's judgment with its reason, and each judgment links to the source on GitHub and OpenProject.
+The finished PoC is scope option B of `poc-plan.md` section 2. A viewer opens the profile page of one developer and sees two dimension scores, five analytics and two quality checks. Every number opens to its evidence items, each item opens to the AI's judgment with its reason, and each judgment links to the source on GitHub and OpenProject.
 
 ## 2. Global constraints
 
@@ -92,15 +99,18 @@ The tables are described in `poc-plan.md` section 3.4. Adding a data source late
 
 These are left out on purpose (`poc-plan.md` 3.1). No feature builds them. If a session thinks one is needed, it stops and asks.
 
-- Gates G3 and G5. G4 is shown only as "gate unverified".
+- Quality check G3. G4 is shown only as unverified. (G5 and the Component ownership evidence type left the spec in v1.6.)
 - The clean-delivery rule (spec 9.2).
 - Dimensions other than Coding and code quality and Engineering standards and system health. Planning and execution needs Planning items and sprint data (gate G3) that are not imported (decision 281). The other dimensions are shown as "Not assessed".
 - Tiers for Bug fix and Documentation items. They are captured and counted only.
-- Confidence (spec 9.4), the opportunity profile (spec 6.6), lead-rated dimensions (spec 8.5, 9.5). The weighted overall score and the growth-area sub-scores (decision 281).
+- The limited-data rule (spec 9.4; it replaced confidence in v1.6 and needs allocation data), the opportunity profile (spec 6.6), lead-rated dimensions (spec 8.5, 9.5). The weighted overall score and the growth-area sub-scores (decision 281).
 - The screen where a lead corrects a judgment (spec 9.7 row 1). The data model already supports corrections.
 - Authentication and roles.
 - A scheduler or daily run.
 - The client-owned project track (spec 15).
+- The search of the repository for an earlier solved example (spec 6.2, "the first solution gets the credit"). The AI judges from tickets and digests and marks each problem "earlier example not checked" (decision 303). The growing set of lead-confirmed examples: the PoC uses the five of spec 6.2 (decision 306).
+- Renaming "gate" to "check" and "hygiene" to "compliance" in code, tables and the API. Only screens and trail notes change (decision 304).
+- Measuring project compliance beyond the one number that exists (decision 302).
 - The demo. It is planned separately.
 
 ## 5. Features
@@ -114,14 +124,15 @@ These are left out on purpose (`poc-plan.md` 3.1). No feature builds them. If a 
 | F05 | Evidence builders without AI, and the evidence list page | F04 | A web page lists the evidence items per developer with links to the sources |
 | F06 | `JudgmentModel`, Stage 1 PR digest, builders that need the PR work type | F05 | Every PR has a digest; test, refactor, security and infra items exist with a tier |
 | F07 | Stage 2 Feature work judgment and review comment judgment | F06 | Every Feature work item has a complexity and every review comment a type and tier |
-| F08 | Blind check and the item page | F07 | You label 30 items blind; the item page shows source, AI judgment and your label |
-| F09 | Full-window run (one month) | F08 | July 2026 is ingested and judged |
+| F08 | Blind check | F16 | You label 30 Feature work items blind and mark the AI's reasons; the agreement numbers are in `docs/feasibility-report.md` |
+| F09 | Full-window run (one month) | F16 | July 2026 is ingested and judged. Runs only if F16 leaves too few items at one complexity (decision 307) |
 | F10 | Five analytics and the hygiene number | F07 (F09 deferred, decision 178) | The analytics API returns the numbers for one developer |
 | F11 | Scoring | F10 | Two dimension scores per developer, with gates G1 and G2 and the trail |
 | F12 | Profile page | F11 | One page per developer where every number opens down to a PR |
 | F13 | Accuracy measurement (dropped, decision 80) | F12 | An accuracy page with the measures of `poc-plan.md` section 4 |
 | F14 | Interface redesign with charts | F12 | An overview dashboard, a developer roster with scores and a profile with charts, in one design system |
 | F15 | Deck-style pages on existing data | F14 | Counts fixed to the quarter, then profile, team list and overview shaped like the v1.5 deck with real charts, on the two existing scores and the analytics |
+| F16 | Spec v1.6 alignment | F15 | Every Feature work item is judged again by problems and depths, shown on the item page; G2 is shown and not scored; screens use the v1.6 names |
 
 Each block below gives a new session enough to start the deep dive. "Open questions" are the points the deep dive must answer; they are not decided here.
 
@@ -260,28 +271,26 @@ Each block below gives a new session enough to start the deep dive. "Open questi
 
 ---
 
-### F08 Blind check and the item page
+### F08 Blind check
 
-**Goal.** A first, honest check of the AI by a person, and the page where a judgment can be read next to its source.
+**Goal.** The measurement behind "I validated the idea": how often the AI's complexity agrees with the user's own blind labels, and how often its reasons are right (master plan section 1, points 2 and 3). Reshaped on 25 Nov 2026 (decision 308); the item page it once held was built in F12.
 
 **Builds.**
 - Migration for `human_label`.
-- Export of 30 Feature work items as a CSV with the item id and the links to GitHub and OpenProject, without the AI's answer. Import of the filled file (work type, complexity) into `human_label`.
-- **Item page** (read-only): the source on the left (work item text, PR descriptions, files changed, links to GitHub and OpenProject); the AI's work type, complexity, tier, reason and facts on the right; the human label next to it where one exists.
-- The list page of F05 now shows the AI's judgment per item, and how often AI and human label agree.
-- Prompt tuning, at most one round (decision 80): the user reads further items, and the prompts of F06 and F07 are adjusted from what is found. Each change is a new prompt version, the affected items are judged again, and the old judgments are kept.
+- Export of 30 Feature work items as a CSV with the item id and the links to GitHub and OpenProject, without the AI's answer. The 30 are picked balanced across the AI's Low, Medium and High, not at random (decision 307). The user labels each with a complexity, using the depths of spec v1.6 section 6.2. Import of the filled file into `human_label`.
+- The item page shows the user's label next to the AI's judgment. For each labeled item the user marks whether the AI's reason is right: its problems and the depth of each.
+- The numbers: complexity exact match, complexity within one step, reason right. Each can be checked against a separate SQL count.
+- `docs/feasibility-report.md`: the numbers, every disagreement with both answers, and what the PoC did not validate (the earlier-example search, DSi's own data, levels, the other dimensions).
 
-**Read first.** `poc-plan.md` 3.1 item 4, 3.7 step 8, section 4 (these 30 items are its tuning set). Spec 9.7.
+**Read first.** `poc-plan.md` section 4. Spec v1.6 section 6.2. `docs/features/F16-spec-v1.6-alignment/notes.md`. `docs/features/F12-profile-page/notes.md` for the item page.
 
-**Gives to later features.** The export and import that F13 uses again. The item page that F12 links to.
+**Done when.** The exported CSV contains no AI answer in any column. The item page of a labeled item shows both answers. Each number equals a count made with separate SQL. The feasibility report is written and the user has read it.
 
-**Done when.** The exported CSV contains no AI answer in any column. The item page for a labeled item shows both answers. The agreement number on the list page equals a count made by hand from the two tables.
+**Order that must be kept.** The user does not open the item page of an item before its label is imported. Showing an AI answer before labeling spoils the check.
 
-**Order that must be kept.** The item page is opened to the user only after the labels are imported. Building it earlier is fine; showing AI answers before labeling is not.
+**Targets, proposed.** Exact match 70% or more, within one step 95% or more, reason right 90% or more (`poc-plan.md` section 4). With 30 items they are an indication, not proof; the report says so.
 
-**Decision at the end.** The user decides whether the agreement is good enough to start F09. F09 is the first large run, so it does not start without that decision.
-
-**Open questions.** How the 30 items are picked (random, or balanced across the AI's complexity values). The CSV columns and how a wrong value in the import is reported. What the item page shows for the other evidence types. The chart library and page layout.
+**Open questions.** The CSV columns and how a wrong value in the import is reported. Where the user marks a reason right or wrong (in the CSV after the import, or on the item page). Whether a prompt tuning round follows a poor result, and on which items it is then measured.
 
 ---
 
@@ -298,6 +307,8 @@ Each block below gives a new session enough to start the deep dive. "Open questi
 **Done when.** The number of distinct merged PRs and of distinct work items in `raw_record` matches the GitHub and OpenProject totals for the window. The share of PRs linked to a work item is about 78%. Every PR has a digest and every closed Feature work item a complexity, or a recorded reason why not. The actual cost is in `notes.md`.
 
 **Known facts.** 215 merged PRs in 1 to 14 Jul 2026 (F02), so about 450 for the month.
+
+**When it runs (decision 307).** Only if, after F16 has judged the 42 Feature work items of 1 to 14 Jul again, one of Low, Medium or High has fewer than 6 items. Under the old rubric the spread was 23 Low, 17 Medium, 2 High: too few High items to show that the AI recognises hard work. It then runs before the labeling of F08, on 15 to 31 Jul, in exchange mode (`/judge`).
 
 **Open questions.** How the run waits on rate limits and resumes the next day if the daily quota runs out. What is done with PRs that failed judgment.
 
@@ -415,7 +426,32 @@ Every count is split by tier (spec 7).
 
 **Done when.** Every count on the overview, the roster and the profile is for the selected quarter (tested). The project bars leave the person out (tested). Each analytic shows judged out of total. The pages render on desktop and phone width with the real data of `ei_latest`. A viewer clicks from a score down to a PR on GitHub. The palette passes the colour-blind check. Backend build and web format check, lint, type check, tests and build are green.
 
+---
+
+### F16 Spec v1.6 alignment
+
+**Goal.** The PoC judges by the rules of spec v1.6 where they differ from v1.5 in a way that changes a judgment or a score. `docs/spec/v1.5-to-v1.6-impact.md` lists every difference and the code it touches.
+
+**Builds.**
+- **Complexity by problems and depths (spec 6.2).** Prompt and schema `feature-work-complexity/v2`: the model lists the distinct problems of the Feature work item, gives each a depth (Routine, Answer exists, No ready answer) with a quote, says whether the problems affect each other and whether mistakes stay hidden, and gives the complexity. The rubric, the five examples and the rules of 6.2 are in the prompt. No repository search: each problem carries "earlier example not checked" (decision 303). The answer is stored in `judgment.value`; the key `complexity` and its four values stay, so scoring and analytics read on unchanged.
+- The Stage 2 input also carries the reason and facts of each PR digest, which are stored already. No new digest run.
+- The item page shows the problems and their depths.
+- **G2 shown and not scored (spec 7.3).** G2 keeps its numbers on the profile, changes no dimension score, and the trail notes "G2 not scored yet". A setting switches it on (decision 305).
+- **Names on screens and in trail notes (decision 304).** "check unverified", "check: G4 far", "Score before checks" and the like. Code, tables and the API keep "gate" and "hygiene".
+- The `/judge` skill names the v2 prompt.
+- On `ei_latest`: the 42 Feature work items are judged again (the new prompt version changes every input hash; the new row supersedes the old one), then `dimension-scoring` runs for 2026-Q3.
+
+**Read first.** `docs/spec/v1.5-to-v1.6-impact.md`. Spec v1.6 sections 6.2, 7.3 and 9.1 step 6. `docs/features/F07-stage-2-judgment/design.md` and `notes.md`. `docs/features/F11-scoring/notes.md`.
+
+**Gives to later features.** The v1.6 judgments that F08 measures. The spread of Low, Medium and High that decides whether F09 runs (decision 307).
+
+**Done when.** Every Feature work item of `ei_latest` has a current judgment of `feature-work-complexity/v2` with at least one problem and a depth on each. The item page of one item shows them. A G2 far miss leaves the dimension score as it is and the trail says "G2 not scored yet" (tested). No screen and no trail note says "gate". The count of items at Low, Medium and High is in `notes.md`.
+
+**Open questions.** Whether the code checks that the complexity follows from the depths, or derives it. The exact shape of a problem in the schema. How G2 is switched (a setting row, or the `applied` column with a reason). Whether `feature-work-complexity/v1` files stay (their judgments remain in the database).
+
 ## 6. Order
+
+**From 25 Nov 2026 (decisions 302 and 307): F16, then F09 only if the rule of decision 307 asks for it, then F08.** The paragraphs below describe how F01 to F15 were ordered.
 
 The features are built in number order; each depends on those in the "Depends on" column. A feature starts when the user asks for it. Two overlaps are allowed to save time (decision 81):
 
@@ -437,14 +473,15 @@ Update this table when a feature changes state. States: not started, in design, 
 | F05 | Evidence builders without AI, list page | done | `docs/features/F05-evidence-builders/design.md` | `docs/features/F05-evidence-builders/plan.md` |
 | F06 | `JudgmentModel`, PR digest, AI-dependent builders | done | `docs/features/F06-pr-digest/design.md` | `docs/features/F06-pr-digest/plan.md` |
 | F07 | Feature work and review comment judgment | done | `docs/features/F07-stage-2-judgment/design.md` | `docs/features/F07-stage-2-judgment/plan.md` |
-| F08 | Blind check and item page | deferred to the end (decision 178) | | |
-| F09 | Full-window run (one month) | deferred to the end (decision 178) | | |
+| F08 | Blind check | not started; after F16 (decision 307) | | |
+| F09 | Full-window run (one month) | not started; only if decision 307 asks for it | | |
 | F10 | Analytics and hygiene | done | `docs/features/F10-analytics/design.md` | `docs/features/F10-analytics/plan.md` |
 | F11 | Scoring | done | `docs/features/F11-scoring/design.md` | `docs/features/F11-scoring/plan.md` |
 | F12 | Profile page | done | `docs/features/F12-profile-page/design.md` | `docs/features/F12-profile-page/plan.md` |
 | F13 | Accuracy measurement | dropped (decision 80) | | |
 | F14 | Interface redesign with charts | done | `docs/features/F14-interface-redesign/design.md` | `docs/features/F14-interface-redesign/plan.md` |
 | F15 | Deck-style pages on existing data | done | `docs/features/F15-deck-style-pages/design.md` | `docs/features/F15-deck-style-pages/plan.md` |
+| F16 | Spec v1.6 alignment | not started | | |
 
 ## 8. Glossary
 
@@ -455,19 +492,21 @@ The names are fixed by spec section 3. Code, tables and screens use the same nam
 | Data source | A system records are pulled from. Here: GitHub, OpenProject | 3, 5 |
 | Raw record | An unchanged copy of one pulled record | PoC |
 | Evidence item | One piece of work linked to one person | 3, 6.1 |
-| Evidence type | The kind of an evidence item. The spec has 18; the PoC builds 8 | 6.4 |
+| Evidence type | The kind of an evidence item. The spec has 17; the PoC builds 8 | 6.4 |
 | Feature work | One person's part of one feature: their tasks and PRs under it | 6.2 |
 | Work type | One of 13 labels on a PR or work item: feature, enhancement, fix, maintenance, research, technical task, operational support, refactor, test, docs, infra, performance, security | 6.2 |
-| Complexity | Low, Medium, High or Very high, on a Feature work item | 6.2 |
+| Complexity | Low, Medium, High or Very high, on a Feature work item. Set from the depths of its problems | 6.2 |
+| Problem | One distinct thing a Feature work item had to solve. The AI lists them | 6.2 |
+| Depth | Routine, Answer exists or No ready answer, on a problem: whether a ready answer existed | 6.2 |
 | Tier | T1, T2 or T3 on an item: which level's kind of work it is | 6.3, 6.4 |
 | Judgment | One stored answer of the AI or a person about an item, with reason and facts | PoC |
 | PR digest | The Stage 1 judgment: a short factual summary of one PR | PoC |
 | Analytic | A number or chart calculated from items. Not scored | 7 |
-| Quality gate | An analytic that can hold a dimension score down. The PoC applies G1 and G2 | 7.3 |
+| Quality check | An analytic that can hold a dimension score down. Called "quality gate" before v1.6; the code, tables and API keep "gate" (decision 304). The PoC applies G1; G2 is shown and not scored (decision 305) | 7.3 |
 | Dimension | One row of the DSi Career Framework | 8 |
 | Presence | A person has presence at a tier when enough of their items sit at that tier or higher | 9.3 |
 | Working tier | The highest tier at which the person has presence. Shown as "works at T2" | 9.3 |
 | Dimension score | 0, 1 or 2 for one dimension in one quarter | 9.1 |
-| Trail | The stored record behind a dimension score: items, tiers, gate results, notes | 9.1 |
-| Hygiene | How well a project keeps its records. Here: the share of PRs linked to a work item | 10.3 |
+| Trail | The stored record behind a dimension score: items, tiers, check results, notes | 9.1 |
+| Project compliance | How well a project keeps its records. Here: the share of PRs linked to a work item. Called "hygiene" before v1.6; the code and API keep that name (decision 304) | 10.3 |
 | Level | L1, L2 or L3. Unknown for this team; the viewer selects one | 3 |
