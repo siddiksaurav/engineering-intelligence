@@ -378,6 +378,20 @@ describe("ItemPage", () => {
       expect(html).not.toContain("steps apart");
     });
 
+    it("offers the reason mark form only on a labeled item that could be judged", async () => {
+      answering(withLabel(LABEL));
+      expect(await render()).toContain("Mark the AI&#x27;s reason");
+
+      answering(withLabel(null));
+      expect(await render()).not.toContain("Mark the AI&#x27;s reason");
+
+      answering(withLabel({ complexity: null, cannotJudge: true, note: null, labeledAt: LABEL.labeledAt }));
+      expect(await render()).not.toContain("Mark the AI&#x27;s reason");
+
+      answering(FEATURE);
+      expect(await render()).not.toContain("Mark the AI&#x27;s reason");
+    });
+
     it("shows no label panel for an item outside the sample", async () => {
       answering(FEATURE);
 

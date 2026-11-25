@@ -248,3 +248,75 @@
   color: var(--ink-2);
   overflow-wrap: anywhere;
 }
+
+.markForm {
+  display: grid;
+  gap: 14px;
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+
+.markForm h3 {
+  margin: 0;
+}
+
+.choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-small);
+  min-width: 0;
+}
+
+.choices legend {
+  padding: 0 6px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.choice {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.noteField {
+  display: grid;
+  gap: 4px;
+  font-weight: 600;
+}
+
+.noteField textarea {
+  font: inherit;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-small);
+  min-width: 0;
+}
+
+.save {
+  justify-self: start;
+  padding: 8px 22px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--azure-600);
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.save:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.refusal {
+  margin: 0;
+  color: var(--critical);
+  font-weight: 500;
+}
