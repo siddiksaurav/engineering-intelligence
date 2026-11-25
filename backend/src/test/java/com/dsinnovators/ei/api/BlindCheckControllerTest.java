@@ -105,4 +105,48 @@ class BlindCheckControllerTest extends DatabaseTest {
         assertEquals("low", body.get("problems").get(0).get("value").stringValue());
         assertTrue(body.get("problems").get(1).get("problem").stringValue().contains("not in the sample"));
     }
+
+    @Test
+    void answersWithTheNumbersAndTheItemsBehindThemWithTheirTitles() throws Exception {
+        long low = stored.judgedItem("low");
+        long medium = stored.judgedItem("medium");
+        long high = stored.judgedItem("high");
+        jdbc.update("update setting set value = '1'::jsonb where key = 'blind_check.items_per_complexity'");
+        client.post("/api/blind-check/sample");
+        client.postCsv(
+                "/api/blind-check/labels",
+                "item_id,complexity,note\n" + low + ",low,\n" + medium + ",high,steep\n" + high
+                        + ",cannot_judge,no ticket\n");
+        client.put(
+                "/api/evidence-items/" + low + "/reason-mark",
+                "{\"reasonRight\":true,\"problemMarks\":[{\"name\":\"Cache invalidation\",\"verdict\":\"right\"}]}");
+
+        HttpResponse<String> response = client.get("/api/blind-check");
+
+        assertEquals(200, response.statusCode());
+        JsonNode body = JobEndpointClient.json(response);
+        assertEquals(3, body.get("sampled").intValue());
+        assertEquals(3, body.get("labeled").intValue());
+        assertEquals(1, body.get("cannotJudge").intValue());
+        assertEquals(1, body.get("reasonMarked").intValue());
+        assertEquals(1, body.get("exactMatch").get("count").intValue());
+        assertEquals(2, body.get("exactMatch").get("of").intValue());
+        assertEquals(0.5, body.get("exactMatch").get("share").doubleValue());
+        assertEquals(1, body.get("problemVerdicts").get("right").intValue());
+        assertEquals(0.7, body.get("targets").get("exactMatch").doubleValue());
+        assertEquals(1, body.get("reasonsToMark").size());
+        JsonNode reasonToMark = body.get("reasonsToMark").get(0);
+        assertEquals(medium, reasonToMark.get("itemId").longValue());
+        assertEquals("Feature 2", reasonToMark.get("title").stringValue());
+        JsonNode disagreement = body.get("disagreements").get(0);
+        assertEquals(medium, disagreement.get("itemId").longValue());
+        assertEquals("high", disagreement.get("userComplexity").stringValue());
+        assertEquals("medium", disagreement.get("aiComplexity").stringValue());
+        assertEquals("steep", disagreement.get("userNote").stringValue());
+        assertEquals("Ada", disagreement.get("developer").stringValue());
+        assertTrue(disagreement.get("reasonRight").isNull());
+        assertEquals(high, body.get("cannotJudgeItems").get(0).get("itemId").longValue());
+        assertEquals(
+                "no ticket", body.get("cannotJudgeItems").get(0).get("note").stringValue());
+    }
 }

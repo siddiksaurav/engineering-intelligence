@@ -16,6 +16,11 @@ public final class BlindCheckFixture {
 
     /** A current Feature work item judged with the complexity, as the model answered it; returns the item row id. */
     public long judgedItem(String complexity) {
+        return judgedItem(complexity, false);
+    }
+
+    /** As {@link #judgedItem(String)}, with the model's {@code thinEvidence} flag as given. */
+    public long judgedItem(String complexity, boolean thinEvidence) {
         int feature = itemsStored + 1;
         long itemId = item("""
                 {"feature":{"number":%1$d,"title":"Feature %1$d","type":"Feature","url":"https://op.test/wp/%1$d"},
@@ -23,7 +28,7 @@ public final class BlindCheckFixture {
                  "pullRequests":[{"externalId":"%1$d","number":%2$d,"title":"Pull request %2$d","url":"https://gh.test/pull/%2$d","mergedAt":"2026-07-01T10:00:00Z"}],
                  "doneAt":"2026-07-03T10:00:00Z"}
                 """.formatted(feature, 100 + feature));
-        judgment(itemId, complexity, null);
+        judgment(itemId, complexity, thinEvidence, null);
         return itemId;
     }
 
@@ -41,6 +46,10 @@ public final class BlindCheckFixture {
 
     /** A judgment of the item; a second one for the same item supersedes the given one. Returns the judgment row id. */
     public long judgment(long itemId, String complexity, Long supersedes) {
+        return judgment(itemId, complexity, false, supersedes);
+    }
+
+    private long judgment(long itemId, String complexity, boolean thinEvidence, Long supersedes) {
         return jdbc.queryForObject(
                 """
                 insert into judgment (kind, evidence_item_id, value, tier, reason, facts, judged_by, model,
@@ -53,8 +62,8 @@ public final class BlindCheckFixture {
                 """,
                 Long.class,
                 itemId,
-                "{\"complexity\":\"%1$s\",\"complexityByTable\":\"%1$s\",\"problems\":[{\"name\":\"Cache invalidation\",\"depth\":\"answer_exists\"}]}"
-                        .formatted(complexity),
+                "{\"complexity\":\"%1$s\",\"complexityByTable\":\"%1$s\",\"thinEvidence\":%2$b,\"problems\":[{\"name\":\"Cache invalidation\",\"depth\":\"answer_exists\"}]}"
+                        .formatted(complexity, thinEvidence),
                 "Reason for " + complexity + " item " + itemId,
                 supersedes);
     }

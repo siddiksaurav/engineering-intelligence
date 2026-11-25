@@ -19,11 +19,20 @@ class BlindCheckController {
     private final BlindCheckSample sample;
     private final BlindCheckExport export;
     private final LabelImport labelImport;
+    private final BlindCheckReport report;
 
-    BlindCheckController(BlindCheckSample sample, BlindCheckExport export, LabelImport labelImport) {
+    BlindCheckController(
+            BlindCheckSample sample, BlindCheckExport export, LabelImport labelImport, BlindCheckReport report) {
         this.sample = sample;
         this.export = export;
         this.labelImport = labelImport;
+        this.report = report;
+    }
+
+    /** The numbers of the blind check, computed on every call, with the items behind them. */
+    @GetMapping
+    BlindCheckResponse numbers() {
+        return report.report();
     }
 
     /** Picks the sample when none is stored; always answers with the stored sample. */

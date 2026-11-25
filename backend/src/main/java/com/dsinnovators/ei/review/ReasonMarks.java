@@ -6,7 +6,6 @@ import java.time.Clock;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.databind.JsonNode;
@@ -19,9 +18,6 @@ import tools.jackson.databind.node.JsonNodeFactory;
  */
 @Service
 public class ReasonMarks {
-
-    private static final Set<String> VERDICTS = Set.of(
-            "right", "should_be_routine", "should_be_answer_exists", "should_be_no_ready_answer", "not_a_problem");
 
     private final BlindCheckItemRepository sampleItems;
     private final HumanLabelRepository labels;
@@ -101,9 +97,9 @@ public class ReasonMarks {
                 throw new InvalidProblemMarksException("Problem " + (index + 1) + " of the judgment is named '"
                         + expectedName + "', got '" + mark.name() + "'");
             }
-            if (mark.verdict() == null || !VERDICTS.contains(mark.verdict())) {
+            if (!ProblemMark.VERDICTS.contains(mark.verdict())) {
                 throw new InvalidProblemMarksException("The verdict '" + mark.verdict() + "' of problem '" + mark.name()
-                        + "' must be one of " + VERDICTS.stream().sorted().toList());
+                        + "' must be one of " + ProblemMark.VERDICTS);
             }
         }
     }
