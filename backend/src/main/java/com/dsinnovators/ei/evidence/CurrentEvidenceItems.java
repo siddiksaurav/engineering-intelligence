@@ -24,6 +24,14 @@ public class CurrentEvidenceItems {
         return items.findCurrentOfPersonBetween(personId, quarter.firstDay(), quarter.lastDay());
     }
 
+    /** Every current item of the type, oldest row first. */
+    @Transactional(readOnly = true)
+    public List<EvidenceItem> ofType(EvidenceType type) {
+        return items.findAllCurrent().stream()
+                .filter(item -> item.getEvidenceType() == type)
+                .toList();
+    }
+
     /** The rows with these ids, current or not: an id from an old trail still names its row. */
     @Transactional(readOnly = true)
     public List<EvidenceItem> byIds(Collection<Long> ids) {
