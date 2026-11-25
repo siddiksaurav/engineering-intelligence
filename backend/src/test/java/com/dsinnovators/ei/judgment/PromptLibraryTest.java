@@ -21,6 +21,7 @@ class PromptLibraryTest {
 
     private static final String VERSION = "pull-request-digest/v1";
     private static final String FEATURE_WORK_VERSION = "feature-work-complexity/v1";
+    private static final String FEATURE_WORK_VERSION_TWO = "feature-work-complexity/v2";
     private static final String REVIEW_COMMENTS_VERSION = "review-comments/v1";
 
     /**
@@ -32,6 +33,8 @@ class PromptLibraryTest {
             "f2da6360862df4f97e641ac7a8f3acf236ee8c8de0281881b55e520041d9875f",
             "judgment/prompts/feature-work-complexity-v1.md",
             "2e72717d21a26afef37c41df019abe8e5ddcb33eca2a21d1d96e75cef1879451",
+            "judgment/prompts/feature-work-complexity-v2.md",
+            "b98b22209aff7df58e4cbf866cdc63d5c820cf2ca3337262231db82cf409ce76",
             "judgment/prompts/review-comments-v1.md",
             "33592fd3f9cc675719f2a1f542879e5aad110f5b12537bb0f35b9956ec13cc1b");
 
@@ -41,6 +44,8 @@ class PromptLibraryTest {
             "27fedee68a274de8dc7b5ea2a9cd7563d31a47af1fa4b6944bee286f78dd0010",
             "judgment/schemas/feature-work-complexity-v1.json",
             "625d61212e88fcfd792e94fce9fa776f7432cee962c6ccf0e033821da8d10626",
+            "judgment/schemas/feature-work-complexity-v2.json",
+            "ee029be1db3034afc674198cc879bbfba9526e599ae8652d852bd0b83ee055ba",
             "judgment/schemas/review-comments-v1.json",
             "c630d670df462085e34d6d73cb64e065f3f5602ac9e5a7aa3f3e02b2d04d879b");
 
@@ -143,6 +148,62 @@ class PromptLibraryTest {
         assertEquals(
                 wireNames(FeatureWorkAnswer.Integration.values()),
                 enumValues(properties.path("rubric").path("properties").path("integration")));
+    }
+
+    @Test
+    void theFeatureWorkPromptOfVersionTwoNamesTheDepthsTheComplexitiesAndTheExamples() {
+        String instructions = library.instructions(FEATURE_WORK_VERSION_TWO);
+
+        for (String depth : List.of("routine", "answer_exists", "no_ready_answer")) {
+            assertTrue(instructions.contains("`" + depth + "`"), depth);
+        }
+        for (FeatureWorkAnswer.Complexity complexity : FeatureWorkAnswer.Complexity.values()) {
+            assertTrue(instructions.contains("`" + complexity.wireName() + "`"), complexity.wireName());
+        }
+        for (PullRequestDigest.WorkType workType : PullRequestDigest.WorkType.values()) {
+            assertTrue(instructions.contains("`" + workType.wireName() + "`"), workType.wireName());
+        }
+        for (String example : List.of(
+                "Organization create, read, update and delete",
+                "First datatable on the project",
+                "Role-based permission design",
+                "File ingestion through NiFi",
+                "Clickable Bangladesh map with drill-down in Superset")) {
+            assertTrue(instructions.contains(example), example);
+        }
+        assertTrue(instructions.contains("Size is not complexity"));
+        assertTrue(instructions.contains("Two problems affect each other when two different people"));
+    }
+
+    @Test
+    void theFeatureWorkSchemaOfVersionTwoIsStrictAndHoldsExactlyTheFieldsOfTheDesign() {
+        JsonNode schema = library.schema(FEATURE_WORK_VERSION_TWO);
+        JsonNode properties = schema.path("properties");
+        JsonNode problem = properties.path("problems").path("items");
+
+        assertStrict(schema);
+        assertEquals(
+                List.of(
+                        "complexity",
+                        "confidence",
+                        "mistakesStayHidden",
+                        "mistakesStayHiddenReason",
+                        "problems",
+                        "problemsAffectEachOther",
+                        "problemsAffectEachOtherReason",
+                        "reachesAcrossProjects",
+                        "reason",
+                        "thinEvidence",
+                        "workType"),
+                properties.propertyNames().stream().sorted().toList());
+        assertEquals(
+                List.of("depth", "depthReason", "name", "quote", "source"),
+                problem.path("properties").propertyNames().stream().sorted().toList());
+        assertEquals(
+                List.of("routine", "answer_exists", "no_ready_answer"),
+                enumValues(problem.path("properties").path("depth")));
+        assertEquals(wireNames(PullRequestDigest.WorkType.values()), enumValues(properties.path("workType")));
+        assertEquals(wireNames(FeatureWorkAnswer.Complexity.values()), enumValues(properties.path("complexity")));
     }
 
     @Test
