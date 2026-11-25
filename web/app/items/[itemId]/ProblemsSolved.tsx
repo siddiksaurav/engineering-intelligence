@@ -1,6 +1,7 @@
 import type { FeatureWorkProblem, FeatureWorkProblems, ProblemDepth } from "@/lib/featureWorkProblems";
 import type { JudgmentFact } from "@/lib/items";
 import { orderedColor } from "@/lib/palette";
+import { capitalised, spaced } from "@/lib/words";
 import styles from "./item.module.css";
 
 const DEPTH_WORDS: Record<ProblemDepth, string> = {
@@ -19,7 +20,7 @@ export function ProblemsSolved({ problems, facts }: { problems: FeatureWorkProbl
       <h3>Problems solved</h3>
       <ul className={styles.problems}>
         {problems.problems.map((problem, position) => (
-          <Problem key={problem.name} problem={problem} link={facts[position]?.link} />
+          <Problem key={`${position}-${problem.name}`} problem={problem} link={facts[position]?.link} />
         ))}
       </ul>
       <ul className={styles.marks}>
@@ -33,7 +34,7 @@ export function ProblemsSolved({ problems, facts }: { problems: FeatureWorkProbl
       </ul>
       {problems.complexityByTable !== problems.complexity && (
         <p className={styles.tableLine}>
-          The table of spec 6.2 would give {capitalisedWords(problems.complexityByTable)}.
+          The table of spec 6.2 would give {capitalised(spaced(problems.complexityByTable))}.
         </p>
       )}
     </>
@@ -67,9 +68,4 @@ function Mark({ title, reason }: { title: string; reason: string }) {
       <strong>{title}.</strong> {reason}
     </li>
   );
-}
-
-function capitalisedWords(complexity: string): string {
-  const words = complexity.replaceAll("_", " ");
-  return words.charAt(0).toUpperCase() + words.slice(1);
 }

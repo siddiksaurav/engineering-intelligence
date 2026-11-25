@@ -1,6 +1,7 @@
 import { TierChip } from "@/components/TierChip";
 import { featureWorkProblems } from "@/lib/featureWorkProblems";
 import type { ItemDetail, ItemJudgment } from "@/lib/items";
+import { capitalised, spaced } from "@/lib/words";
 import { ProblemsSolved } from "./ProblemsSolved";
 import styles from "./item.module.css";
 
@@ -83,12 +84,4 @@ function complexityWords(complexity: string): string {
 /** A field name of the judgment in words: "testKind" becomes "test kind". */
 function worded(fieldName: string): string {
   return spaced(fieldName.replace(/([a-z])([A-Z])/g, "$1 $2")).toLowerCase();
-}
-
-function spaced(name: string): string {
-  return name.replaceAll("_", " ");
-}
-
-function capitalised(text: string): string {
-  return text.charAt(0).toUpperCase() + text.slice(1);
 }

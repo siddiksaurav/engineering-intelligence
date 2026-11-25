@@ -102,7 +102,7 @@ function unverifiedWords(gate: GateResult): string {
 }
 
 /** A check of a run before F16 has no `scored` value and counted. */
-export function isScored(gate: GateResult): boolean {
+function isScored(gate: GateResult): boolean {
   return gate.scored !== false;
 }
 

@@ -678,10 +678,23 @@ describe("ProfilePage", () => {
     expect(bugFixCheck).toContain("not scored");
   });
 
+  it("G2 unverified while not scored shows Unverified with the tag", async () => {
+    const engineering = withTrail(dimension("engineering", ENGINEERING, "T2", 1), {}, [
+      gate("G2", { outcome: "UNVERIFIED", unverifiedReason: "TOO_FEW_DEVELOPERS", scored: false }),
+    ]);
+    answeringWith(scores("L2", [engineering]));
+
+    const html = await render({ quarter: "2026-Q3" });
+
+    const quality = html.slice(html.indexOf("4 · Quality checks"), html.indexOf("5 · Reviews"));
+    expect(quality).toContain("Unverified");
+    expect(quality.match(/not scored/g)).toHaveLength(1);
+  });
+
   it('no profile text says "gate"', async () => {
     const engineering = withTrail(
       dimension("engineering", ENGINEERING, "T2", 0),
-      { scoreBeforeGates: 2, notes: ["check: G1 far", "check close: G2", "check unverified: G4", "held: G1"] },
+      { scoreBeforeGates: 2, notes: ["check: G1 far", "G2 not scored yet", "check unverified: G4", "held: G1"] },
       [
         gate("G1", { outcome: "FAR_MISS" }),
         gate("G2", { outcome: "CLOSE_MISS", scored: false }),

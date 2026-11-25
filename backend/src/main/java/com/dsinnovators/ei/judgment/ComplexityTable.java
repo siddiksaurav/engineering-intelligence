@@ -1,5 +1,6 @@
 package com.dsinnovators.ei.judgment;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -34,12 +35,8 @@ final class ComplexityTable {
         return FeatureWorkAnswer.Complexity.LOW;
     }
 
-    /** "Several" is more than one (decision 313). */
+    /** "Several" means two or more: a definition (decision 313), not a setting. */
     private static boolean hasSeveralWithAnAnswer(List<FeatureWorkAnswer.Depth> depths) {
-        return depths.stream()
-                .filter(depth -> depth == FeatureWorkAnswer.Depth.ANSWER_EXISTS)
-                .skip(1)
-                .findAny()
-                .isPresent();
+        return Collections.frequency(depths, FeatureWorkAnswer.Depth.ANSWER_EXISTS) >= 2;
     }
 }

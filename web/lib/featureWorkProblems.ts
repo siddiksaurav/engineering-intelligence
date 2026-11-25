@@ -24,11 +24,40 @@ export type FeatureWorkProblems = {
   complexityByTable: string;
 };
 
-/** The problem part of the value of a judgment, or null when the judgment lists no problems. */
+const PROBLEM_DEPTHS: readonly string[] = ["routine", "answer_exists", "no_ready_answer"];
+
+/** The problem part of the value of a judgment, or null when the judgment lists no problems or a field is wrong. */
 export function featureWorkProblems(judgment: ItemJudgment): FeatureWorkProblems | null {
-  const problems = judgment.value?.problems;
-  if (judgment.kind !== "feature_work_complexity" || !Array.isArray(problems) || problems.length === 0) {
+  const value = judgment.value;
+  if (judgment.kind !== "feature_work_complexity" || !value || !isProblemsValue(value)) {
     return null;
   }
-  return judgment.value as unknown as FeatureWorkProblems;
+  return value as unknown as FeatureWorkProblems;
+}
+
+function isProblemsValue(value: Record<string, unknown>): boolean {
+  const { problems } = value;
+  return (
+    Array.isArray(problems) &&
+    problems.length > 0 &&
+    problems.every(isProblem) &&
+    ["problemsAffectEachOther", "mistakesStayHidden", "thinEvidence"].every(
+      (flag) => typeof value[flag] === "boolean",
+    ) &&
+    ["problemsAffectEachOtherReason", "mistakesStayHiddenReason", "complexity", "complexityByTable"].every(
+      (field) => typeof value[field] === "string",
+    )
+  );
+}
+
+function isProblem(problem: unknown): boolean {
+  if (typeof problem !== "object" || problem === null) {
+    return false;
+  }
+  const fields = problem as Record<string, unknown>;
+  return (
+    typeof fields.depth === "string" &&
+    PROBLEM_DEPTHS.includes(fields.depth) &&
+    ["name", "depthReason", "quote", "source", "earlierExample"].every((field) => typeof fields[field] === "string")
+  );
 }

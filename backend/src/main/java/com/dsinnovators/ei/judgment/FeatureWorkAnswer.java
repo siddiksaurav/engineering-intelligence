@@ -15,10 +15,13 @@ import tools.jackson.databind.node.ObjectNode;
  * @param workType the one work type of the item, separate from the work types of its pull requests
  * @param problems the problems the work solved, at least one
  * @param problemsAffectEachOther one yes or no for the whole item (decision 324)
+ * @param problemsAffectEachOtherReason why the problems affect each other; empty when they do not
  * @param mistakesStayHidden true for a design whose mistakes stay hidden across the system
+ * @param mistakesStayHiddenReason why the mistakes stay hidden; empty when they do not
  * @param reachesAcrossProjects true when the problems reach across projects or the organization
  * @param thinEvidence true when the model could not really see the problems (decision 321)
  * @param complexity the model's own choice; the table of spec 6.2 is guidance (decision 323)
+ * @param reason why the model chose this complexity
  * @param confidence the model's own value from 0 to 1 (decision 173)
  */
 record FeatureWorkAnswer(

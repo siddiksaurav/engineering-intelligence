@@ -298,6 +298,19 @@ describe("ItemPage", () => {
       expect(await render()).toContain("The table of spec 6.2 would give Medium.");
     });
 
+    it("a value with an unknown depth is not shown as problems", async () => {
+      const [first, second] = PROBLEMS_VALUE.problems;
+      answering({
+        ...FEATURE,
+        judgment: {
+          ...PROBLEMS_JUDGMENT,
+          value: { ...PROBLEMS_VALUE, problems: [first, { ...second, depth: "deep" }] },
+        },
+      });
+
+      expect(await render()).not.toContain("Problems solved");
+    });
+
     it("a judgment without problems shows as before", async () => {
       answering(FEATURE);
 

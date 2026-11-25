@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test;
 
 class FeatureWorkInputTest {
 
-    private static final String PROMPT_VERSION = "feature-work-complexity/v1";
+    private static final String PROMPT_VERSION = FeatureWorkJudge.PROMPT_VERSION;
     private static final FeatureWorkLimits ROOMY = new FeatureWorkLimits(1_500, 14_000);
     private static final String ITEM_URL = "https://community.openproject.org/wp/100";
 
@@ -248,7 +248,7 @@ class FeatureWorkInputTest {
                                 List.of(workItem(101, "Implementation", "Task text")),
                                 threePullRequests(),
                                 ROOMY,
-                                "feature-work-complexity/v2")
+                                "feature-work-complexity/v1")
                         .hash());
         assertNotEquals(
                 hash,
